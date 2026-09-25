@@ -1,19 +1,16 @@
 import { ShieldAlert } from "lucide-react";
 
+/** Persistent, always-visible reminder of the access model — rendered as a
+ * fixed strip under the Header on every authenticated screen. See DESIGN.md
+ * §8: "every restricted screen carries a persistent … banner." */
 export default function RestrictedBanner() {
   return (
-    <div className="bg-severity-high/10 border-b border-severity-high/40 px-4 py-2 sm:px-6">
-      <div className="flex items-start gap-2.5 max-w-screen-2xl mx-auto">
-        <ShieldAlert size={18} className="text-severity-high shrink-0 mt-0.5" />
-        <div className="leading-tight">
-          <p className="text-severity-high font-semibold text-xs tracking-wide uppercase">
-            Restricted — UPSI-Adjacent — Do Not Forward
-          </p>
-          <p className="text-ink-500 text-[11px] mt-0.5">
-            This is a signal-flagging tool, not a valuation or due-diligence tool.
-          </p>
-        </div>
-      </div>
+    <div className="restricted-strip fixed top-[60px] left-[240px] right-0 h-[40px] z-10">
+      <ShieldAlert size={14} className="flex-shrink-0" />
+      <span>RESTRICTED — UPSI-ADJACENT — DO NOT FORWARD</span>
+      <span className="hidden md:inline text-rose-500 font-normal">
+        · This is a signal-flagging tool, not a valuation or due-diligence tool.
+      </span>
     </div>
   );
 }

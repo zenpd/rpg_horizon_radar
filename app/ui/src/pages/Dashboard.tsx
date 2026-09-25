@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { PlayCircle, RefreshCw, Sparkles } from "lucide-react";
+import { Activity, AlertTriangle, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
+import { usePageMeta } from "../context/PageMetaContext";
 import { generateDigest, getSignals, getSubsidiaries, runIngest } from "../services/api";
 import SubsidiaryFilterChip from "../components/SubsidiaryFilterChip";
 import SignalCard from "../components/SignalCard";
@@ -15,6 +16,8 @@ const STATUS_OPTIONS = [
 ];
 
 export default function Dashboard() {
+  usePageMeta("Signal Board", "Flagged entities across subsidiaries within your reviewer scope.");
+
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
@@ -91,38 +94,55 @@ export default function Dashboard() {
     }
   };
 
+  // Lightweight, client-side counts from the already-fetched signal list —
+  // purely presentational, not a substitute for the real filtered fetch.
+  const liveCount = signals.filter((s) => s.status === "live").length;
+  const underEvalCount = signals.filter((s) => s.status === "under_evaluation").length;
+  const highSeverityCount = signals.filter((s) => s.score >= 75).length;
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-ink-100">Signal Board</h1>
-          <p className="text-sm text-ink-500 mt-0.5">
-            Flagged entities across subsidiaries within your reviewer scope.
-          </p>
+      {isAdmin && (
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={handleRunIngestion} disabled={ingesting} className="btn btn-secondary btn-sm">
+            <RefreshCw size={13} className={ingesting ? "animate-spin" : ""} />
+            {ingesting ? "Running…" : "Run Ingestion"}
+          </button>
+          <button type="button" onClick={handleGenerateDigest} disabled={generating} className="btn btn-restricted btn-sm">
+            <Sparkles size={13} />
+            {generating ? "Generating…" : "Generate Digest"}
+          </button>
         </div>
+      )}
 
-        {isAdmin && (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleRunIngestion}
-              disabled={ingesting}
-              className="flex items-center gap-1.5 rounded-md border border-ink-600 bg-ink-800 px-3 py-1.5 text-xs font-medium text-ink-200 hover:border-accent/50 disabled:opacity-50"
-            >
-              <RefreshCw size={14} className={ingesting ? "animate-spin" : ""} />
-              {ingesting ? "Running…" : "Run Ingestion"}
-            </button>
-            <button
-              type="button"
-              onClick={handleGenerateDigest}
-              disabled={generating}
-              className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-accent-dark disabled:opacity-50"
-            >
-              <Sparkles size={14} />
-              {generating ? "Generating…" : "Generate Digest"}
-            </button>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="card p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+            <Activity size={18} className="text-blue-500" />
           </div>
-        )}
+          <div>
+            <p className="text-xl font-bold text-gray-900">{liveCount}</p>
+            <p className="text-xs text-gray-400">Live</p>
+          </div>
+        </div>
+        <div className="card p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+            <ShieldCheck size={18} className="text-amber-500" />
+          </div>
+          <div>
+            <p className="text-xl font-bold text-gray-900">{underEvalCount}</p>
+            <p className="text-xs text-gray-400">Under Evaluation</p>
+          </div>
+        </div>
+        <div className="card p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle size={18} className="text-rose-500" />
+          </div>
+          <div>
+            <p className="text-xl font-bold text-gray-900">{highSeverityCount}</p>
+            <p className="text-xs text-gray-400">High Severity</p>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -137,15 +157,13 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="flex items-center gap-1.5 border-b border-ink-700 pb-1">
+      <div className="flex items-center gap-1.5 border-b border-gray-100 pb-1">
         {STATUS_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             onClick={() => setStatus(opt.value)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-t-md ${
-              status === opt.value
-                ? "text-accent-light border-b-2 border-accent"
-                : "text-ink-500 hover:text-ink-200"
+            className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-colors ${
+              status === opt.value ? "text-rose-700 border-b-2 border-rose-600" : "text-gray-400 hover:text-gray-600"
             }`}
           >
             {opt.label}
@@ -154,12 +172,9 @@ export default function Dashboard() {
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-ink-500 py-10 justify-center">
-          <PlayCircle size={16} className="animate-pulse" />
-          Loading signals…
-        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-400 py-10 justify-center">Loading signals…</div>
       ) : signals.length === 0 ? (
-        <div className="text-sm text-ink-500 py-10 text-center border border-dashed border-ink-700 rounded-lg">
+        <div className="text-sm text-gray-400 py-10 text-center border border-dashed border-gray-200 rounded-2xl">
           No signals match the current filters.
         </div>
       ) : (

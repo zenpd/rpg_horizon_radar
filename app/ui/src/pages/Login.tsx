@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Radar, ShieldAlert } from "lucide-react";
+import { Radar } from "lucide-react";
 import axios from "axios";
 
 import { useAuth } from "../context/AuthContext";
@@ -33,24 +33,23 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-ink-950 flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <div className="flex items-center justify-center gap-2 mb-6">
-          <Radar size={22} className="text-accent" />
-          <span className="text-ink-100 font-semibold tracking-wide">RPG Horizon Radar</span>
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-restricted flex items-center justify-center shadow-glow-restricted mb-3">
+            <Radar size={26} className="text-white" />
+          </div>
+          <h1 className="text-lg font-extrabold text-gray-900 tracking-tight">RPG Horizon Radar</h1>
+          <p className="text-xs text-gray-400 mt-2 max-w-xs leading-relaxed">
+            Restricted — Corporate Strategy. Named-reviewer access only. Contact Compliance to be
+            added to the reviewer list.
+          </p>
         </div>
 
-        <div className="rounded-lg border border-ink-600 bg-ink-800 p-6 shadow-xl">
-          <div className="flex items-start gap-2 rounded-md border border-severity-high/30 bg-severity-high/10 px-3 py-2.5 mb-5">
-            <ShieldAlert size={16} className="text-severity-high shrink-0 mt-0.5" />
-            <p className="text-xs text-ink-300 leading-relaxed">
-              Named-reviewer access only. Contact Compliance to be added to the reviewer list.
-            </p>
-          </div>
-
+        <div className="card p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-ink-400 mb-1.5" htmlFor="email">
+              <label className="block text-xs font-medium text-gray-500 mb-1.5" htmlFor="email">
                 Email
               </label>
               <input
@@ -60,12 +59,12 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-md border border-ink-600 bg-ink-900 px-3 py-2 text-sm text-ink-100 placeholder:text-ink-600 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                className="input"
                 placeholder="you@rpgroup.com"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-ink-400 mb-1.5" htmlFor="password">
+              <label className="block text-xs font-medium text-gray-500 mb-1.5" htmlFor="password">
                 Password
               </label>
               <input
@@ -75,21 +74,17 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full rounded-md border border-ink-600 bg-ink-900 px-3 py-2 text-sm text-ink-100 placeholder:text-ink-600 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                className="input"
                 placeholder="••••••••"
               />
             </div>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full rounded-md bg-accent hover:bg-accent-dark text-white text-sm font-semibold py-2 transition-colors disabled:opacity-50"
-            >
+            <button type="submit" disabled={submitting} className="btn btn-restricted w-full justify-center">
               {submitting ? "Signing in…" : "Sign in"}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-[11px] text-ink-600 mt-4">
+        <p className="text-center text-[11px] text-gray-400 mt-4">
           This is a signal-flagging tool, not a valuation or due-diligence tool.
         </p>
       </div>

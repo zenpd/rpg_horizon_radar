@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { Plus, ScrollText, Trash2, Users } from "lucide-react";
 
+import { usePageMeta } from "../context/PageMetaContext";
 import {
   createReviewer,
   deleteReviewer,
@@ -37,6 +38,15 @@ function formatDateTime(value?: string | null) {
   } catch {
     return value;
   }
+}
+
+// Maps raw audit-log action strings onto the four audit-badge classes
+// defined in index.css.
+function actionBadgeClass(action: string): string {
+  if (action === "mark_under_evaluation") return "action-escalate";
+  if (action === "gate_change" || action === "ingest_run") return "action-write";
+  if (action === "admin_change") return "action-admin";
+  return "action-view";
 }
 
 function ReviewersTab() {
@@ -114,59 +124,54 @@ function ReviewersTab() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-ink-600 bg-ink-800 overflow-x-auto">
+      <div className="card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-ink-700 text-left text-[11px] uppercase tracking-wide text-ink-500">
-              <th className="px-4 py-2.5">Name</th>
-              <th className="px-4 py-2.5">Email</th>
-              <th className="px-4 py-2.5">Role</th>
-              <th className="px-4 py-2.5">Scopes</th>
-              <th className="px-4 py-2.5">Added</th>
-              <th className="px-4 py-2.5" />
+            <tr className="text-left text-[10px] uppercase tracking-widest text-gray-400 font-bold border-b border-gray-100">
+              <th className="px-4 py-3">Name</th>
+              <th className="px-4 py-3">Email</th>
+              <th className="px-4 py-3">Role</th>
+              <th className="px-4 py-3">Scopes</th>
+              <th className="px-4 py-3">Added</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-50">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-ink-500">
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
                   Loading reviewers…
                 </td>
               </tr>
             ) : reviewers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-ink-500">
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
                   No reviewers yet.
                 </td>
               </tr>
             ) : (
               reviewers.map((r) => (
-                <tr key={r.id} className="border-b border-ink-700/60 last:border-0">
-                  <td className="px-4 py-2.5 text-ink-100 font-medium">{r.name}</td>
-                  <td className="px-4 py-2.5 text-ink-400">{r.email}</td>
-                  <td className="px-4 py-2.5 text-ink-400">
+                <tr key={r.id} className="hover:bg-gray-50/80 transition-colors">
+                  <td className="px-4 py-3 text-gray-900 font-medium">{r.name}</td>
+                  <td className="px-4 py-3 text-gray-500">{r.email}</td>
+                  <td className="px-4 py-3 text-gray-500">
                     {r.role === "compliance_admin" ? "Compliance Admin" : "Corp Strategy Reviewer"}
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {(r.subsidiary_scopes || []).map((c) => (
-                        <span
-                          key={c}
-                          className="rounded border border-ink-600 bg-ink-900 px-1.5 py-0.5 text-[10px] text-ink-400"
-                        >
+                        <span key={c} className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
                           {c}
                         </span>
                       ))}
                     </div>
                   </td>
-                  <td className="px-4 py-2.5 text-ink-500 font-mono text-xs">
-                    {formatDateTime(r.created_at)}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
+                  <td className="px-4 py-3 text-gray-400 font-mono text-xs">{formatDateTime(r.created_at)}</td>
+                  <td className="px-4 py-3 text-right">
                     <button
                       type="button"
                       onClick={() => setPendingDelete(r)}
-                      className="text-ink-500 hover:text-severity-high"
+                      className="text-gray-400 hover:text-rose-600"
                       aria-label={`Remove ${r.name}`}
                     >
                       <Trash2 size={15} />
@@ -179,8 +184,8 @@ function ReviewersTab() {
         </table>
       </div>
 
-      <div className="rounded-lg border border-ink-600 bg-ink-800 p-4">
-        <h3 className="text-sm font-semibold text-ink-200 mb-3 flex items-center gap-1.5">
+      <div className="card p-5">
+        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-1.5">
           <Plus size={15} />
           Add reviewer
         </h3>
@@ -191,7 +196,7 @@ function ReviewersTab() {
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             required
-            className="rounded-md border border-ink-600 bg-ink-900 px-3 py-2 text-sm text-ink-100 placeholder:text-ink-600 focus:border-accent focus:outline-none"
+            className="input"
           />
           <input
             type="email"
@@ -199,7 +204,7 @@ function ReviewersTab() {
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             required
-            className="rounded-md border border-ink-600 bg-ink-900 px-3 py-2 text-sm text-ink-100 placeholder:text-ink-600 focus:border-accent focus:outline-none"
+            className="input"
           />
           <input
             type="password"
@@ -207,7 +212,7 @@ function ReviewersTab() {
             value={form.password}
             onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
             required
-            className="rounded-md border border-ink-600 bg-ink-900 px-3 py-2 text-sm text-ink-100 placeholder:text-ink-600 focus:border-accent focus:outline-none"
+            className="input"
           />
           <select
             value={form.role}
@@ -217,25 +222,25 @@ function ReviewersTab() {
                 role: e.target.value as ReviewerCreate["role"],
               }))
             }
-            className="rounded-md border border-ink-600 bg-ink-900 px-3 py-2 text-sm text-ink-100 focus:border-accent focus:outline-none"
+            className="input"
           >
             <option value="corp_strategy_reviewer">Corp Strategy Reviewer</option>
             <option value="compliance_admin">Compliance Admin</option>
           </select>
 
           <div className="sm:col-span-2">
-            <p className="text-xs font-medium text-ink-400 mb-1.5">Subsidiary scopes</p>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Subsidiary scopes</p>
             <div className="flex flex-wrap gap-1.5">
               {subsidiaries.map((s) => (
                 <button
                   type="button"
                   key={s.code}
                   onClick={() => toggleScope(s.code)}
-                  className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
+                  className={
                     form.subsidiary_scopes.includes(s.code)
-                      ? "border-accent bg-accent/15 text-accent-light"
-                      : "border-ink-600 bg-ink-900 text-ink-400 hover:border-ink-500"
-                  }`}
+                      ? "chip-open"
+                      : "rounded-full px-2.5 py-1 text-xs font-semibold bg-gray-50 text-gray-500 ring-1 ring-gray-200 hover:ring-rose-200"
+                  }
                 >
                   {s.code}
                 </button>
@@ -244,11 +249,7 @@ function ReviewersTab() {
           </div>
 
           <div className="sm:col-span-2">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-md bg-accent px-4 py-2 text-xs font-semibold text-white hover:bg-accent-dark disabled:opacity-50"
-            >
+            <button type="submit" disabled={submitting} className="btn btn-restricted">
               {submitting ? "Adding…" : "Add reviewer"}
             </button>
           </div>
@@ -294,14 +295,10 @@ function GatesTab() {
     try {
       const updated = await patchSubsidiaryGate(subsidiary.code, nextValue);
       setSubsidiaries((prev) => prev.map((s) => (s.code === subsidiary.code ? updated : s)));
-      toast.success(
-        `${subsidiary.name} sector gate ${nextValue ? "opened" : "closed"}.`
-      );
+      toast.success(`${subsidiary.name} sector gate ${nextValue ? "opened" : "closed"}.`);
     } catch {
       setSubsidiaries((prev) =>
-        prev.map((s) =>
-          s.code === subsidiary.code ? { ...s, compliance_gate: subsidiary.compliance_gate } : s
-        )
+        prev.map((s) => (s.code === subsidiary.code ? { ...s, compliance_gate: subsidiary.compliance_gate } : s))
       );
     } finally {
       setPendingCode(null);
@@ -309,47 +306,47 @@ function GatesTab() {
   };
 
   if (loading) {
-    return <div className="text-sm text-ink-500 py-10 text-center">Loading subsidiaries…</div>;
+    return <div className="text-sm text-gray-400 py-10 text-center">Loading subsidiaries…</div>;
   }
 
   return (
-    <div className="rounded-lg border border-ink-600 bg-ink-800 overflow-x-auto">
+    <div className="card overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-ink-700 text-left text-[11px] uppercase tracking-wide text-ink-500">
-            <th className="px-4 py-2.5">Subsidiary</th>
-            <th className="px-4 py-2.5">Signal Focus</th>
-            <th className="px-4 py-2.5">Sectors</th>
-            <th className="px-4 py-2.5">Compliance Gate</th>
+          <tr className="text-left text-[10px] uppercase tracking-widest text-gray-400 font-bold border-b border-gray-100">
+            <th className="px-4 py-3">Subsidiary</th>
+            <th className="px-4 py-3">Signal Focus</th>
+            <th className="px-4 py-3">Sectors</th>
+            <th className="px-4 py-3">Compliance Gate</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-gray-50">
           {subsidiaries.map((s) => (
-            <tr key={s.code} className="border-b border-ink-700/60 last:border-0">
-              <td className="px-4 py-2.5 text-ink-100 font-medium">
-                {s.name} <span className="text-ink-600 font-mono text-xs">({s.code})</span>
+            <tr key={s.code} className="hover:bg-gray-50/80 transition-colors">
+              <td className="px-4 py-3 text-gray-900 font-medium">
+                {s.name} <span className="text-gray-400 font-mono text-xs">({s.code})</span>
               </td>
-              <td className="px-4 py-2.5 text-ink-400 max-w-xs">{s.signal_focus}</td>
-              <td className="px-4 py-2.5 text-ink-500 text-xs">{(s.sectors || []).join(", ")}</td>
-              <td className="px-4 py-2.5">
-                <button
-                  type="button"
-                  onClick={() => toggleGate(s)}
-                  disabled={pendingCode === s.code}
-                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 ${
-                    s.compliance_gate ? "bg-severity-low" : "bg-ink-600"
-                  }`}
-                  aria-label={`Toggle compliance gate for ${s.name}`}
-                >
-                  <span
-                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                      s.compliance_gate ? "translate-x-[18px]" : "translate-x-0.5"
+              <td className="px-4 py-3 text-gray-500 max-w-xs">{s.signal_focus}</td>
+              <td className="px-4 py-3 text-gray-400 text-xs">{(s.sectors || []).join(", ")}</td>
+              <td className="px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleGate(s)}
+                    disabled={pendingCode === s.code}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 ${
+                      s.compliance_gate ? "bg-emerald-500" : "bg-gray-200"
                     }`}
-                  />
-                </button>
-                <span className="ml-2 text-[11px] text-ink-500 align-middle">
-                  {s.compliance_gate ? "Open" : "Awaiting sign-off"}
-                </span>
+                    aria-label={`Toggle compliance gate for ${s.name}`}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform ${
+                        s.compliance_gate ? "translate-x-[18px]" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
+                  <span className="text-[11px] text-gray-400">{s.compliance_gate ? "Open" : "Awaiting sign-off"}</span>
+                </div>
               </td>
             </tr>
           ))}
@@ -372,10 +369,7 @@ function AuditTab() {
       .finally(() => setLoading(false));
   }, []);
 
-  const actions = useMemo(
-    () => ["all", ...Array.from(new Set(entries.map((e) => e.action)))],
-    [entries]
-  );
+  const actions = useMemo(() => ["all", ...Array.from(new Set(entries.map((e) => e.action)))], [entries]);
 
   const filtered = useMemo(() => {
     return entries.filter((e) => {
@@ -392,11 +386,7 @@ function AuditTab() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={actionFilter}
-          onChange={(e) => setActionFilter(e.target.value)}
-          className="rounded-md border border-ink-600 bg-ink-900 px-2.5 py-1.5 text-xs text-ink-200 focus:border-accent focus:outline-none"
-        >
+        <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} className="input w-auto">
           {actions.map((a) => (
             <option key={a} value={a}>
               {a === "all" ? "All actions" : a}
@@ -408,49 +398,46 @@ function AuditTab() {
           placeholder="Search reviewer, resource, detail…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 min-w-[200px] rounded-md border border-ink-600 bg-ink-900 px-2.5 py-1.5 text-xs text-ink-200 placeholder:text-ink-600 focus:border-accent focus:outline-none"
+          className="input flex-1 min-w-[200px]"
         />
       </div>
 
-      <div className="rounded-lg border border-ink-600 bg-ink-800 overflow-x-auto">
-        <table className="w-full text-xs font-mono">
+      <div className="card overflow-x-auto">
+        <table className="w-full text-xs">
           <thead>
-            <tr className="border-b border-ink-700 text-left text-[10px] uppercase tracking-wide text-ink-500 font-sans">
-              <th className="px-4 py-2.5">Timestamp</th>
-              <th className="px-4 py-2.5">Reviewer</th>
-              <th className="px-4 py-2.5">Action</th>
-              <th className="px-4 py-2.5">Resource</th>
-              <th className="px-4 py-2.5">Detail</th>
+            <tr className="text-left text-[10px] uppercase tracking-widest text-gray-400 font-bold border-b border-gray-100">
+              <th className="px-4 py-3">Timestamp</th>
+              <th className="px-4 py-3">Reviewer</th>
+              <th className="px-4 py-3">Action</th>
+              <th className="px-4 py-3">Resource</th>
+              <th className="px-4 py-3">Detail</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-ink-500 font-sans">
+                <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
                   Loading audit log…
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-ink-500 font-sans">
+                <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
                   No matching entries.
                 </td>
               </tr>
             ) : (
-              filtered.map((e, idx) => (
-                <tr
-                  key={e.id}
-                  className={`border-b border-ink-700/60 last:border-0 ${
-                    idx % 2 === 0 ? "bg-ink-800" : "bg-ink-900/50"
-                  }`}
-                >
-                  <td className="px-4 py-2 text-ink-500 whitespace-nowrap">{formatDateTime(e.created_at)}</td>
-                  <td className="px-4 py-2 text-ink-200 font-sans">{e.reviewer_name_snapshot}</td>
-                  <td className="px-4 py-2 text-accent-light">{e.action}</td>
-                  <td className="px-4 py-2 text-ink-400">
+              filtered.map((e) => (
+                <tr key={e.id} className="odd:bg-white even:bg-gray-50/50">
+                  <td className="px-4 py-2.5 text-gray-500 font-mono whitespace-nowrap">{formatDateTime(e.created_at)}</td>
+                  <td className="px-4 py-2.5 text-gray-700">{e.reviewer_name_snapshot}</td>
+                  <td className="px-4 py-2.5">
+                    <span className={actionBadgeClass(e.action)}>{e.action}</span>
+                  </td>
+                  <td className="px-4 py-2.5 text-gray-400 font-mono">
                     {e.resource_type}#{e.resource_id}
                   </td>
-                  <td className="px-4 py-2 text-ink-500 font-sans">{e.detail}</td>
+                  <td className="px-4 py-2.5 text-gray-500">{e.detail}</td>
                 </tr>
               ))
             )}
@@ -462,28 +449,22 @@ function AuditTab() {
 }
 
 export default function Admin() {
+  usePageMeta("Compliance Admin", "Reviewer list, sector gates, and the immutable audit trail.");
+
   const [tab, setTab] = useState<TabKey>("reviewers");
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold text-ink-100">Compliance Admin</h1>
-        <p className="text-sm text-ink-500 mt-0.5">
-          Reviewer list, sector gates, and the immutable audit trail.
-        </p>
-      </div>
-
-      <div className="flex items-center gap-1 border-b border-ink-700">
+      <div className="flex items-center gap-2">
         {TABS.map((t) => {
           const Icon = t.icon;
+          const active = tab === t.key;
           return (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-t-md ${
-                tab === t.key
-                  ? "text-accent-light border-b-2 border-accent"
-                  : "text-ink-500 hover:text-ink-200"
+              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-all border ${
+                active ? "bg-rose-600 text-white border-rose-600" : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
               }`}
             >
               <Icon size={13} />

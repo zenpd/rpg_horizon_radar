@@ -18,15 +18,9 @@ export default function SubsidiaryFilterChip({
   const { code, name, compliance_gate: gated } = subsidiary;
   const locked = disabled || !gated;
 
-  const base =
-    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors";
-
   if (locked) {
     return (
-      <span
-        className={`${base} border-ink-600 bg-ink-800 text-ink-500 cursor-not-allowed`}
-        title="Awaiting Compliance sign-off"
-      >
+      <span className="chip-locked inline-flex items-center gap-1.5" title="Awaiting Compliance sign-off">
         <Lock size={12} />
         {name}
       </span>
@@ -37,11 +31,11 @@ export default function SubsidiaryFilterChip({
     <button
       type="button"
       onClick={onClick}
-      className={`${base} ${
+      className={
         active
-          ? "border-accent bg-accent/15 text-accent-light"
-          : "border-ink-600 bg-ink-800 text-ink-500 hover:border-accent/50 hover:text-ink-100"
-      }`}
+          ? "chip-open inline-flex items-center gap-1.5"
+          : "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold bg-gray-50 text-gray-500 ring-1 ring-gray-200 hover:ring-rose-200 hover:text-rose-600 transition-colors"
+      }
     >
       {code}
     </button>

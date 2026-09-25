@@ -225,9 +225,17 @@ rpg_horizon_radar/
     └── ui/src/
         ├── pages/                    Login, Dashboard, SignalDetail, DigestArchive, Admin
         ├── components/               RestrictedBanner, SignalCard, ScoreBadge, EscalationBrief, …
-        │   └── layout/AppShell.tsx   Horizon Radar's actual nav — not the template's generic sidebar
+        │   └── layout/              Sidebar, Header, Footer, AppShell — see UI theme note below
         └── services/api.ts           axios client, typed against api/schemas
 ```
+
+**UI theme:** the ZenLabs Design System (Plus Jakarta Sans, white cards on gray-50, the shared
+`.card`/`.btn-*`/badge component classes) is ported from `digital-onboarding`, another Agent Foundry
+app, so Horizon Radar looks and feels consistent with the rest of the org's agentic apps rather than
+being a one-off. The one deliberate departure: Horizon Radar's own primary actions and logo mark use a
+rose "restricted" gradient in place of the shared indigo "zen" gradient — a visual cue, carried through
+the sidebar, buttons, and the persistent restricted-access strip under the header, that this is the
+UPSI-adjacent, access-restricted app and not a generic product surface.
 
 Deployment note: for the actual pilot this should run in RPG's restricted network segment with access
 scoped to Corporate Strategy + Compliance only, consistent with the "small, named, centrally-controlled

@@ -27,34 +27,27 @@ export default function ConfirmModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-md rounded-lg border border-ink-600 bg-ink-800 shadow-xl">
-        <div className="flex items-start justify-between border-b border-ink-600 px-5 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm px-4">
+      <div className="w-full max-w-md card animate-slide-up overflow-hidden">
+        <div className="flex items-start justify-between border-b border-gray-100 px-5 py-4">
           <div className="flex items-center gap-2">
-            {danger && <AlertTriangle size={18} className="text-severity-high" />}
-            <h2 className="text-sm font-semibold text-ink-100">{title}</h2>
+            {danger && <AlertTriangle size={18} className="text-rose-500" />}
+            <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
           </div>
-          <button onClick={onCancel} className="text-ink-500 hover:text-ink-100" aria-label="Close">
+          <button onClick={onCancel} className="text-gray-400 hover:text-gray-700" aria-label="Close">
             <X size={16} />
           </button>
         </div>
-        <div className="px-5 py-4 text-sm text-ink-300 leading-relaxed">{description}</div>
-        <div className="flex justify-end gap-2 border-t border-ink-600 px-5 py-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={busy}
-            className="rounded-md border border-ink-600 px-3 py-1.5 text-xs font-medium text-ink-300 hover:bg-ink-700 disabled:opacity-50"
-          >
+        <div className="px-5 py-4 text-sm text-gray-600 leading-relaxed">{description}</div>
+        <div className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50/50 px-5 py-3">
+          <button type="button" onClick={onCancel} disabled={busy} className="btn btn-secondary btn-sm">
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
             disabled={busy}
-            className={`rounded-md px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 ${
-              danger ? "bg-severity-high hover:bg-severity-high/90" : "bg-accent hover:bg-accent-dark"
-            }`}
+            className={danger ? "btn btn-danger btn-sm" : "btn btn-restricted btn-sm"}
           >
             {busy ? "Working…" : confirmLabel}
           </button>

@@ -2,33 +2,134 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── RPG Horizon Radar — dark ink/navy theme ─────────────────────────────── */
+/* ── ZenLabs Design System (ported from digital-onboarding) ─────────────────
+   Plus Jakarta Sans / white cards on gray-50 / zen-indigo for platform chrome,
+   rose "restricted" gradient for Horizon Radar's own primary actions — see
+   tailwind.config.js for why. */
 
 @layer base {
-  * {
-    @apply antialiased;
+  :root {
+    --sidebar-w: 240px;
+    --header-h: 60px;
+    --banner-h: 40px;
+    --footer-h: 44px;
   }
 
-  html {
-    font-family: "Inter", system-ui, sans-serif;
-  }
+  * { @apply antialiased; }
+
+  html { font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; }
 
   body {
-    @apply bg-ink-950;
+    @apply bg-gray-50 text-gray-900;
+    -webkit-font-smoothing: antialiased;
   }
 
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #0e1526;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #26324d;
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #3a4966;
-  }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-gray-200 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-gray-300; }
 }
+
+@layer components {
+  /* ── Cards ───────────────────────────────────────────── */
+  .card { @apply bg-white rounded-2xl border border-gray-100 shadow-card; }
+  .card-hover {
+    @apply card transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5 cursor-pointer;
+  }
+
+  /* ── Buttons ─────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-gradient-zen text-white shadow-sm hover:shadow-glow-zen hover:-translate-y-px
+           active:translate-y-0 active:shadow-sm;
+  }
+  /* Horizon Radar's own primary actions (login, mark-under-evaluation,
+     generate digest) use the rose "restricted" gradient instead of zen-indigo
+     — a visual cue that this app's actions carry compliance weight. */
+  .btn-restricted {
+    @apply btn bg-gradient-restricted text-white shadow-sm hover:shadow-glow-restricted hover:-translate-y-px
+           active:translate-y-0 active:shadow-sm;
+  }
+  .btn-secondary {
+    @apply btn bg-white text-gray-700 border border-gray-200 hover:bg-gray-50
+           hover:border-gray-300 hover:shadow-sm shadow-sm;
+  }
+  .btn-ghost { @apply btn text-gray-600 hover:bg-gray-100 hover:text-gray-900; }
+  .btn-danger { @apply btn bg-rose-600 text-white hover:bg-rose-700 shadow-sm hover:shadow-md; }
+  .btn-sm { @apply px-3 py-1.5 text-xs rounded-lg; }
+  .btn-lg { @apply px-6 py-3 text-base rounded-2xl; }
+
+  /* ── Inputs ──────────────────────────────────────────── */
+  .input {
+    @apply w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl
+           outline-none transition-all placeholder-gray-400
+           focus:border-rose-400 focus:ring-2 focus:ring-rose-500/15 focus:shadow-sm;
+  }
+
+  /* ── Opportunity/distress score badges ────────────────── */
+  .score-low      { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200; }
+  .score-elevated { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50   text-amber-700   ring-1 ring-amber-200; }
+  .score-high     { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50    text-rose-700    ring-1 ring-rose-200; }
+
+  /* ── Signal status badges ─────────────────────────────── */
+  .status-live             { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50  text-blue-700  ring-1 ring-blue-200; }
+  .status-under_evaluation { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200; }
+
+  /* ── Subsidiary chips ─────────────────────────────────── */
+  .chip-open   { @apply px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 ring-1 ring-rose-200; }
+  .chip-locked { @apply px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-400 ring-1 ring-gray-200 cursor-not-allowed; }
+
+  /* ── Audit-action badges (Admin → Audit Log) ──────────── */
+  .action-view    { @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100  text-gray-600; }
+  .action-write   { @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100  text-blue-700; }
+  .action-escalate{ @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700; }
+  .action-admin   { @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700; }
+
+  /* ── Page section ────────────────────────────────────── */
+  .page-header  { @apply flex items-center justify-between mb-6 gap-4; }
+  .page-title   { @apply text-xl font-bold text-gray-900; }
+  .page-subtitle{ @apply text-sm text-gray-400 mt-0.5; }
+  .section-title{ @apply text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3; }
+
+  /* ── Divider ─────────────────────────────────────────── */
+  .divider { @apply border-t border-gray-100 my-4; }
+
+  /* ── Restricted-access strip (persistent, under the header) ──────────── */
+  .restricted-strip {
+    @apply flex items-center gap-2 bg-rose-50 border-b border-rose-100 text-rose-700
+           px-6 text-xs font-semibold;
+  }
+
+  /* ── Live pulse dot ──────────────────────────────────── */
+  .live-dot { @apply relative w-2 h-2; }
+  .live-dot::before {
+    content: '';
+    @apply absolute inset-0 rounded-full bg-emerald-400 animate-pulse-ring;
+  }
+  .live-dot::after {
+    content: '';
+    @apply absolute inset-0 rounded-full bg-emerald-500;
+  }
+
+  /* ── Gradient text ───────────────────────────────────── */
+  .gradient-text { @apply bg-gradient-restricted bg-clip-text text-transparent; }
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────────── */
+.sidebar-link {
+  @apply relative flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium
+         text-gray-500 hover:bg-rose-50 hover:text-rose-700 transition-all duration-150;
+}
+.sidebar-link.active {
+  @apply bg-gradient-restricted-soft text-rose-700 font-semibold shadow-sm;
+}
+.sidebar-link.active::before {
+  content: '';
+  @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-gradient-restricted rounded-r-full;
+}
+.sidebar-link svg { @apply flex-shrink-0 opacity-60 transition-opacity; }
+.sidebar-link.active svg { @apply opacity-100 text-rose-600; }
+.sidebar-link:hover svg { @apply opacity-90; }
