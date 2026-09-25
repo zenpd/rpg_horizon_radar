@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── RPG Horizon Radar — dark ink/navy theme ─────────────────────────────── */
+
+@layer base {
+  * {
+    @apply antialiased;
+  }
+
+  html {
+    font-family: "Inter", system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-ink-950;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0e1526;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #26324d;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a4966;
+  }
+}
