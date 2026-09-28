@@ -63,6 +63,7 @@ if settings.app_env == "development":
     _cors_origins = [
         "http://localhost:3000",
         "http://localhost:5173",
+        "http://localhost:5174",
     ]
 else:
     _cors_origins = [o.strip() for o in settings.cors_allowed_origins.split(",") if o.strip()]
