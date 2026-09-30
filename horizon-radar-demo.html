@@ -1,0 +1,1676 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horizon Radar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F6F4; --surface:#FFFFFF; --ink:#15201B; --muted:#56635C; --faint:#8A968F;
+  --rule:#D9DFDA; --chip:#EAEFEB;
+  --accent:#0E6E55; --accent-soft:#DDEFE8;
+  --l1:#2C64A8; --l1s:#E2ECF7;
+  --l2:#A5661A; --l2s:#F6EBDB;
+  --l3:#2E7A48; --l3s:#E0F0E5;
+  --l4:#6A4C9C; --l4s:#ECE5F5;
+  --dim:.28;
+  --crit:#B7372B; --crits:#F8E3E0; --high:#B8661A; --highs:#F7E9DA; --opp:#1E7F55; --opps:#DDF0E6; --watch:#3F68A3; --watchs:#E1EAF6;
+  --display:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", Roboto, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F1512; --surface:#161E1A; --ink:#E6ECE8; --muted:#A3B0A9; --faint:#76837C;
+    --rule:#2A3530; --chip:#212B26;
+    --accent:#4FC39F; --accent-soft:#193A30;
+    --l1:#7FB0EC; --l1s:#1A2A3E;
+    --l2:#E3AA5E; --l2s:#35291A;
+    --l3:#77CC92; --l3s:#1A3323;
+    --l4:#B89BE6; --l4s:#2A2140;
+    --dim:.22;
+    --crit:#F08377; --crits:#3A1E1B; --high:#EBA560; --highs:#36291A; --opp:#6FD3A2; --opps:#17352A; --watch:#8DB2EA; --watchs:#1B2940;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F1512; --surface:#161E1A; --ink:#E6ECE8; --muted:#A3B0A9; --faint:#76837C;
+  --rule:#2A3530; --chip:#212B26;
+  --accent:#4FC39F; --accent-soft:#193A30;
+  --l1:#7FB0EC; --l1s:#1A2A3E;
+  --l2:#E3AA5E; --l2s:#35291A;
+  --l3:#77CC92; --l3s:#1A3323;
+  --l4:#B89BE6; --l4s:#2A2140;
+  --dim:.22;
+  --crit:#F08377; --crits:#3A1E1B; --high:#EBA560; --highs:#36291A; --opp:#6FD3A2; --opps:#17352A; --watch:#8DB2EA; --watchs:#1B2940;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;padding-inline:20px;padding-block:28px 64px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+header{display:flex;flex-direction:column;gap:12px}
+.side{border-right:1px solid var(--rule);padding:14px 10px;display:flex;flex-direction:column;gap:2px;background:var(--bg)}
+.lock{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border:1px solid var(--rule);border-radius:4px;padding:1px 5px;white-space:nowrap}
+.crumb{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.03em}
+.crumb b{color:var(--accent);font-weight:500}
+.seg{display:flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden;font-size:11.5px}
+.fin-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
+.fin-search{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+.fin-search input{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:7px 10px;max-width:320px}
+.fin-search input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.fin-list{display:flex;flex-wrap:wrap;gap:6px}
+.fin-list button{font:500 12px var(--body);color:var(--ink);background:var(--chip);border:1px solid transparent;border-radius:999px;padding:4px 10px;cursor:pointer}
+.fin-list button[aria-selected="true"]{background:var(--l2s);border-color:var(--l2);color:var(--ink)}
+.fin-list button:focus-visible,.fin-period button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.fin-list small{color:var(--faint);font-size:11.5px;align-self:center}
+.fin-period button{font:inherit;font-size:11.5px;padding:4px 11px;background:transparent;color:var(--muted);border:0;border-left:1px solid var(--rule);cursor:pointer}
+.fin-period button:first-child{border-left:0}
+.fin-period button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.fin-legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;margin-bottom:4px;font-variant-numeric:tabular-nums}
+.fin-legend span{display:flex;align-items:center;gap:6px}
+.fin-legend i{width:14px;height:3px;border-radius:2px;display:block}
+.fin-legend b.up{color:var(--opp)} .fin-legend b.dn{color:var(--crit)}
+.fin-chart text{fill:var(--faint);font-family:var(--mono);font-size:10px}
+.fin-chart .lbl-ev{fill:var(--muted);font-family:var(--body);font-size:10.5px}
+.fin-table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.fin-table th,.fin-table td{padding:6px 4px;border-top:1px solid var(--rule);text-align:right}
+.fin-table th:first-child,.fin-table td:first-child{text-align:left;color:var(--muted);font-weight:400}
+.fin-table thead th{border-top:0;font-size:11.5px;color:var(--faint);font-weight:600}
+.side .sep{margin-top:auto;border-top:1px solid var(--rule);padding:10px 8px 0;font-size:11.5px;color:var(--faint)}
+.am{padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.top{display:flex;gap:10px;align-items:center}
+.pill{border:1px solid var(--rule);border-radius:999px;padding:5px 10px;font-size:12px;white-space:nowrap}
+.pill.dark{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.am h4{font-family:var(--display);font-size:19px;margin:0;font-weight:700;text-wrap:balance}
+.am h5{font-family:var(--display);font-size:13.5px;margin:0 0 8px;font-weight:700}
+.sub{color:var(--muted);margin:0}
+.cols{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;align-items:start}
+.cols.even{grid-template-columns:1fr 1fr}
+.panel{border:1px solid var(--rule);border-radius:8px;padding:12px 14px}
+.sev{font-size:10.5px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;border-radius:4px;padding:1px 6px;background:var(--svs);color:var(--sv);white-space:nowrap;align-self:start}
+.crit{--sv:var(--crit);--svs:var(--crits)} .high{--sv:var(--high);--svs:var(--highs)}
+.opp{--sv:var(--opp);--svs:var(--opps)} .watch{--sv:var(--watch);--svs:var(--watchs)}
+.mini{font-size:11px;background:var(--chip);border-radius:4px;padding:0 6px;color:var(--muted)}
+.tl{display:flex;flex-direction:column}
+.tl div{display:grid;grid-template-columns:52px 1fr;gap:10px;padding:8px 0;border-top:1px solid var(--rule)}
+.tl div:first-child{border-top:0}
+.tl time{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+.tl p{margin:0}
+.callout{background:var(--accent-soft);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.callout b{font-family:var(--display)}
+.callout p{margin:0}
+.chart{color:var(--accent)}
+.chart text{fill:var(--faint);font-family:var(--mono);font-size:9px}
+.stack{display:flex;flex-direction:column;gap:8px;padding-top:8px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--rule);border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.prompt{border:1px solid var(--rule);border-radius:10px;padding:10px 12px;background:var(--bg);display:flex;gap:10px;align-items:center}
+.prompt span{flex:1}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.opt{border:1px solid var(--rule);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.opt.rec{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.opt p{margin:0}
+.rate{display:grid;grid-template-columns:70px 1fr;gap:3px 8px;font-size:11.5px;color:var(--muted)}
+.rate b{color:var(--ink);font-weight:600}
+.chat{display:flex;flex-direction:column;gap:12px}
+.q{align-self:flex-end;background:var(--ink);color:var(--bg);border-radius:12px 12px 2px 12px;padding:9px 12px;max-width:70%}
+.a{border:1px solid var(--rule);border-radius:12px 12px 12px 2px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;max-width:88%}
+.a ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.a sup{font-family:var(--mono);color:var(--accent);font-size:10px}
+.src{display:flex;flex-direction:column;gap:6px}
+.src div{display:grid;grid-template-columns:22px 1fr;gap:6px;font-size:12px}
+.src span{font-family:var(--mono);color:var(--accent)}
+.verified{font-size:11.5px;color:var(--opp);display:flex;gap:6px;align-items:center}
+</style><style>
+.score{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;height:52px;font-variant-numeric:tabular-nums;background:var(--svs);color:var(--sv)}
+.score b{font-family:var(--display);font-size:22px;line-height:1}
+.score small{font-size:9.5px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em}
+.s-hi{--sv:var(--crit);--svs:var(--crits)} .s-md{--sv:var(--high);--svs:var(--highs)} .s-lo{--sv:var(--muted);--svs:var(--chip)}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th,.tbl td{text-align:left;padding:7px 6px;border-top:1px solid var(--rule);vertical-align:top}
+.tbl thead th{border-top:0;font-size:11px;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-family:var(--mono)}
+.tbl td.mono{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+.toggle{display:inline-flex;width:30px;height:17px;border-radius:9px;background:var(--rule);position:relative;vertical-align:middle}
+.toggle::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--surface)}
+.toggle.on{background:var(--opp)} .toggle.on::after{left:15px}
+</style>
+<style>
+body{padding:0;background:var(--bg)}
+.am a{color:var(--accent)}
+.shell-top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--rule)}
+.brand{font-family:var(--display);font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px}
+.brand svg{color:var(--accent)}
+.laneseg{display:flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.laneseg button{font:600 13px var(--body);padding:6px 12px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+.laneseg button+button{border-left:1px solid var(--rule)}
+.laneseg button[aria-pressed="true"].l1{background:#1E7F55;color:#fff}
+.laneseg button[aria-pressed="true"].l2{background:#B4234F;color:#fff}
+.laneseg button:focus-visible,.navbtn:focus-visible,.btnx:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.topctl{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--muted)}
+.topctl select{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:6px;padding:5px 8px}
+.mock{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;background:var(--chip);color:var(--muted);border-radius:4px;padding:2px 7px}
+.spacer{flex:1}
+.seg.dm button{font:600 12.5px var(--body);padding:6px 12px;background:var(--surface);color:var(--muted);border:0;border-left:1px solid var(--rule);cursor:pointer}
+.seg.dm button:first-child{border-left:0}
+.seg.dm button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg.dm button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.stack[hidden]{display:none!important}
+.shell{display:grid;grid-template-columns:210px 1fr;min-height:calc(100vh - 56px)}
+.shell .side{min-height:100%}
+.navbtn{font:inherit;font-size:13px;text-align:left;padding:8px 10px;border-radius:6px;color:var(--muted);background:transparent;border:0;display:flex;justify-content:space-between;align-items:center;cursor:pointer;width:100%}
+.navbtn:hover{background:var(--surface)}
+.navbtn[aria-current="page"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:inset 3px 0 0 var(--accent)}
+.navbtn em{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--faint)}
+.navbtn .newdot{font-family:var(--mono);font-size:9.5px;background:var(--accent);color:#fff;border-radius:3px;padding:0 4px}
+.shell .am{font-size:13.5px;line-height:1.5;padding:18px 22px 40px;max-width:1180px}
+.view[hidden]{display:none!important}
+.view{display:flex;flex-direction:column;gap:14px}
+.btnx{font:600 12.5px var(--body);border:1px solid var(--rule);border-radius:6px;padding:6px 11px;background:var(--surface);color:var(--ink);cursor:pointer}
+.btnx:hover{border-color:var(--accent)}
+.btnx.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btnx[disabled]{opacity:.45;cursor:not-allowed}
+.filters{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:12.5px;color:var(--muted)}
+.filters select,.filters input{font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:5px 8px}
+.tabs2{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--rule)}
+.tabs2 button{font:600 13px var(--body);background:transparent;border:0;border-bottom:2px solid transparent;padding:8px 12px;color:var(--muted);cursor:pointer}
+.tabs2 .newdot{font-family:var(--mono);font-size:9.5px;background:var(--accent);color:#fff;border-radius:3px;padding:0 4px;margin-left:4px;vertical-align:1px}
+.navgrp{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:14px 10px 4px}
+.hbars{display:flex;align-items:flex-end;gap:6px;height:90px;padding-top:6px}
+.hbars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hbars i{display:block;width:100%;background:var(--accent);border-radius:3px 3px 0 0;opacity:.8}
+.hbars i.neg{background:var(--crit)}
+.verdict{border-radius:10px;padding:12px 14px;background:var(--accent-soft)}
+.verdict b{font-family:var(--display);font-size:15px}
+.flagok{color:var(--opp)} .flagbad{color:var(--crit);font-weight:600}
+.tabs2 button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.kv div{background:var(--bg);border-radius:6px;padding:8px 10px}
+.kv small{display:block;color:var(--faint);font-size:11px}
+.kv b{font-size:13.5px}
+.match{display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+.pbar{height:7px;background:var(--chip);border-radius:4px;overflow:hidden;flex:1;min-width:60px}
+.pbar i{display:block;height:100%;background:var(--accent)}
+.crit{display:flex;flex-wrap:wrap;gap:6px}
+.crit span{font-size:12px;border:1px solid var(--rule);border-radius:999px;padding:3px 10px;background:var(--surface)}
+.crit span.ok{border-color:var(--opp);color:var(--opp)} .crit span.no{border-color:var(--rule);color:var(--faint);text-decoration:line-through}
+textarea.th{font:inherit;font-size:13.5px;width:100%;min-height:74px;border:1px solid var(--rule);border-radius:8px;padding:10px;background:var(--surface);color:var(--ink)}
+.graphwrap{background:var(--surface);border:1px solid var(--rule);border-radius:10px;overflow-x:auto}
+.graphwrap svg{display:block;min-width:720px;width:100%;height:auto}
+.gl{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted)}
+.gl i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:13px;z-index:50;box-shadow:0 8px 24px -10px rgba(0,0,0,.5)}
+.frm{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;align-items:end}
+.frm label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--muted)}
+.frm select,.frm input{font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:6px 8px}
+.pill2{font-size:11px;font-family:var(--mono);border-radius:4px;padding:1px 6px;background:var(--chip);color:var(--muted);white-space:nowrap}
+.pill2.fired{background:var(--crits);color:var(--crit)}
+.empty2{border:1px dashed var(--rule);border-radius:8px;padding:16px;text-align:center;color:var(--faint)}
+.barrow{display:grid;grid-template-columns:120px 1fr 30px;gap:8px;align-items:center;font-size:12.5px;font-variant-numeric:tabular-nums}
+
+/* theme toggle */
+#themeBtn{font-size:15px;line-height:1;padding:6px 10px}
+
+/* Ask Radar: clickable suggestion chips + free-text input */
+.askSug{all:unset;box-sizing:border-box;display:grid;grid-template-columns:22px 1fr;gap:6px;font-size:12px;cursor:pointer;width:100%;padding:4px 2px;border-radius:6px}
+.askSug:hover{background:var(--chip)}
+.askSug:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.askSug span:first-child{font-family:var(--mono);color:var(--accent)}
+.askSug span:last-child{color:var(--ink)}
+#askInput{flex:1;border:0;background:transparent;font:inherit;font-size:14px;color:var(--ink);min-width:0}
+#askInput:focus-visible{outline:none}
+.prompt:focus-within{border-color:var(--accent)}
+.a.fallback{border-style:dashed}
+
+/* escalated-move badge, sits next to the "Open follow-up" link */
+.esc-badge{display:inline-flex;align-items:center;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;background:var(--opps);color:var(--opp);border-radius:999px;padding:2px 9px;margin-right:6px}
+.esc-badge.closed{background:var(--chip);color:var(--muted)}
+
+/* scope note shown on single-company screens while "All companies" is selected */
+.scope-note{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;background:var(--chip);color:var(--muted);border-radius:999px;padding:3px 10px;margin-top:6px}
+
+@media (max-width:820px){
+  .shell{grid-template-columns:1fr}
+  .shell .side{min-height:0;flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--rule)}
+  .shell .side .lbl,.shell .side .sep,.shell .side .navgrp{display:none}
+  .navbtn{width:auto}
+  .shell .am{padding:14px 16px 40px}
+  .cols,.cols.even{grid-template-columns:1fr}
+  .dgrid,.kpis{grid-template-columns:1fr 1fr}
+}
+
+/* ---- story layout ---- */
+.pipe{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;align-items:start}
+.pcol{background:var(--chip);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.pcol-h{display:flex;flex-direction:column;gap:1px;padding:2px 2px 4px}
+.pcol-h b{font-family:var(--display);font-size:13.5px;display:flex;justify-content:space-between;align-items:baseline}
+.pcol-h b em{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.pcol-h small{font-size:11.5px;color:var(--muted)}
+.pcol .empty2{font-size:12px;padding:12px 8px;background:transparent}
+.ccard{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:9px 10px;min-width:0}
+.ccard:hover{border-color:var(--accent)}
+.ccard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ccard p{margin:0;font-size:12.8px;line-height:1.4;font-weight:600;color:var(--ink)}
+.ccard .cm{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:11px;color:var(--muted)}
+.ccard .cm .sc{margin-left:auto;font-family:var(--mono);font-weight:600}
+.ccard.ring{box-shadow:0 0 0 3px var(--accent-soft),0 0 0 1.5px var(--accent) inset}
+.kchip{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-radius:4px;padding:1px 6px;align-self:flex-start}
+.kchip.deal{background:var(--l4s);color:var(--l4)}
+.kchip.threat{background:var(--crits);color:var(--crit)}
+.kfilter{display:flex;gap:6px;flex-wrap:wrap}
+.kfilter button{font:600 12px var(--body);border:1px solid var(--rule);background:var(--surface);color:var(--muted);border-radius:999px;padding:4px 11px;cursor:pointer}
+.kfilter button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.stepper{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.stp{border-top:4px solid var(--rule);padding:7px 2px 0;display:flex;flex-direction:column;gap:1px;min-width:0}
+.stp b{font-size:12.5px;font-family:var(--display)}
+.stp small{font-size:11px;color:var(--faint);line-height:1.35}
+.stp.done{border-top-color:var(--accent)} .stp.done b{color:var(--accent)}
+.stp.now{border-top-color:var(--ink)} .stp.now b{color:var(--ink)} .stp.now small{color:var(--muted)}
+.decide-bar{border:1.5px solid var(--ink);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.decide-bar h5{margin:0}
+.decide-bar .row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.decide-bar label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--muted)}
+.decide-bar select{font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:6px 8px}
+.dd{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:10px;background:var(--surface)}
+.dd>div{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:10px 14px;border-top:1px solid var(--rule);align-items:start}
+.dd>div:first-child{border-top:0}
+.dd p{margin:0}
+.dd small{display:block;color:var(--faint);font-size:11.5px}
+.dd .ic{width:22px;height:22px;border-radius:50%;border:2px solid var(--rule);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--bg)}
+.dd .ok .ic{background:var(--accent);border-color:var(--accent)}
+.dd .run .ic{border-color:var(--accent);border-right-color:transparent;animation:spin .8s linear infinite}
+.dd .wait p{color:var(--faint)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.dd .run .ic{animation:none;border-right-color:var(--accent)}}
+.doc{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:22px 24px;display:flex;flex-direction:column;gap:18px;max-width:900px}
+.doc-h{display:flex;flex-direction:column;gap:4px;border-bottom:1px solid var(--rule);padding-bottom:14px}
+.doc-h .eb{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)}
+.doc-h h3{margin:0;font-family:var(--display);font-size:22px;text-wrap:balance}
+.doc-h p{margin:0;color:var(--muted);font-size:12.5px}
+.reco{background:var(--accent-soft);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.reco small{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.reco b{font-family:var(--display);font-size:16px}
+.reco p{margin:0}
+.reco .need{border-top:1px solid color-mix(in srgb,var(--accent) 25%,transparent);padding-top:8px;margin-top:2px}
+.doc section{display:flex;flex-direction:column;gap:10px;min-width:0}
+.doc section>h5{margin:0;font-family:var(--display);font-size:15px;color:var(--ink)}
+.doc section p{margin:0;max-width:68ch}
+.doc ul,.doc ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.doc footer{border-top:1px solid var(--rule);padding-top:12px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+.subcol{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.subcol>div{background:var(--bg);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.subcol h6{margin:0;font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--rule)}
+.chk:first-of-type{border-top:0}
+.chk input{margin-top:3px;accent-color:var(--accent);width:16px;height:16px}
+.chk label{cursor:pointer}
+.chk.done label{color:var(--faint);text-decoration:line-through}
+.upd{display:grid;grid-template-columns:64px 1fr;gap:10px;padding:8px 0;border-top:1px solid var(--rule)}
+.upd:first-child{border-top:0}
+.upd time{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+.upd p{margin:0}
+.upd.fresh p{font-weight:600}
+.guide{position:fixed;right:18px;bottom:calc(80px + env(safe-area-inset-bottom,0px));width:320px;max-width:calc(100vw - 32px);background:var(--ink);color:var(--bg);border-radius:12px;padding:14px 16px;z-index:40;display:flex;flex-direction:column;gap:8px;box-shadow:0 12px 32px -12px rgba(0,0,0,.5)}
+.guide small{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;opacity:.7}
+.guide b{font-family:var(--display);font-size:15px}
+.guide p{margin:0;font-size:13px;line-height:1.45;opacity:.92}
+.guide .gb{display:flex;gap:6px;flex-wrap:wrap}
+.guide button{font:600 12px var(--body);border-radius:6px;padding:5px 10px;cursor:pointer;border:1px solid color-mix(in srgb,var(--bg) 35%,transparent);background:transparent;color:var(--bg)}
+.guide button.pri{background:var(--bg);color:var(--ink);border-color:var(--bg)}
+.guide button:focus-visible{outline:2px solid var(--bg);outline-offset:2px}
+.gdots{display:flex;gap:4px}
+.gdots i{width:18px;height:4px;border-radius:2px;background:color-mix(in srgb,var(--bg) 25%,transparent)}
+.gdots i.on{background:var(--bg)}
+.toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+body.guide-on .shell .am{padding-bottom:230px}
+.closed-list{display:flex;flex-direction:column;gap:0}
+.tagline{font-family:var(--display);font-size:15px;color:var(--muted);margin:0}
+.intro{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+@media (max-width:1000px){.pipe{grid-template-columns:1fr 1fr}}
+@media (max-width:820px){
+  .pipe,.subcol{grid-template-columns:1fr}
+  .stepper{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .stp small{display:none}
+  .stp b{font-size:10.5px;overflow-wrap:anywhere;line-height:1.25}
+  .stepper{gap:6px}
+  .doc{padding:16px}
+  .guide{right:16px;left:16px;width:auto;bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .toast{bottom:calc(215px + env(safe-area-inset-bottom,0px))}
+}
+
+/* ---- book flow ---- */
+.homecols{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}
+.digest{display:flex;flex-direction:column;gap:8px}
+.drow{background:var(--surface);border:1px solid var(--rule);border-radius:10px;transition:box-shadow .2s,border-color .2s}
+.drow.on{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.drow.flash{box-shadow:0 0 0 3px var(--accent-soft),inset 3px 0 0 var(--accent)}
+.dmain{display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 14px 6px}
+.slbox{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--muted);cursor:pointer;padding-top:2px;text-align:center}
+.slbox input{width:20px;height:20px;accent-color:var(--accent);cursor:pointer}
+.slbox.done{cursor:default;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--accent)}
+.dtxt p{margin:4px 0 0}
+.dname{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.dname b{font-family:var(--display);font-size:14.5px}
+.drow details{border-top:1px dashed var(--rule);margin:0 14px}
+.drow summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--accent);padding:8px 0;list-style-position:inside}
+.drow summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.drow details[open]{padding-bottom:12px}
+.feed{position:sticky;top:calc(env(safe-area-inset-top,0px) + 66px);max-height:calc(100vh - 90px);overflow:auto}
+.fitem{all:unset;box-sizing:border-box;display:grid;grid-template-columns:46px 1fr;gap:8px;padding:8px 0;border-top:1px solid var(--rule);cursor:pointer;font-size:12.5px;line-height:1.4;width:100%}
+.fitem:first-of-type{border-top:0}
+.fitem:hover b{color:var(--accent)}
+.fitem:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.fitem time{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.fitem .sub{font-size:12px}
+.slbar{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;background:var(--surface);border:1.5px solid var(--ink);border-radius:10px;padding:10px 14px;box-shadow:0 10px 28px -14px rgba(0,0,0,.45);font-size:13px}
+.booknav{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.booknav.bottom{max-width:900px}
+.bktabs{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;flex:1;min-width:0}
+.bktabs button{font:600 12px var(--body);border:1px solid var(--rule);background:var(--surface);color:var(--muted);border-radius:999px;padding:4px 10px;cursor:pointer}
+.bktabs button[aria-current="page"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.bktabs .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--high);vertical-align:1px}
+.pagewrap{display:flex;flex-direction:column;gap:12px;max-width:900px}
+.doc.page{box-shadow:0 1px 0 var(--rule),0 18px 40px -28px rgba(0,0,0,.35);max-width:900px}
+.pgno{font-family:var(--mono);font-size:11px;color:var(--faint);text-align:center}
+.turn{animation:turn .28s ease-out}
+@keyframes turn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.turn{animation:none}}
+.toc{display:flex;flex-direction:column}
+.tocrow{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:46px minmax(0,1fr) minmax(0,220px);gap:12px;padding:10px 4px;border-top:1px solid var(--rule);font-size:13px;width:100%}
+.tocrow:first-child{border-top:0}
+.tocrow:hover b{color:var(--accent)}
+.tocrow:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stamp{align-self:flex-start;font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.05em;border:2px solid var(--accent);color:var(--accent);border-radius:6px;padding:6px 12px;transform:rotate(-1.5deg)}
+.stamp:empty{display:none}
+.journey .stp b{font-size:12px}
+@media (max-width:1000px){.homecols{grid-template-columns:1fr}.feed{position:static;max-height:none}}
+@media (max-width:820px){.dmain{grid-template-columns:64px minmax(0,1fr)}.dmain>.score,.dmain>.sev{grid-column:2;justify-self:start}.tocrow{grid-template-columns:40px minmax(0,1fr)}.tocrow>span:last-child{grid-column:2;text-align:left!important}.bktabs{order:3;flex-basis:100%;justify-content:flex-start}}
+
+/* ---- SWOT ---- */
+.swot{display:grid;grid-template-columns:1fr 1fr;gap:8px;transition:opacity .2s}
+.sq{border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0;border:1px solid transparent}
+.sqh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sqh b{font-family:var(--display);font-size:15px}
+.sqh small{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.05em;opacity:.75}
+.qS{background:var(--opps);color:var(--ink)} .qS .sqh b,.qS .mono{color:var(--opp)}
+.qW{background:var(--highs)} .qW .sqh b,.qW .mono{color:var(--high)}
+.qO{background:var(--watchs)} .qO .sqh b,.qO .mono{color:var(--watch)}
+.qT{background:var(--crits)} .qT .sqh b,.qT .mono{color:var(--crit)}
+.sq ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.sq li{display:grid;grid-template-columns:28px 1fr;gap:6px;font-size:13px;line-height:1.4;border-radius:6px;padding:3px 4px;transition:background .15s,box-shadow .15s}
+.sq li .mono{font-size:11px;font-weight:600;padding-top:1px}
+.sq p{margin:0;font-size:12px;color:var(--muted);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sw-link{font-size:11.5px;white-space:nowrap}
+.swot.dim li{opacity:.4}
+.swot.dim li.hl{opacity:1;background:var(--surface);box-shadow:0 0 0 1.5px currentColor}
+.qS li.hl{color:var(--opp)} .qW li.hl{color:var(--high)} .qO li.hl{color:var(--watch)} .qT li.hl{color:var(--crit)}
+.swot.dim li.hl span:last-child{color:var(--ink);font-weight:600}
+.swgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.swtile{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.swtile:hover{border-color:var(--accent)}
+.swtile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.swt-h{display:flex;flex-direction:column;gap:1px}
+.swt-h b{font-family:var(--display);font-size:15px}
+.swt-h .sub{font-size:12px}
+.swtile .swot{gap:5px}.swtile .sq{padding:8px 9px;gap:4px}.swtile .sqh b{font-size:12.5px}.swtile .sqh small{display:none}
+.tows{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.tows.tSO,.tows.tST{color:var(--opp)} .tows.tWO,.tows.tWT{color:var(--high)}
+.rt{font-family:var(--display);font-size:15px;font-weight:700;color:var(--ink);margin:3px 0 2px!important}
+.uses{display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center;margin-top:6px}
+.uses>span[class^="u"]{font-family:var(--mono);font-size:11px;font-weight:600;border-radius:4px;padding:1px 6px}
+.uS{background:var(--opps);color:var(--opp)} .uW{background:var(--highs);color:var(--high)} .uO{background:var(--watchs);color:var(--watch)} .uT{background:var(--crits);color:var(--crit)}
+.skip summary{cursor:pointer;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;font-size:13px}
+.skip summary .sub{font-size:12px}
+.skiplist{display:flex;flex-direction:column;gap:0;margin-top:8px}
+.skiplist>div{padding:8px 0;border-top:1px solid var(--rule)}
+.skiplist>div.flash{background:var(--accent-soft)}
+.whybox{border-left:3px solid var(--accent);background:var(--bg);border-radius:0 8px 8px 0;padding:10px 14px;display:flex;flex-direction:column;gap:4px}
+.whybox small{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.whybox b{font-family:var(--display);font-size:14.5px}
+.whybox .uses{display:block;line-height:1.9}
+@media (max-width:1000px){.swgrid{grid-template-columns:1fr 1fr}}
+@media (max-width:820px){.swgrid{grid-template-columns:1fr}.swot.big{grid-template-columns:1fr}}
+
+/* ---- positioning chart ---- */
+:root{--ch-o:#3F68A3;--ch-t:#B7372B}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ch-o:#6495E0;--ch-t:#E0675A}}
+:root[data-theme="dark"]{--ch-o:#6495E0;--ch-t:#E0675A}
+.poschart{display:flex;flex-direction:column;gap:10px}
+.plegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.plegend span{display:flex;align-items:center;gap:5px}
+.pchart{position:relative;overflow-x:auto}
+.pchart svg{display:block;width:100%;max-width:780px;min-width:520px;height:auto}
+.pchart .qlab{font:600 10.5px var(--mono);letter-spacing:.06em;fill:var(--faint)}
+.pchart .ax{font:11px var(--mono);fill:var(--faint)}
+.pchart .axt{font:600 12px var(--body);fill:var(--muted)}
+.pchart .plab{font:700 12px var(--mono);fill:var(--ink)}
+.pchart .pt{cursor:pointer;outline:none}
+.pchart .pt:focus-visible circle:first-child{stroke:var(--accent);stroke-width:2}
+.ptip{position:absolute;z-index:5;width:240px;background:var(--ink);color:var(--bg);border-radius:8px;padding:9px 11px;font-size:12.5px;line-height:1.4;display:flex;flex-direction:column;gap:3px;pointer-events:none;box-shadow:0 8px 24px -12px rgba(0,0,0,.5)}
+.ptip p{margin:0;opacity:.92}
+.ptip span{font-size:11.5px;opacity:.85}
+.ptable summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="shell-top">
+  <div class="brand"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 8 L13 3" stroke="currentColor" stroke-width="1.6"/></svg>Horizon Radar</div>
+  <div class="topctl"><label for="coSel">Company</label><select id="coSel"></select></div>
+  <span class="spacer"></span>
+  <button type="button" class="btnx" id="guideBtn">Guided demo</button>
+  <button type="button" class="btnx" id="themeBtn" aria-pressed="false" aria-label="Switch to dark theme" title="Switch theme"></button>
+  <span class="mock">Demo · mock data</span>
+</div>
+<div class="shell">
+  <nav class="side" id="sideNav" aria-label="Screens"></nav>
+  <main class="am" id="main">
+    <section class="view" id="v-home"></section>
+    <section class="view" id="v-deep" hidden></section>
+    <section class="view" id="v-book" hidden></section>
+    <section class="view" id="v-follow" hidden></section>
+    <section class="view" id="v-comp" hidden><div id="wsComp"></div></section>
+    <section class="view" id="v-fin" hidden>
+      <div class="top"><div><span class="crumb"><b class="wsco"></b> / Financials</span><h4 id="finTitle"></h4><p class="sub" id="finSub"></p></div><span style="flex:1"></span><span class="lock">Live feed · 15-min delay</span></div>
+      <div class="fin-controls">
+        <div class="fin-search">
+          <label for="finSearch" class="crumb" id="finLabel"></label>
+          <input id="finSearch" type="search" placeholder="Search a competitor…" autocomplete="off">
+          <div class="fin-list" id="finList" role="listbox" aria-label="Competitors"></div>
+        </div>
+        <div class="seg fin-period" id="finPeriod" role="group" aria-label="Time period"></div>
+      </div>
+      <div class="cols">
+        <div class="panel"><div class="fin-legend" id="finLegend"></div><svg id="finChart" class="fin-chart" viewBox="0 0 640 260" width="100%" role="img" aria-label="Indexed share price comparison"></svg></div>
+        <div style="display:flex;flex-direction:column;gap:14px"><div class="callout" id="finNote"></div><div class="panel"><h5>Valuation and fundamentals</h5><table class="fin-table" id="finTable"></table></div></div>
+      </div>
+      </section>
+    <section class="view" id="v-ask" hidden><div id="wsAsk"></div></section>
+    <section class="view" id="v-deals" hidden></section>
+    <section class="view" id="v-thesis" hidden></section>
+    <section class="view" id="v-trig" hidden></section>
+    <section class="view" id="v-admin" hidden></section>
+  </main>
+</div>
+<div class="guide" id="guide" role="region" aria-label="Guided demo" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script>
+function esc(t){return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}
+
+/* ===== Company workspaces (illustrative data for all six companies) ===== */
+const WS = {
+ "CEAT": {
+  rival:"Rival A", seg:"Tyres", tracked:11, threat:["crit","Threat: High"],
+  timeline:[["22 Sep","Hiring surge","13 EV battery and thermal engineering roles posted this week (40 this month).","Talent Tracker"],["18 Sep","Patents","4 filings on sensor-embedded tyre carcasses.","Patent Scout"],["11 Sep","Price cut","2-wheeler tyres down 6% in Maharashtra, Gujarat and Karnataka.","Price Tracker"],["04 Sep","Earnings call","Management's tone on exports turned cautious for the second quarter running.","Earnings Decoder"],["28 Aug","New plant","Filing for a greenfield site in Tamil Nadu.","Watcher"]],
+  analyst:"The hiring, patents and new plant point to a dedicated EV tyre range, likely launching within 12 months and aimed at 2-wheeler makers.",
+  suggest:"lock in EV maker partnerships now and build or partner for sensor technology before the launch.",
+  voc:[["crit","Negative","Sidewall cracking","on 2-wheeler tyres. Complaints tripled on dealer forums and reviews.",312],["opp","Positive","Mileage","on its new commuter range is praised by fleet riders.",188],["high","Negative","Slow warranty claims,","reported by dealers in 3 states.",96]],
+  opening:"highlight sidewall strength and quick claims in dealer campaigns where Rival A is weakest.",
+  spark:{t:"EV roles posted per week",v:[2,3,4,5,6,9,12,13],a:"Aug",b:"Sep 22"},
+  tone:{t:"Export confidence in earnings calls",v:[80,75,55,40]},
+  war:{q:"What if Rival A launches a dedicated EV tyre range in India within 12 months?",conf:68,basis:"23 signals about Rival A and 4 comparable launches in other markets",
+   play:[["Month 0–3","Sign supply deals with two leading EV 2-wheeler makers."],["Month 4–8","Launch from the new Tamil Nadu plant with low introductory pricing."],["Month 9–12","Market “smart” tyres with built-in sensors to fleet operators."]],
+   opts:[["rec","Move first with EV makers","Offer CEAT's EV range to 2-wheeler makers now, with co-development deals.","High","Medium","Medium"],["rec","Build sensor capability","Build or license sensor technology. Any buy option goes to Corporate Strategy separately.","High","Medium","Medium"],["fb","Defend on price","Match introductory prices in the replacement market only.","Medium","Low","Margin loss"]]},
+  ask:{q:"What has Rival A done in truck and bus tyres in the last 6 months?",lead:"Rival A is pushing hard into fleet customers:",
+   pts:[["Launched 3 new truck radial sizes aimed at mining and logistics fleets.",1],["Raised dealer credit for fleet orders from 60 to 90 days.",2],["Management called truck radials its “top growth priority for FY27”.",3],["Its truck radial plant is near full capacity, so supply may be tight in peak season.",3]],
+   mean:"expect pressure on fleet credit terms. Rival A's capacity limit may open doors with large mining fleets next quarter.",conf:81,
+   src:["Rival A product launch releases, Apr–Sep 2026","14 dealer scheme circulars and dealer forum posts","Rival A Q1 FY27 earnings call transcript"],try:["Which rivals are hiring for EV roles?","Where is Rival A cutting prices?"]},
+  fin:{listed:true,base:{ret:{"1M":3,"6M":9,"1Y":18,"3Y":62},vol:1.1,m:["24×","11.5×","12%","13.8%","1.1×","18 · 6 · 2"]},rivals:{
+   "Rival A":{seg:"Tyres · India",ret:{"1M":6,"6M":14,"1Y":24,"3Y":48},vol:1.3,m:["28×","13.2×","15%","14.5%","0.8×","20 · 5 · 1"],ev:[.72,"Q1 beat + EV plans"],why:"The market is rewarding Rival A's EV plans, which the Competitors page has been tracking. Its higher P/E shows investors expect faster growth.",act:"If CEAT announces EV maker deals, part of this gap could close."},
+   "Rival B":{seg:"Tyres · India",ret:{"1M":-2,"6M":4,"1Y":7,"3Y":35},vol:1.2,m:["17×","7.8×","6%","10.9%","2.4×","8 · 12 · 5"],ev:[.45,"Margin warning"],why:"Rising raw material costs and higher debt are weighing on Rival B.",act:"Watch for price cuts as Rival B tries to protect volume."},
+   "Rival C":{seg:"Tyres · India",ret:{"1M":1,"6M":-5,"1Y":-3,"3Y":20},vol:1.4,m:["14×","6.9×","2%","9.4%","1.9×","5 · 10 · 9"],ev:[.58,"Export slowdown"],why:"An export slowdown and a product recall have hit Rival C. It has the lowest valuation in CEAT's peer group.",act:"A weaker Rival C may cut prices to win volume. Watch the replacement market closely."},
+   "Global Rival D":{seg:"Tyres · Global",ret:{"1M":0,"6M":6,"1Y":11,"3Y":28},vol:.9,m:["19×","8.4×","5%","16.2%","1.3×","14 · 11 · 3"],ev:[.3,"Currency swing"],why:"Global Rival D moves with worldwide car demand and currency swings.",act:"Use it as the benchmark for CEAT's global off-highway business."}}}
+ },
+ "KEC": {
+  rival:"Competitor B", seg:"Power transmission EPC", tracked:9, threat:["high","Threat: Medium"],
+  timeline:[["20 Sep","Tender wins","Won 3 state utility tenders at prices about 8% below its usual level.","Tender Intelligence"],["14 Sep","Hiring","25 tower design engineers hired for Middle East projects.","Talent Tracker"],["06 Sep","Earnings call","Management said it is “prioritising order book over margin”.","Earnings Decoder"],["30 Aug","Joint venture","JV with a Gulf firm to build substations in Saudi Arabia.","Watcher"],["21 Aug","Capacity","Tower fabrication plants reported running at about 95%.","Supply Chain Mapper"]],
+  analyst:"Competitor B is buying market share in India while expanding in the Gulf. Its fabrication capacity is nearly full, so delivery delays are likely on the projects it has just won.",
+  suggest:"hold margin on routine tenders and compete hard on delivery-critical projects where Competitor B cannot keep up.",
+  voc:[["crit","Negative","Project delays","on two state transmission lines, raised by utility officials.",41],["opp","Positive","Fast site mobilisation","praised in a utility's contractor review.",18],["high","Negative","Safety incident","reported at one of its tower sites.",9]],
+  opening:"pitch KEC's on-time delivery and safety record to the utilities affected by the delays.",
+  spark:{t:"Tender wins per month",v:[1,1,2,1,2,3,2,3],a:"Feb",b:"Sep"},
+  tone:{t:"Margin confidence in earnings calls",v:[70,62,50,38]},
+  war:{q:"What if Competitor B keeps bidding 8% below market for the next 12 months?",conf:64,basis:"19 tender results and Competitor B's last 4 earnings calls",
+   play:[["Month 0–3","Win most state tenders on price to fill its order book."],["Month 4–8","Capacity strain leads to delays on newly won lines."],["Month 9–12","Raise prices again or seek new funding for capacity."]],
+   opts:[["rec","Win on delivery","Hold margin and target delivery-critical projects with firm deadlines.","High","Low","Medium"],["rec","Add fabrication capacity","Contract extra tower fabrication so KEC can bid on fast-track work.","High","Medium","Medium"],["fb","Match prices selectively","Match Competitor B only on strategic state tenders.","Medium","Low","Margin loss"]]},
+  ask:{q:"What has Competitor B done in transmission tenders in the last 6 months?",lead:"Competitor B has become much more aggressive on price in domestic tenders:",
+   pts:[["Won 7 of 19 state utility tenders it bid for, up from 3 of 17 in the previous six months.",1],["Winning bids averaged about 8% below its usual pricing.",1],["Management said it is “prioritising order book over margin”.",2],["It is short of tower fabrication capacity, so delivery delays are possible.",3]],
+   mean:"expect price pressure in the next two state rounds. Its capacity gap may create openings on delivery-critical projects.",conf:84,
+   src:["State utility tender award notices, Apr–Sep 2026 (12 documents)","Competitor B Q1 FY27 earnings call transcript","Supply Chain Mapper: vendor filings and industry news"],try:["Which rivals won Gulf substation orders?","Where are steel costs rising fastest?"]},
+  fin:{listed:true,base:{ret:{"1M":2,"6M":11,"1Y":28,"3Y":85},vol:1.2,m:["31×","14.1×","14%","7.2%","1.6×","16 · 5 · 2"]},rivals:{
+   "Competitor B":{seg:"EPC · India",ret:{"1M":4,"6M":15,"1Y":35,"3Y":110},vol:1.4,m:["35×","16.0×","18%","8.1%","1.2×","18 · 4 · 1"],ev:[.6,"Big order win"],why:"Investors are rewarding Competitor B's fast order book growth, even though its margins are thin.",act:"KEC's story can be steadier margins and delivery. Watch whether Competitor B's delays start to show."},
+   "Competitor G":{seg:"Transmission · India",ret:{"1M":-3,"6M":2,"1Y":9,"3Y":40},vol:1.3,m:["22×","10.4×","7%","6.5%","2.1×","7 · 9 · 4"],ev:[.4,"Project write-off"],why:"A project write-off and high debt have held Competitor G back.",act:"It may withdraw from some tenders, leaving room for KEC."},
+   "Global EPC H":{seg:"EPC · Global",ret:{"1M":1,"6M":5,"1Y":12,"3Y":30},vol:.9,m:["18×","9.2×","5%","9.8%","0.9×","12 · 10 · 2"],ev:[.35,"Middle East slowdown"],why:"Global EPC H tracks Middle East project spending and oil prices.",act:"Use it as a benchmark for KEC's international business."}}}
+ },
+ "Zensar": {
+  rival:"Competitor D", seg:"IT services", tracked:12, threat:["high","Threat: Medium"],
+  timeline:[["23 Sep","Large deal","Signed a multi-year AI services deal with a US insurer.","Watcher"],["15 Sep","Acquisition","Bought a small GenAI consulting firm in the UK.","Watcher"],["09 Sep","Hiring","300 GenAI engineering roles posted this month.","Talent Tracker"],["02 Sep","Guidance","Lowered its outlook for Europe, citing slower spending.","Earnings Decoder"],["25 Aug","Pricing","Offered price cuts on managed services renewals.","Price Tracker"]],
+  analyst:"Competitor D is shifting to AI-led deals in insurance, which is one of Zensar's core industries, while cutting prices to hold on to existing contracts.",
+  suggest:"package Zensar's AI offerings for its top 10 insurance clients before renewal talks start.",
+  voc:[["opp","Positive","Strong AI proofs of concept,","praised in client peer reviews.",64],["crit","Negative","Delivery team churn,","raised in client reviews and on employee forums.",52],["high","Negative","Slow support response","on managed services tickets.",27]],
+  opening:"stress Zensar's delivery stability with clients that are worried about Competitor D's team churn.",
+  spark:{t:"GenAI roles posted per week",v:[20,25,30,40,55,70,85,90],a:"Aug",b:"Sep 22"},
+  tone:{t:"Europe demand confidence in earnings calls",v:[75,68,52,41]},
+  war:{q:"What if Competitor D uses its insurance AI deal to target Zensar's insurance clients?",conf:70,basis:"31 signals about Competitor D and its last 3 large deal announcements",
+   play:[["Month 0–3","Publish case studies from the US insurer deal."],["Month 4–8","Offer free AI pilots to mid-sized insurers."],["Month 9–12","Bundle AI with managed services at a low price."]],
+   opts:[["rec","Pre-empt with AI pilots","Offer AI pilots to Zensar's top insurance clients first.","High","Medium","Low"],["rec","Partner with a cloud provider","Co-invest with a cloud provider to lower the cost of AI projects.","High","Medium","Medium"],["fb","Discount renewals","Cut prices on at-risk renewals only.","Medium","Low","Margin loss"]]},
+  ask:{q:"How is Competitor D winning AI deals in insurance?",lead:"Competitor D is combining acquisitions, hiring and pricing:",
+   pts:[["Its new UK acquisition brings a team with insurance claims AI experience.",1],["It has posted about 300 GenAI roles this month, mostly for US insurance clients.",2],["It offers fixed-price AI pilots that convert into multi-year contracts.",3],["It lowered its outlook for Europe, so its focus is shifting to the US.",3]],
+   mean:"expect Competitor D to approach Zensar's US insurance clients within two quarters.",conf:78,
+   src:["Competitor D acquisition press release, Sep 2026","Job posting data, Aug–Sep 2026","Competitor D Q1 FY27 earnings call transcript"],try:["Which rivals cut prices on renewals?","Who is hiring the most GenAI engineers?"]},
+  fin:{listed:true,base:{ret:{"1M":-1,"6M":6,"1Y":14,"3Y":70},vol:1.2,m:["24×","15.2×","9%","15.8%","Net cash","11 · 8 · 3"]},rivals:{
+   "Competitor D":{seg:"IT services · India",ret:{"1M":2,"6M":10,"1Y":22,"3Y":60},vol:1.3,m:["27×","17.0×","11%","17.2%","Net cash","15 · 6 · 2"],ev:[.8,"US insurer deal"],why:"The market is rewarding Competitor D's large AI deal wins.",act:"A strong AI deal announcement from Zensar could close part of the gap."},
+   "Competitor J":{seg:"IT services · India",ret:{"1M":-4,"6M":-8,"1Y":-2,"3Y":25},vol:1.5,m:["16×","10.1×","2%","12.4%","Net cash","4 · 10 · 7"],ev:[.5,"Client loss"],why:"Losing a large client has hurt Competitor J.",act:"Its clients may look for new partners. A chance for Zensar's sales teams."},
+   "Global IT K":{seg:"IT services · Global",ret:{"1M":0,"6M":4,"1Y":9,"3Y":35},vol:.9,m:["21×","13.0×","6%","16.0%","0.3×","13 · 12 · 3"],ev:[.3,"Guidance cut"],why:"Global IT K reflects overall tech spending in the US and Europe.",act:"Use it to judge whether Zensar is gaining or losing ground against the market."}}}
+ },
+ "RPG Life Sciences": {
+  rival:"Rival C", seg:"Pharmaceuticals", tracked:8, threat:["high","Threat: Medium"],
+  timeline:[["19 Sep","Price cut","5% cut on two cardiac brands in western India.","Price Tracker"],["12 Sep","Launch","New diabetes combination brand launched.","Watcher"],["05 Sep","Regulatory","USFDA observation at one of its export plants.","Policy & Regulation"],["27 Aug","Hiring","120 medical representative roles posted for north India.","Talent Tracker"],["18 Aug","Earnings call","Cautious on exports after the plant observation.","Earnings Decoder"]],
+  analyst:"With exports under regulatory pressure, Rival C is pushing for domestic share: lower prices on cardiac brands and a bigger sales force in the north.",
+  suggest:"defend RPG Life Sciences' cardiac brands with doctor programmes, especially in the north.",
+  voc:[["opp","Positive","Price cut noticed","by chemists in western India.",140],["crit","Negative","Stock-outs","of one of its cardiac brands, reported by chemists.",85],["high","Negative","Side-effect complaints","about its new diabetes combination.",22]],
+  opening:"make sure supply is strong in the areas where Rival C's cardiac brand is out of stock.",
+  spark:{t:"Medical rep roles posted per week",v:[4,6,5,8,12,18,26,30],a:"Aug",b:"Sep 22"},
+  tone:{t:"Export confidence in earnings calls",v:[78,70,48,35]},
+  war:{q:"What if Rival C extends its price cuts to all its cardiac brands across India?",conf:66,basis:"17 signals about Rival C and 3 similar price moves in the last 2 years",
+   play:[["Month 0–3","Extend price cuts from the west to the north."],["Month 4–8","Use the new sales force to push doctors to switch."],["Month 9–12","Launch a combination cardiac brand."]],
+   opts:[["rec","Doctor loyalty programme","Deepen doctor engagement for RPG Life Sciences' top cardiac brands.","High","Medium","Low"],["rec","Supply guarantee","Promise chemists reliable supply where Rival C has stock-outs.","Medium","Low","Low"],["fb","Match prices on two brands","Cut prices only where Rival C has cut.","Medium","Low","Margin loss"]]},
+  ask:{q:"Where is Rival C gaining share in cardiac medicines?",lead:"Rival C's gains are concentrated in western India:",
+   pts:[["Its prescription share in two cardiac categories rose about 2 points in 3 months.",1],["Its 5% price cut is being passed on by chemists.",2],["It is hiring 120 medical reps for the north, the next likely target.",3],["Stock-outs are limiting its gains in some cities.",2]],
+   mean:"protect the north before Rival C's new sales force is in place.",conf:76,
+   src:["Prescription audit data, Jun–Aug 2026","Chemist surveys and trade forum posts","Job posting data, Aug–Sep 2026"],try:["Which rivals have USFDA issues?","Who launched new diabetes brands?"]},
+  fin:{listed:true,base:{ret:{"1M":3,"6M":12,"1Y":25,"3Y":140},vol:1.3,m:["29×","17.5×","13%","24.1%","Net cash","6 · 2 · 0"]},rivals:{
+   "Rival C":{seg:"Pharma · India",ret:{"1M":-2,"6M":-6,"1Y":4,"3Y":55},vol:1.4,m:["21×","12.8×","7%","19.5%","0.6×","9 · 8 · 3"],ev:[.55,"USFDA observation"],why:"The USFDA observation at its export plant has weighed on Rival C.",act:"Its push into the domestic market is likely to continue. Protect cardiac share."},
+   "Rival L":{seg:"Pharma · India",ret:{"1M":1,"6M":9,"1Y":18,"3Y":90},vol:1.1,m:["33×","20.1×","15%","25.3%","Net cash","14 · 3 · 1"],ev:[.65,"New launch"],why:"Rival L's strong launches in chronic therapies are driving its shares.",act:"Track its launch pipeline for areas that overlap with RPG Life Sciences."},
+   "Rival M":{seg:"Pharma · India",ret:{"1M":0,"6M":3,"1Y":10,"3Y":45},vol:1.0,m:["19×","11.6×","6%","17.8%","0.4×","6 · 7 · 2"],ev:[.4,"Price controls"],why:"New price controls on some medicines have limited Rival M's growth.",act:"Check which RPG Life Sciences brands face the same price controls."}}}
+ },
+ "Raychem RPG": {
+  rival:"Competitor E", seg:"Cable accessories", tracked:7, threat:["high","Threat: Medium"],
+  timeline:[["21 Sep","Policy","Stands to gain from the new import duty on cable accessories.","Policy & Regulation"],["16 Sep","New plant","Announced a cable joints plant in Gujarat.","Watcher"],["08 Sep","Partnership","Tie-up with a smart-meter maker for utility projects.","Watcher"],["01 Sep","Price rise","4% increase on cable joints.","Price Tracker"],["22 Aug","Hiring","30 field service engineers hired.","Talent Tracker"]],
+  analyst:"Competitor E is preparing to capture demand that the import duty will shift to domestic makers, with new capacity and a bigger field service team.",
+  suggest:"sign long-term distributor deals before Competitor E's new plant opens.",
+  voc:[["crit","Negative","Joint failures","in humid coastal regions, reported by installers.",58],["opp","Positive","Easy installation","praised by electrical contractors.",44],["high","Negative","Long lead times","on large utility orders.",31]],
+  opening:"promote Raychem RPG's reliability in humid and coastal regions where Competitor E's joints are failing.",
+  spark:{t:"Field service roles posted per week",v:[2,2,3,3,4,5,7,8],a:"Aug",b:"Sep 22"},
+  tone:{t:"Utility demand confidence in public statements",v:[60,66,72,78]},
+  war:{q:"What if Competitor E's Gujarat plant opens 6 months early?",conf:61,basis:"12 signals about Competitor E and its past plant timelines",
+   play:[["Month 0–3","Sign up distributors in western India."],["Month 4–8","Offer introductory prices to state utilities."],["Month 9–12","Bundle joints with its smart-meter partner's products."]],
+   opts:[["rec","Lock distributor contracts","Sign multi-year deals with key distributors now.","High","Low","Low"],["rec","Reliability campaign","Market proven performance in humid and coastal regions.","Medium","Low","Low"],["fb","Cut prices on joints","Match any introductory pricing.","Medium","Low","Margin loss"]]},
+  ask:{q:"How will the new import duty change the cable accessories market?",lead:"Demand should shift towards domestic makers:",
+   pts:[["The duty applies to imported cable joints and terminations from 1 November.",1],["Imports supplied an estimated quarter of utility demand last year.",2],["Competitor E is adding capacity in Gujarat to capture it.",3],["Lead times across the market are likely to stretch in the first months.",2]],
+   mean:"secure capacity and distributor commitments now to capture demand that shifts from imports.",conf:88,
+   src:["Official customs duty notification, Sep 2026","Import data and industry association reports","Competitor E plant announcement"],try:["Which rivals are partnering with smart-meter makers?","Where are installers reporting failures?"]},
+  fin:{listed:false,baseName:"Sector index",base:{ret:{"1M":1,"6M":7,"1Y":16,"3Y":58},vol:1.0,m:["30×","18.0×","12%","14.0%","0.4×","—"]},rivals:{
+   "Competitor E":{seg:"Electrical · India",ret:{"1M":5,"6M":18,"1Y":30,"3Y":95},vol:1.3,m:["38×","22.5×","17%","15.6%","0.2×","17 · 4 · 1"],ev:[.85,"Import duty news"],why:"Investors expect Competitor E to benefit most from the import duty.",act:"Raychem RPG should move first on distributors to share in that demand."},
+   "Competitor N":{seg:"Electrical · India",ret:{"1M":-1,"6M":4,"1Y":11,"3Y":50},vol:1.1,m:["26×","15.3×","8%","12.1%","0.7×","8 · 9 · 3"],ev:[.5,"Copper cost spike"],why:"Copper cost increases have squeezed Competitor N's margins.",act:"Raychem RPG can use its pricing to win share if Competitor N raises prices."},
+   "Global Electrical P":{seg:"Electrical · Global",ret:{"1M":2,"6M":6,"1Y":14,"3Y":42},vol:.9,m:["24×","14.0×","6%","18.5%","0.9×","15 · 9 · 2"],ev:[.35,"Grid spending"],why:"Global Electrical P follows worldwide grid investment.",act:"A benchmark for the global technology Raychem RPG draws on."}}}
+ },
+ "Harrisons": {
+  rival:"Estate Co. F", seg:"Tea and rubber plantations", tracked:6, threat:["watch","Threat: Low"],
+  timeline:[["18 Sep","Asset sale","Sold a tea estate in the Nilgiris.","Watcher"],["11 Sep","Replanting","Started a rubber replanting programme.","Watcher"],["03 Sep","Wages","Wage settlement signed with unions.","Policy & Regulation"],["26 Aug","New brand","Launched a packaged tea brand online.","Watcher"],["15 Aug","Earnings call","Positive on rubber prices for the year.","Earnings Decoder"]],
+  analyst:"Estate Co. F is moving from bulk sales to branded tea and selling weaker estates, while betting on higher rubber prices.",
+  suggest:"review Harrisons' own branded tea plans for online channels.",
+  voc:[["opp","Positive","Aroma","of its new packaged tea is praised in online reviews.",210],["crit","Negative","Packaging damage","during delivery, raised in reviews.",64],["high","Negative","High price","compared with similar teas.",40]],
+  opening:"compete with good-value packs online, where shoppers say Estate Co. F is expensive.",
+  spark:{t:"Natural rubber price index",v:[100,101,103,102,105,107,108,109],a:"Aug",b:"Sep 22"},
+  tone:{t:"Tea price confidence in public statements",v:[55,50,58,63]},
+  war:{q:"What if Estate Co. F's online tea brand takes 10% of the premium segment?",conf:58,basis:"9 signals about Estate Co. F and online tea sales trends",
+   play:[["Month 0–3","Heavy discounts on online marketplaces."],["Month 4–8","Expand into quick-commerce apps in big cities."],["Month 9–12","Launch a single-estate premium range."]],
+   opts:[["rec","Launch value packs online","Sell Harrisons tea online at a clear value price.","Medium","Low","Low"],["rec","Estate-origin story","Market the heritage and origin of Harrisons' estates.","Medium","Low","Low"],["fb","Stay with bulk sales","Keep selling mainly through auctions.","Low","Low","Lost growth"]]},
+  ask:{q:"What is happening to natural rubber prices, and why?",lead:"Prices have risen about 9% in three weeks:",
+   pts:[["Kerala's monsoon has been below normal, cutting tapping days.",1],["Imports have slowed after changes to import rules.",2],["Tyre makers are building stock ahead of the festive season.",3],["Rival estates expect prices to stay firm this year.",3]],
+   mean:"a good time to review how much rubber to sell now and how much to hold. CEAT is affected in the opposite way.",conf:80,
+   src:["Rubber Board price data, Sep 2026","Trade and import data","Estate Co. F Q1 FY27 earnings call transcript"],try:["Which estates are selling land?","Who launched tea brands online?"]},
+  fin:{listed:true,base:{ret:{"1M":4,"6M":8,"1Y":20,"3Y":60},vol:1.3,m:["12×","8.5×","6%","9.0%","0.9×","2 · 1 · 0"]},rivals:{
+   "Estate Co. F":{seg:"Plantations · India",ret:{"1M":2,"6M":5,"1Y":10,"3Y":35},vol:1.2,m:["14×","9.1×","4%","8.2%","0.7×","3 · 2 · 0"],ev:[.6,"Estate sale"],why:"Estate Co. F's estate sale and new brand have had a mixed response.",act:"Watch whether its branded tea gains share online."},
+   "Estate Co. Q":{seg:"Plantations · India",ret:{"1M":-3,"6M":-1,"1Y":6,"3Y":28},vol:1.4,m:["10×","7.2×","2%","6.5%","1.4×","1 · 3 · 1"],ev:[.4,"Wage costs"],why:"Rising wage costs have hurt Estate Co. Q.",act:"Wage settlements may affect Harrisons too. Plan for the cost impact."},
+   "Commodity Co. R":{seg:"Rubber trading · India",ret:{"1M":1,"6M":9,"1Y":15,"3Y":40},vol:1.3,m:["15×","9.8×","7%","5.1%","1.0×","4 · 2 · 1"],ev:[.75,"Rubber price rise"],why:"Commodity Co. R rises and falls with rubber prices.",act:"A useful signal for when to sell Harrisons' rubber."}}}
+ }
+};
+const COS_WS = Object.keys(WS);
+let cur = "CEAT";
+const $ = id => document.getElementById(id);
+const pct = v => (v>=0?"+":"")+v.toFixed(1)+"%";
+
+/* ---------- theme ---------- */
+function applyTheme(t){
+  document.documentElement.dataset.theme = t;
+  const b=$("themeBtn");
+  b.textContent = t==="dark" ? "☀︎" : "☾";
+  b.setAttribute("aria-pressed", String(t==="dark"));
+  b.setAttribute("aria-label", t==="dark" ? "Switch to light theme" : "Switch to dark theme");
+  b.title = t==="dark" ? "Switch to light theme" : "Switch to dark theme";
+}
+let theme;
+try{ theme = localStorage.getItem("hr-theme"); }catch(e){ theme = null; }
+if(theme!=="light" && theme!=="dark"){
+  theme = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+}
+applyTheme(theme);
+$("themeBtn").onclick=()=>{
+  theme = theme==="dark" ? "light" : "dark";
+  try{ localStorage.setItem("hr-theme", theme); }catch(e){}
+  applyTheme(theme);
+};
+
+function sparkSVG(sp){
+  const v=sp.v, hi=Math.max(...v), lo=Math.min(...v)>50?Math.floor(Math.min(...v)*0.98):0;
+  const X=i=>16+175*i/(v.length-1), Y=x=>56-46*(x-lo)/((hi-lo)||1);
+  const pts=v.map((x,i)=>`${X(i).toFixed(1)},${Y(x).toFixed(1)}`);
+  return `<svg class="chart" viewBox="0 0 200 70" width="100%" role="img" aria-label="${esc(sp.t)}">
+    <line x1="10" y1="56" x2="195" y2="56" stroke="var(--rule)" stroke-width="1"/><line x1="10" y1="10" x2="195" y2="10" stroke="var(--rule)" stroke-width=".6" stroke-dasharray="2 3"/>
+    <text x="0" y="13">${hi}</text><text x="0" y="59">${lo}</text>
+    <path d="M${pts.join(" L")} L${X(v.length-1)},56 L16,56 Z" fill="currentColor" opacity=".15"/>
+    <path d="M${pts.join(" L")}" fill="none" stroke="currentColor" stroke-width="2"/>
+    <circle cx="${X(v.length-1)}" cy="${Y(v[v.length-1])}" r="3.5" fill="currentColor"/>
+    <text x="12" y="68">${esc(sp.a)}</text><text x="195" y="68" text-anchor="end">${esc(sp.b)}</text></svg>`;
+}
+function toneSVG(t){
+  const q=["Q2","Q3","Q4","Q1"];
+  return `<svg class="chart" viewBox="0 0 200 70" width="100%" role="img" aria-label="${esc(t.t)}"><line x1="10" y1="56" x2="195" y2="56" stroke="var(--rule)" stroke-width="1"/>`+
+   t.v.map((x,i)=>{const h=x*0.5, xx=22+45*i, c=x>=65?'currentColor" opacity=".55':x>=45?'var(--high)':'var(--crit)';
+     return `<rect x="${xx}" y="${56-h}" width="30" height="${h}" fill="${c}"/><text x="${xx+8}" y="${53-h}">${x}</text><text x="${xx+4}" y="67">${q[i]}</text>`;}).join("")+`</svg>`;
+}
+/* ---------- Ask Radar: keyword matching over WS/TARGETS + append-only thread ---------- */
+const askThreads = {};
+function askTurns(){
+  if(!askThreads[cur]){
+    const a=WS[cur].ask;
+    askThreads[cur]=[{q:a.q, lead:a.lead, pts:a.pts, mean:a.mean, conf:a.conf, src:a.src}];
+  }
+  return askThreads[cur];
+}
+function askSuggestions(){
+  const a=WS[cur].ask;
+  return a.try.concat([`What has ${WS[cur].rival} been doing?`,"How is the opportunity score calculated?","What risks is the radar watching?"]);
+}
+function matchAsk(co,qRaw){
+  const q=qRaw.toLowerCase(), w=WS[co];
+  const rivalNames=[w.rival,...Object.keys(w.fin.rivals)];
+  const hitRival=rivalNames.find(n=>q.includes(n.toLowerCase()));
+  if(hitRival){
+    if(hitRival===w.rival){
+      return {lead:`Here's the latest the radar has tracked on ${w.rival}:`,
+        pts:[[`${w.timeline[0][0]} · ${w.timeline[0][1]}: ${w.timeline[0][2]}`,1],[w.analyst,2],[`Customers say: ${w.voc[0][2]} ${w.voc[0][3]}`,3]],
+        mean:w.suggest, conf:78, src:[w.timeline[0][3],"Voice of Customer tracker","Analyst synthesis"]};
+    }
+    const r=w.fin.rivals[hitRival];
+    return {lead:`On ${hitRival} (${r.seg}) versus ${w.listed?co:"the sector index"}:`,
+      pts:[[`1-year share price return: ${pct(r.ret["1Y"])}`,1],[r.why,2],[r.act,3]],
+      mean:r.act, conf:74, src:["Market & Financials Tracker","Exchange price data"]};
+  }
+  if(/\bscor(e|ing)\b|how.*(calculat|work)/.test(q)){
+    const sample=TARGETS.filter(t=>t.desks.includes(co)).sort((a,b)=>b.score-a.score)[0]||TARGETS[0];
+    return {lead:"Every opportunity score is rule-based, never a black box:",
+      pts:[["Each distinct signal type carries a fixed weight — for example an insolvency filing is worth 35, a leadership departure 20.",1],
+           ["The weights for every distinct type touching a company are summed, then multiplied by a co-occurrence factor (1.0× for one type, up to 2.0× for four or more).",2],
+           [`For example, ${sample.name}: ${sample.types.map(k=>`${TYPE_LABEL[k].toLowerCase()} ${W[k]}`).join(" + ")} = ${sample.base}, × ${sample.m} → ${sample.score}.`,3],
+           ["Scores are capped at 100 and never use non-public information.",1]],
+      mean:"a higher score means more independent signal types are pointing the same way at once — not that any single signal is more important.", conf:95,
+      src:["Radar scoring rules (fixed, shown to every user)","Signal weights table"]};
+  }
+  if(/\brisks?\b/.test(q)){
+    const t=TARGETS.filter(x=>x.desks.includes(co)).sort((a,b)=>b.score-a.score)[0];
+    const negV=w.voc.find(v=>v[0]==="crit")||w.voc[0];
+    const pts=[[`${negV[2]} ${negV[3]}`,1]];
+    if(t){const b=t.brief||makeBrief(t); pts.push([`On ${t.name}: ${b.cons[0]}`,2]); if(b.flags[0]!=="None found in public sources") pts.push([`Red flag on ${t.name}: ${b.flags[0]}`,3]);}
+    return {lead:`The main risks the radar is watching around ${co} right now:`, pts,
+      mean:"none of this is confirmed by diligence — treat it as a prompt to look closer, not a verdict.", conf:70,
+      src:["Voice of Customer tracker","Public-signal pattern matching (no non-public information)"]};
+  }
+  const target=TARGETS.find(t=>q.includes(t.name.toLowerCase())||q.includes(t.name.split(" ")[0].toLowerCase()));
+  if(target){
+    return {lead:`${target.name} (${target.category}, ${target.geo}) — opportunity score ${target.score} of 100:`,
+      pts:[[target.business,1],[`${target.signals[0][1]} · ${target.signals[0][2]}`,2],[`Routed to ${target.desks.join(", ")}.`,3]],
+      mean:`current status: ${target.status.replace(/_/g," ")}.`, conf:82,
+      src:[target.signals[0][3],"Radar scoring rules"]};
+  }
+  // generic: scan this company's own tracked rival timeline for topical overlap
+  // (covers the app's own "Try asking" chips that don't name a rival directly,
+  // e.g. "Which rivals are hiring for EV roles?")
+  const stop=new Set(["which","what","where","when","how","does","has","have","been","that","this","with","from","about","rival","rivals","company","companies","the","and","for","are","is","in","on","of","to","its","their","doing"]);
+  const words=q.replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(x=>x.length>3&&!stop.has(x));
+  if(words.length){
+    let best=null,bestScore=0;
+    w.timeline.forEach(t=>{
+      const hay=(t[1]+" "+t[2]).toLowerCase();
+      const score=words.filter(word=>hay.includes(word)).length;
+      if(score>bestScore){bestScore=score;best=t;}
+    });
+    if(best){
+      return {lead:`Closest match from what the radar has tracked on ${w.rival}:`,
+        pts:[[`${best[0]} · ${best[1]}: ${best[2]}`,1],[w.analyst,2]],
+        mean:w.suggest, conf:62, src:[best[3],"Analyst synthesis"]};
+    }
+  }
+  return null;
+}
+function askAsk(qRaw){
+  const q=(qRaw||"").trim(); if(!q) return;
+  const list=askTurns(), hit=matchAsk(cur,q);
+  list.push(hit?{q,...hit}:{q,fallback:true});
+  renderAsk();
+  const qs=$("wsAsk").querySelectorAll(".q"); const last=qs[qs.length-1];
+  if(last) last.scrollIntoView({block:"end",behavior:"smooth"});
+}
+function renderAskTurn(t){
+  return `<div class="q">${esc(t.q)}</div>
+    <div class="a"><p style="margin:0">${esc(t.lead)}</p><ul>${t.pts.map(p=>`<li>${esc(p[0])}<sup>[${p[1]}]</sup></li>`).join("")}</ul>
+     <p style="margin:0"><b>What it means for ${esc(cur)}:</b> ${esc(t.mean)}</p><span class="verified">✓ Verified by 2+ sources · ${t.conf}% confidence</span></div>`;
+}
+function renderAskFallback(t){
+  return `<div class="q">${esc(t.q)}</div>
+    <div class="a fallback"><p style="margin:0">I don't have a confident answer for that yet — here's what I can tell you about:</p>
+     <div class="src" style="margin-top:6px">${askSuggestions().map(s=>`<button type="button" class="askSug" data-q="${esc(s)}"><span>→</span><span>${esc(s)}</span></button>`).join("")}</div></div>`;
+}
+function renderAsk(){
+  const list=askTurns();
+  const srcTurn=[...list].reverse().find(t=>!t.fallback)||list[0];
+  const note=scope==="All"?`<div><span class="scope-note">Showing ${esc(cur)} — pick a company above to change</span></div>`:"";
+  $("wsAsk").innerHTML=`<div class="cols">
+   <div class="chat">
+    <div class="top" style="gap:8px"><span class="crumb"><b>${esc(cur)}</b> / Ask Radar</span><span style="flex:1"></span><span class="pill">Scope: ${esc(cur)} ▾</span><span class="lock">Covers competitors and M&amp;A</span></div>
+    ${note}
+    ${list.map(t=>t.fallback?renderAskFallback(t):renderAskTurn(t)).join("")}
+    <div class="prompt"><input type="text" id="askInput" placeholder="Ask a follow-up about ${esc(cur)}'s market…" autocomplete="off"><button type="button" class="btn" id="askSend">Send</button></div>
+   </div>
+   <div class="panel"><h5>Sources</h5><div class="src">${(srcTurn.src||WS[cur].ask.src).map((s,i)=>`<div><span>[${i+1}]</span><p style="margin:0">${esc(s)}</p></div>`).join("")}</div>
+    <h5 style="margin-top:14px">Try asking</h5><div class="src">${askSuggestions().map(s=>`<button type="button" class="askSug" data-q="${esc(s)}"><span>→</span><span>${esc(s)}</span></button>`).join("")}</div></div>
+  </div>`;
+  const input=$("askInput"), send=$("askSend");
+  const submit=()=>{const v=input.value;input.value="";askAsk(v);};
+  send.onclick=submit;
+  input.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();submit();}});
+  $("wsAsk").querySelectorAll(".askSug").forEach(b=>b.addEventListener("click",()=>askAsk(b.dataset.q)));
+}
+
+/* Financials */
+const PERIODS={"1M":{n:22,lab:["4 wks ago","3 wks","2 wks","1 wk","Today"]},"6M":{n:26,lab:["Apr","May","Jun","Jul","Aug","Sep"]},"1Y":{n:52,lab:["Oct '25","Jan '26","Apr '26","Jul '26","Sep '26"]},"3Y":{n:36,lab:["2023","2024","2025","2026"]}};
+const FROWS=["P/E","EV / EBITDA","Revenue growth (YoY)","EBITDA margin","Net debt / EBITDA","Analysts: buy · hold · sell"];
+let fsel=null, per="1Y";
+function rng(seed){let a=0;for(const c of seed)a=(a*31+c.charCodeAt(0))|0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function series(key,c){const {n}=PERIODS[per], r=rng(key+per), tgt=c.ret[per];let w=0;const nz=[0];
+  for(let i=1;i<=n;i++){w+=(r()-.5)*2*c.vol*(per==="1M"?1.2:2.2);nz.push(w);}
+  return nz.map((v,i)=>100*(1+tgt/100*i/n)+v-nz[n]*i/n);}
+function baseName(){const f=WS[cur].fin;return f.listed?cur:f.baseName;}
+function draw(){
+  const f=WS[cur].fin, c=f.rivals[fsel], a=series(cur,f.base), b=series(fsel,c), bn=baseName();
+  const all=a.concat(b); let lo=Math.min(...all), hi=Math.max(...all); const step=(hi-lo)>80?40:(hi-lo)>40?20:(hi-lo)>16?10:5;
+  lo=Math.floor(lo/step)*step; hi=Math.ceil(hi/step)*step;
+  const L=40,R=630,T=16,B=230, X=i=>L+(R-L)*i/(a.length-1), Y=v=>B-(B-T)*(v-lo)/(hi-lo);
+  let g="";
+  for(let v=lo;v<=hi+.001;v+=step){g+=`<line x1="${L}" x2="${R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--rule)" stroke-width="${v===100?1.2:.6}" ${v===100?'':'stroke-dasharray="2 4"'}/><text x="${L-6}" y="${Y(v)+3}" text-anchor="end">${v}</text>`;}
+  const labs=PERIODS[per].lab; labs.forEach((t,i)=>{const x=L+(R-L)*i/(labs.length-1);g+=`<text x="${x}" y="${B+18}" text-anchor="${i===0?'start':i===labs.length-1?'end':'middle'}">${t}</text>`;});
+  const path=s=>s.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(v).toFixed(1)).join(" ");
+  const ei=Math.round(c.ev[0]*(b.length-1)), ex=X(ei), ey=Y(b[ei]), up=ey>T+30, ty=up?ey-22:ey+28;
+  g+=`<path d="${path(b)}" fill="none" stroke="var(--l2)" stroke-width="2"/><path d="${path(a)}" fill="none" stroke="var(--accent)" stroke-width="2.4" ${f.listed?'':'stroke-dasharray="6 4"'}/>`;
+  g+=`<circle cx="${X(a.length-1)}" cy="${Y(a[a.length-1])}" r="4" fill="var(--accent)"/><circle cx="${X(b.length-1)}" cy="${Y(b[b.length-1])}" r="4" fill="var(--l2)"/>`;
+  g+=`<line x1="${ex}" x2="${ex}" y1="${ey}" y2="${up?ty+4:ty-12}" stroke="var(--l2)" stroke-width="1"/><circle cx="${ex}" cy="${ey}" r="3.5" fill="var(--surface)" stroke="var(--l2)" stroke-width="1.5"/><text class="lbl-ev" x="${Math.min(Math.max(ex,L+60),R-60)}" y="${ty}" text-anchor="middle">${esc(c.ev[1])}</text>`;
+  $("finChart").innerHTML=g;
+  const ra=a[a.length-1]-100, rb=b[b.length-1]-100;
+  $("finLegend").innerHTML=`<span><i style="background:var(--accent)"></i>${esc(bn)} <b class="${ra>=0?'up':'dn'}">${pct(ra)}</b></span><span><i style="background:var(--l2)"></i>${esc(fsel)} <b class="${rb>=0?'up':'dn'}">${pct(rb)}</b></span><span style="color:var(--faint)">over ${per}</span>`;
+  const gap=rb-ra;
+  $("finNote").innerHTML=`<b>Why the gap? · Market &amp; Financials Tracker</b><p>Over ${per}, ${esc(fsel)} ${gap>=0?"outperformed":"underperformed"} ${f.listed?esc(cur):"the sector index"} by ${Math.abs(gap).toFixed(1)} points. ${esc(c.why)}</p><p><b style="font-family:var(--body)">So what for ${esc(cur)}:</b> ${esc(c.act)}</p>`;
+  $("finTable").innerHTML=`<thead><tr><th>Metric</th><th>${f.listed?esc(cur):"Sector median"}</th><th>${esc(fsel)}</th></tr></thead><tbody>`+FROWS.map((r,i)=>`<tr><td>${r}</td><td>${f.base.m[i]}</td><td>${c.m[i]}</td></tr>`).join("")+"</tbody>";
+}
+function finList(){
+  const f=WS[cur].fin, names=Object.keys(f.rivals), q=$("finSearch").value.trim().toLowerCase();
+  const hits=names.filter(k=>(k+" "+f.rivals[k].seg).toLowerCase().includes(q));
+  $("finList").innerHTML=hits.map(k=>`<button type="button" role="option" aria-selected="${k===fsel}" data-k="${esc(k)}">${esc(k)}</button>`).join("")+(hits.length?`<small>+${WS[cur].tracked-names.length} more ${esc(cur)} rivals in production</small>`:`<small>No tracked rival matches. In production, any listed company can be added.</small>`);
+  $("finList").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{fsel=b.dataset.k;finList();draw();}));
+}
+function renderFin(){
+  const f=WS[cur].fin; fsel=Object.keys(f.rivals)[0]; $("finSearch").value="";
+  $("finTitle").textContent=`${cur} vs competitors: market performance`;
+  $("finSub").textContent=(f.listed?"Share prices indexed to 100 at the start of the period · illustrative data":`${cur} is not listed, so rivals are compared with the listed sector index (dashed line) · illustrative data`)+(scope==="All"?` · Showing ${cur} — pick a company above to change`:"");
+  $("finLabel").textContent=f.listed?`Compare ${cur} with`:`Compare the sector index with`;
+  finList(); draw();
+}
+Object.keys(PERIODS).forEach(k=>{const b=document.createElement("button");b.type="button";b.textContent=k;b.setAttribute("aria-pressed",String(k===per));b.addEventListener("click",()=>{per=k;$("finPeriod").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x.textContent===k)));draw();});$("finPeriod").appendChild(b);});
+$("finSearch").addEventListener("input",finList);
+
+
+/* ================= M&A SCREENS (mock data) ================= */
+const W = {leadership_churn:20,delayed_filing:25,credit_downgrade:30,patent_shift:15,hiring_scaledown:15,hiring_scaleup:10,press_distress:20,press_opportunity:15,
+  insolvency_filed:35,auditor_resigned:25,pledge_rising:20,succession_risk:15,divestment_signal:20,pe_exit_window:15};
+const TYPE_LABEL = {leadership_churn:"Leadership churn",delayed_filing:"Delayed filing",credit_downgrade:"Credit downgrade",patent_shift:"Patent shift",hiring_scaledown:"Hiring scale-down",hiring_scaleup:"Hiring scale-up",press_distress:"Press: distress",press_opportunity:"Press: opportunity",insolvency_filed:"Insolvency filed",auditor_resigned:"Auditor resigned",pledge_rising:"Promoter pledge rising",succession_risk:"Succession risk",divestment_signal:"Divestment signal",pe_exit_window:"PE exit window"};
+const NEW_TYPES = new Set(["insolvency_filed","auditor_resigned","pledge_rising","succession_risk","divestment_signal","pe_exit_window"]);
+const MULT = n => n>=4?2.0:({1:1.0,2:1.3,3:1.6}[n]||1.0);
+const DESKS = ["CEAT","KEC","Zensar","RPG Life Sciences","Raychem RPG","Harrisons"];
+
+const TARGETS = [
+ {id:"meridian",name:"Meridian Treadworks Pvt Ltd",desks:["CEAT"],sector:"tyres",category:"Tyre components",geo:"India",revenue:620,listed:false,ownership:"family",rating:"BB",pledge:0,
+  business:"Makes bead wire, tread rubber and tyre-curing bladders for truck and 2-wheeler tyre makers.",
+  signals:[["credit_downgrade","12 Sep","Rating cut two notches to BB by a rating agency.","Rating agency"],["delayed_filing","29 Aug","Annual financial statements not filed with MCA by the due date.","MCA via vendor"],["leadership_churn","08 Aug","CFO and head of operations resigned in the same month.","News"]],
+  owners:[["Kapoor family (promoters)",62,"family"],["Brightwater PE Fund II",18,"pe"],["Other shareholders",20,"public"]],
+  directors:[["R. Kapoor","Chairman",["Kapoor Holdings"]],["S. Menon","Independent director",["Axle Components Ltd"]],["A. Rao","Director",["Rival A Ltd (supplier board)"]]],
+  subs:["Meridian Bladders Pvt Ltd","Meridian Exports FZE (UAE)"],
+  bidders:["Rival A Ltd: bought 6% stake (SAST, Sep)"],
+  status:"new"},
+ {id:"rovan",name:"Rovan Tyres Co.",desks:["CEAT"],sector:"tyres",category:"Off-highway tyres",geo:"ASEAN",revenue:1450,listed:true,ownership:"pe",rating:"BBB-",pledge:40,
+  business:"Off-the-road tyres for mining and construction fleets in Thailand, Indonesia and Vietnam.",
+  signals:[["pledge_rising","15 Sep","Promoter pledge rose from 22% to 40% of promoter shares.","Exchange filing"],["auditor_resigned","02 Sep","Statutory auditor resigned, citing limited access to records.","Exchange filing"]],
+  owners:[["Southeast Growth Partners (PE)",45,"pe"],["Founder family",30,"family"],["Public float",25,"public"]],
+  directors:[["T. Somchai","CEO",[]],["L. Wei","PE nominee",["Southeast Growth Partners","Kinetic Compounds"]]],
+  subs:["Rovan Vietnam Co."],bidders:["Global Rival D: rumoured interest (news, unconfirmed)"],status:"watching"},
+ {id:"sensa",name:"Sensa Labs",desks:["CEAT","KEC","Raychem RPG"],sector:"sensors",category:"IoT sensors",geo:"India",revenue:95,listed:false,ownership:"founder",rating:"–",pledge:0,
+  business:"Low-cost IoT sensors for tyre pressure, transmission-line sag and substation temperature.",
+  signals:[["press_opportunity","20 Sep","Reported to be raising a Series B round.","News"],["hiring_scaleup","14 Sep","Hiring 35 embedded and firmware engineers.","Job data vendor"],["patent_shift","03 Sep","Filed 4 patents on low-power sensor modules.","EPO OPS"]],
+  owners:[["Founders",58,"family"],["Seed and Series A investors",42,"pe"]],
+  directors:[["N. Iyer","Founder, CEO",[]],["P. Shah","Investor nominee",["Gridwise AI"]]],
+  subs:[],bidders:[],status:"watching"},
+ {id:"ashford",name:"Ashford EPC Projects Ltd",desks:["KEC"],sector:"epc",category:"Transmission EPC",geo:"India",revenue:1850,listed:true,ownership:"promoter",rating:"BBB",pledge:12,
+  business:"Mid-sized contractor for transmission lines and rural electrification projects.",
+  signals:[["press_distress","18 Sep","Two state utilities reported project delays and penalty notices.","News"],["hiring_scaledown","10 Sep","Site engineering postings down 60% vs normal.","Job data vendor"]],
+  owners:[["Promoter group",51,"family"],["Mutual funds",19,"public"],["Public",30,"public"]],
+  directors:[["V. Reddy","Managing director",[]]],subs:["Ashford Towers Pvt Ltd"],bidders:["Competitor B: open about growth by acquisition (earnings call)"],status:"watching"},
+ {id:"strata",name:"Strata Substations Pvt Ltd",desks:["KEC","Raychem RPG"],sector:"epc",category:"Substation EPC",geo:"Middle East",revenue:980,listed:false,ownership:"family",rating:"D",pledge:0,
+  business:"Builds gas-insulated substations in the UAE and Oman.",
+  signals:[["insolvency_filed","21 Sep","Insolvency petition admitted; resolution process started (IBBI announcement).","IBBI"],["credit_downgrade","05 Sep","Rating moved to default (D).","Rating agency"],["leadership_churn","22 Aug","CEO stepped down.","News"]],
+  owners:[["Al-Noor family",80,"family"],["Management",20,"public"]],
+  directors:[["K. Al-Noor","Chairman",["Al-Noor Trading"]],["J. Mathew","Director",["Ashford EPC Projects Ltd"]]],
+  subs:[],bidders:["Global EPC H: filed with competition regulator for a related asset (CCI)"],status:"new"},
+ {id:"northfield",name:"Northfield Cognitive Systems Inc",desks:["Zensar"],sector:"it",category:"AI / GenAI services",geo:"US",revenue:900,listed:false,ownership:"pe",rating:"–",pledge:0,
+  business:"AI engineering and data services for US insurers and banks. About $110M revenue.",
+  signals:[["pe_exit_window","16 Sep","Majority PE owner invested in 2019; fund is near the end of its holding period.","Deal database"],["hiring_scaledown","09 Sep","Postings down 45% over two months.","Job data vendor"],["leadership_churn","30 Aug","Chief delivery officer left.","News"]],
+  owners:[["Harborline Capital (PE)",70,"pe"],["Founders",20,"family"],["Employees",10,"public"]],
+  directors:[["E. Walsh","CEO",[]],["M. Chen","PE nominee",["Harborline Capital","Solstice BFSI Analytics"]]],
+  subs:["Northfield India Pvt Ltd"],bidders:["Competitor D: acquired a GenAI boutique in the UK (Sep)"],status:"watching"},
+ {id:"solstice",name:"Solstice BFSI Analytics Ltd",desks:["Zensar"],sector:"it",category:"BFSI analytics",geo:"UK",revenue:260,listed:false,ownership:"founder",rating:"–",pledge:0,
+  business:"Risk and fraud analytics software for UK building societies.",
+  signals:[["succession_risk","11 Sep","Founder, 71, has no named successor in the annual report.","Annual report"]],
+  owners:[["Founder",65,"family"],["Harborline Capital (PE)",35,"pe"]],
+  directors:[["G. Hart","Founder, chair",[]],["M. Chen","PE nominee",["Harborline Capital","Northfield Cognitive Systems Inc"]]],
+  subs:[],bidders:[],status:"watching"},
+ {id:"veltrix",name:"Veltrix Biopharma Ltd",desks:["RPG Life Sciences"],sector:"pharma",category:"API / formulations",geo:"India",revenue:720,listed:true,ownership:"promoter",rating:"BBB+",pledge:18,usfda:true,
+  business:"Active ingredients and cardiac formulations; one USFDA-approved plant in Gujarat.",
+  signals:[["delayed_filing","19 Sep","Quarterly results delayed beyond the exchange deadline.","Exchange filing"],["auditor_resigned","06 Sep","Auditor resigned mid-term.","Exchange filing"]],
+  owners:[["Promoter group",48,"family"],["Institutions",22,"public"],["Public",30,"public"]],
+  directors:[["H. Desai","Managing director",[]]],subs:["Veltrix Labs Pvt Ltd"],bidders:["Rival L: open offer rumoured (news, unconfirmed)"],status:"watching"},
+ {id:"corvane",name:"Corvane Materials Systems Ltd",desks:["Raychem RPG"],sector:"electrical",category:"Cable accessory materials",geo:"India",revenue:340,listed:false,ownership:"subsidiary",rating:"A-",pledge:0,
+  business:"Heat-shrink polymers and cable-joint compounds. Owned by a diversified group.",
+  signals:[["divestment_signal","17 Sep","Parent group announced a strategic review of non-core businesses.","Exchange filing (parent)"],["press_opportunity","12 Sep","Management open to a strategic partner (interview).","News"]],
+  owners:[["Parent: Vasant Group",100,"family"]],directors:[["D. Kulkarni","CEO",[]]],subs:[],bidders:[],status:"watching"},
+ {id:"palmgrove",name:"Palmgrove Estates Cooperative",desks:["Harrisons"],sector:"plantations",category:"Tea and rubber estates",geo:"India",revenue:210,listed:false,ownership:"family",rating:"BB+",pledge:35,
+  business:"Five tea and two rubber estates in the Nilgiris and Idukki.",
+  signals:[["succession_risk","14 Sep","Managing trustee retiring; family split reported.","News"],["pledge_rising","07 Sep","Estate land pledged for new loans.","MCA charges via vendor"],["press_distress","27 Aug","Wage arrears reported at two estates.","News"]],
+  owners:[["Menon family trust",75,"family"],["Members",25,"public"]],directors:[["V. Menon","Managing trustee",["Menon Holdings"]]],subs:[],bidders:[],status:"new"},
+];
+function scoreOf(t){const types=[...new Set(t.signals.map(s=>s[0]))];const base=types.reduce((a,k)=>a+W[k],0);const m=MULT(types.length);return {types,base,m,raw:base*m,score:Math.min(100,Math.round(base*m))};}
+TARGETS.forEach(t=>Object.assign(t,scoreOf(t)));
+const byId = id => TARGETS.find(t=>t.id===id);
+
+let THESES = [
+ {id:"th1",desk:"CEAT",text:"Tyre components or off-highway tyre makers in India or ASEAN, revenue ₹200–1,500 crore, family or promoter owned.",c:{sector:["tyres"],geo:["India","ASEAN"],rev:[200,1500],own:["family","promoter"]}},
+ {id:"th2",desk:"KEC",text:"Transmission or substation EPC in India or the Middle East, revenue ₹500–3,000 crore.",c:{sector:["epc"],geo:["India","Middle East"],rev:[500,3000],own:[]}},
+ {id:"th3",desk:"Zensar",text:"AI or analytics services firms in the US or UK, revenue ₹200–1,200 crore, PE-backed or founder-led.",c:{sector:["it"],geo:["US","UK"],rev:[200,1200],own:["pe","founder"]}},
+ {id:"th4",desk:"RPG Life Sciences",text:"API or formulation makers in India with a USFDA-approved plant, revenue ₹300–1,200 crore.",c:{sector:["pharma"],geo:["India"],rev:[300,1200],own:[],usfda:true}},
+ {id:"th5",desk:"Raychem RPG",text:"Cable accessory or materials makers in India, revenue ₹100–600 crore.",c:{sector:["electrical"],geo:["India"],rev:[100,600],own:[]}},
+ {id:"th6",desk:"Harrisons",text:"Tea or rubber estates in South India, family owned.",c:{sector:["plantations"],geo:["India"],rev:[0,99999],own:["family"]}},
+];
+const SECTOR_LABEL={tyres:"Tyres",epc:"EPC",it:"IT / AI",pharma:"Pharma",electrical:"Electrical",plantations:"Plantations",sensors:"Sensors"};
+function thesisMatch(th,t){
+  const c=th.c, checks=[];
+  checks.push([`Sector: ${c.sector.map(s=>SECTOR_LABEL[s]).join(" / ")}`, c.sector.includes(t.sector)]);
+  checks.push([`Geography: ${c.geo.join(" / ")}`, c.geo.includes(t.geo)]);
+  if(c.rev[1]<99999) checks.push([`Revenue ₹${c.rev[0].toLocaleString("en-IN")}–${c.rev[1].toLocaleString("en-IN")} cr`, t.revenue>=c.rev[0]&&t.revenue<=c.rev[1]]);
+  if(c.own.length) checks.push([`Ownership: ${c.own.join(" / ")}`, c.own.includes(t.ownership)]);
+  if(c.usfda) checks.push(["USFDA-approved plant", !!t.usfda]);
+  const ok=checks.filter(x=>x[1]).length; return {checks,ok,total:checks.length,pct:Math.round(ok/checks.length*100)};
+}
+
+const DEALS = [
+ ["2026-09-18","Rival A Ltd","Meridian Treadworks Pvt Ltd","Stake disclosure (SAST)","6% stake","Tyres","CEAT","Exchange filing"],
+ ["2026-09-12","Competitor D","Brightmoor AI (UK)","Acquisition announced","100%","IT / AI","Zensar","Exchange filing"],
+ ["2026-09-09","Global EPC H","Gulf Grid Assets","Combination approved (CCI)","Majority","EPC","KEC","CCI"],
+ ["2026-09-04","Rival C","Nova Cardiac Brands","Acquisition announced","Brand portfolio","Pharma","RPG Life Sciences","Exchange filing"],
+ ["2026-08-28","Competitor E","JointTech Polymers","PE co-investment","26%","Electrical","Raychem RPG","Deal database"],
+ ["2026-08-21","Rival A Ltd","Axle Components Ltd","Combination approved (CCI)","100%","Tyres","CEAT","CCI"],
+ ["2026-08-14","Competitor B","Deccan Towers Pvt Ltd","Acquisition announced","100%","EPC","KEC","Exchange filing"],
+ ["2026-08-05","Harborline Capital","Solstice BFSI Analytics Ltd","PE investment","35%","IT / AI","Zensar","Deal database"],
+ ["2026-07-30","Global Rival D","Rovan Tyres Co.","Rumour","Undisclosed","Tyres","CEAT","News (unconfirmed)"],
+ ["2026-07-22","Rival L","Veltrix Biopharma Ltd","Rumour: open offer","Undisclosed","Pharma","RPG Life Sciences","News (unconfirmed)"],
+ ["2026-07-10","Estate Co. F","Highwood Tea Estates","Acquisition announced","100%","Plantations","Harrisons","News"],
+ ["2026-06-26","Competitor B","Konkan Line Services","Stake disclosure (SAST)","8% stake","EPC","KEC","Exchange filing"],
+];
+
+let TRIGGERS = [
+ {id:"tr1",desk:"CEAT",metric:"rating",op:"below",val:"BBB",on:true},
+ {id:"tr2",desk:"All",metric:"pledge",op:"above",val:30,on:true},
+ {id:"tr3",desk:"All",metric:"insolvency",op:"is",val:"filed",on:true},
+ {id:"tr4",desk:"All",metric:"score",op:"above",val:70,on:true},
+ {id:"tr5",desk:"CEAT",metric:"rivalstake",op:"is",val:"new",on:false},
+];
+const RATING_ORDER=["D","C","CC","CCC","B-","B","B+","BB-","BB","BB+","BBB-","BBB","BBB+","A-","A","A+","AA-","AA","AA+","AAA"];
+const METRIC_LABEL={score:"Opportunity score",pledge:"Promoter pledge %",rating:"Credit rating",insolvency:"Insolvency",rivalstake:"New stake by a rival"};
+function trigText(tr){return tr.metric==="insolvency"?"Insolvency filed":tr.metric==="rivalstake"?"A rival builds a new stake":`${METRIC_LABEL[tr.metric]} ${tr.op} ${tr.val}${tr.metric==="pledge"?"%":""}`;}
+function trigHits(tr){
+  return TARGETS.filter(t=>(tr.desk==="All"||t.desks.includes(tr.desk))).filter(t=>{
+    if(tr.metric==="score") return t.score>Number(tr.val);
+    if(tr.metric==="pledge") return t.pledge>Number(tr.val);
+    if(tr.metric==="rating") return t.rating!=="–"&&RATING_ORDER.indexOf(t.rating)<RATING_ORDER.indexOf(tr.val);
+    if(tr.metric==="insolvency") return t.types.includes("insolvency_filed");
+    if(tr.metric==="rivalstake") return DEALS.some(d=>d[2]===t.name&&d[3].includes("SAST"));
+    return false;});
+}
+
+let UNIVERSE = TARGETS.map(t=>[t.name,t.desks.join(", "),SECTOR_LABEL[t.sector],"Auto: sector scan"]).concat([["Kinetic Compounds","CEAT","Tyres","Auto: sector scan"],["Gridwise AI","KEC","EPC","Added by KEC strategy"],["Highland Rubber Co.","Harrisons, CEAT","Plantations","Auto: sector scan"]]);
+let AUDIT=[["28 Sep 16:40","strategy.harrisons","universe_add","Highland Rubber Co."],["28 Sep 09:12","strategy.kec","create_trigger","Promoter pledge above 30%"]];
+function nowStr(){const d=new Date();return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short"})+" "+d.toTimeString().slice(0,5);}
+function user(){return "strategy."+cur_co().toLowerCase().split(" ")[0];}
+function audit(action,res){if(action.startsWith("view_"))return;AUDIT.unshift([nowStr(),user(),action,res]);}
+let boardDesk="CEAT", thesisSel="th1", dealFilter="All";
+function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2600);}
+const sCls = s => s>=70?"s-hi":s>=40?"s-md":"s-lo";
+function makeBrief(t){
+  const pros=[],cons=[],flags=[];
+  if(t.types.some(k=>["credit_downgrade","delayed_filing","insolvency_filed","pledge_rising"].includes(k))) pros.push("Possible distress-driven opening. The owners may be open to talks.");
+  if(t.types.includes("succession_risk")) pros.push("Succession gap may make the family open to a sale.");
+  if(t.types.includes("pe_exit_window")||t.types.includes("divestment_signal")) pros.push("Owner is likely looking for an exit or buyer.");
+  if(t.types.includes("patent_shift")||t.types.includes("press_opportunity")) pros.push("Growing capability that fills a gap for "+t.desks.join(", ")+".");
+  pros.push("Found through public sources ahead of wide market awareness.");
+  cons.push("Not confirmed by diligence. These are patterns in public data, not verified financials.");
+  if(t.desks.length>1) cons.push("Relevant to several RPG companies. Agree which one would own it.");
+  if(t.bidders.length) cons.push("Rival interest detected. Timing may be tight.");
+  if(t.types.includes("insolvency_filed")) cons.push("In an insolvency process. Any bid goes through the resolution process.");
+  if(t.types.includes("auditor_resigned")) flags.push("Auditor resigned");
+  if(t.pledge>30) flags.push(`Promoter pledge ${t.pledge}%`);
+  if(t.types.includes("delayed_filing")) flags.push("Late filing");
+  if(t.rating==="D"||t.types.includes("credit_downgrade")) flags.push(`Rating ${t.rating}`);
+  if(t.types.includes("insolvency_filed")) flags.push("Insolvency case open");
+  if(!flags.length) flags.push("None found in public sources");
+  const complexity = t.geo!=="India"||t.desks.length>1?"High":t.listed?"Medium":"Low";
+  const cci = t.revenue>1000?"Check needed with Legal":"Likely not needed · confirm";
+  return {pros,cons,flags,complexity,cci};
+}
+
+/* ---- Ownership graph (SVG) ---- */
+function graphSVG(t){
+  const W0=1000,H0=470,cx=430,cy=250,nodes=[],edges=[];
+  const col={family:"#1E7F55",pe:"#6A4C9C",public:"#8A968F",person:"#2C64A8",link:"#B7372B",sub:"#A5661A"};
+  const spread=(n,gap,c)=>Array.from({length:n},(_,i)=>c+(i-(n-1)/2)*gap);
+  spread(t.owners.length,86,cy).forEach((y,i)=>{const o=t.owners[i];nodes.push({x:130,y,label:o[0],sub:"owns "+o[1]+"%",kind:o[2]});edges.push([nodes.length-1,o[1]+"%"]);});
+  const dys=spread(t.directors.length,96,cy);
+  t.directors.forEach((d,i)=>{const di=nodes.length;nodes.push({x:680,y:dys[i],label:d[0],sub:d[1],kind:"person"});edges.push([di,"director"]);
+    spread(d[2].length,44,dys[i]).forEach((y,j)=>nodes.push({x:890,y,label:d[2][j],sub:"also on this board",kind:"link",from:di}));});
+  spread(t.subs.length,240,cx).forEach((x,i)=>{nodes.push({x,y:60,label:t.subs[i],sub:"subsidiary",kind:"sub"});edges.push([nodes.length-1,"owns"]);});
+  const F='font-family="Arial,sans-serif"';
+  let s=`<div class="graphwrap"><svg viewBox="0 0 ${W0} ${H0}" role="img" aria-label="Ownership and relationship map for ${esc(t.name)}">`;
+  edges.forEach(([i,l])=>{const n=nodes[i];const mx=cx+(n.x-cx)*0.62,my=cy+(n.y-cy)*0.62;s+=`<line x1="${cx}" y1="${cy}" x2="${n.x}" y2="${n.y}" stroke="#8A968F" stroke-width="1.4"/><rect x="${mx-30}" y="${my-9}" width="60" height="16" rx="3" fill="#FFFFFF"/><text x="${mx}" y="${my+3}" text-anchor="middle" font-size="10.5" fill="#56635C" ${F}>${esc(l)}</text>`;});
+  nodes.forEach(n=>{if(n.kind==="link"){const f=nodes[n.from];s+=`<line x1="${f.x}" y1="${f.y}" x2="${n.x}" y2="${n.y}" stroke="#B7372B" stroke-width="1.5" stroke-dasharray="5 4"/>`;}});
+  s+=`<rect x="${cx-115}" y="${cy-27}" width="230" height="54" rx="8" fill="#FBE3EA" stroke="#B4234F" stroke-width="2"/><text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="13" font-weight="700" fill="#15201B" ${F}>${esc(t.name.length>32?t.name.slice(0,30)+"…":t.name)}</text><text x="${cx}" y="${cy+14}" text-anchor="middle" font-size="11" fill="#56635C" ${F}>Target · score ${t.score}</text>`;
+  nodes.forEach(n=>{const w=n.kind==="link"?180:200;const c=col[n.kind];const lab=n.label.length>28?n.label.slice(0,26)+"…":n.label;
+    s+=`<rect x="${n.x-w/2}" y="${n.y-20}" width="${w}" height="40" rx="${n.kind==="person"?20:6}" fill="#FFFFFF" stroke="${c}" stroke-width="1.8"/><text x="${n.x}" y="${n.y-3}" text-anchor="middle" font-size="11.5" font-weight="600" fill="#15201B" ${F}>${esc(lab)}</text><text x="${n.x}" y="${n.y+12}" text-anchor="middle" font-size="10.5" fill="${c}" ${F}>${esc(n.sub)}</text>`;});
+  s+=`</svg></div>`;
+  const links=t.directors.filter(d=>d[2].length);
+  if(links.length) s+=`<div class="callout"><b>Links found</b><p>${links.map(d=>`${esc(d[0])} (${esc(d[1])}) also sits on: ${d[2].map(esc).join(", ")}.`).join(" ")}</p></div>`;
+  return s;
+}
+function graphLegend(){return `<div class="gl"><span><i style="background:#1E7F55"></i>Family / promoter</span><span><i style="background:#6A4C9C"></i>PE / investor</span><span><i style="background:#8A968F"></i>Public / others</span><span><i style="background:#2C64A8"></i>Director</span><span><i style="background:#B7372B"></i>Other board (possible link)</span><span><i style="background:#A5661A"></i>Subsidiary</span></div><p class="sub" style="font-size:12px">Built from MCA data, filings and annual reports. Links extracted by an LLM are confirmed by an analyst before use.</p>`;}
+
+/* ---- Thesis screener ---- */
+function rThesis(){
+  audit("view_theses",boardDesk);
+  const th=THESES.find(x=>x.id===thesisSel)||THESES[0];
+  const rows=TARGETS.map(t=>({t,m:thesisMatch(th,t)})).filter(r=>r.m.checks[0][1]).sort((a,b)=>b.m.pct-a.m.pct||b.t.score-a.t.score);
+  $("v-thesis").innerHTML=`
+   <div class="top"><div><span class="crumb"><b>Radar settings</b> / Acquisition theses</span><h4>Acquisition thesis screener</h4><p class="sub">Each RPG company writes what it wants to buy. Every company in the watched universe is checked against it each week.</p></div></div>
+   <div class="filters"><label>Thesis <select id="thSel">${THESES.map(x=>`<option value="${x.id}"${x.id===th.id?" selected":""}>${esc(x.desk)}: ${esc(x.text.slice(0,60))}…</option>`).join("")}</select></label></div>
+   <div class="panel"><h5>${esc(th.desk)} thesis</h5><p style="margin-bottom:8px">"${esc(th.text)}"</p><div class="crit">${thesisMatch(th,TARGETS[0]).checks.map(c=>`<span>${esc(c[0])}</span>`).join("")}</div></div>
+   <div class="panel"><h5>Matching companies in the sector</h5><table class="tbl"><thead><tr><th>Company</th><th>Match</th><th>Criteria met</th><th>Signal score</th></tr></thead><tbody>
+   ${rows.map(r=>`<tr><td><a href="#" data-open="${r.t.id}">${esc(r.t.name)}</a><br><span class="sub" style="font-size:11.5px">${esc(r.t.category)} · ${esc(r.t.geo)}</span></td><td style="min-width:140px"><div class="match"><div class="pbar"><i style="width:${r.m.pct}%"></i></div>${r.m.pct}%</div></td><td>${r.m.ok} of ${r.m.total}</td><td><span class="score ${sCls(r.t.score)}" style="height:28px;width:44px;display:inline-flex"><b style="font-size:14px">${r.t.score}</b></span></td></tr>`).join("")}
+   </tbody></table></div>
+   <div class="panel"><h5>Write a new thesis</h5><p class="sub" style="font-size:12.5px;margin-bottom:8px">Describe the target in plain words. An LLM turns it into criteria, and you confirm them before they are used.</p>
+     <textarea class="th" id="thText" aria-label="New thesis">Cable joint or heat-shrink makers in India, revenue ₹100–500 crore, family owned</textarea>
+     <div class="btns" style="margin-top:8px"><label class="topctl">RPG company <select id="thDesk">${DESKS.map(d=>`<option>${d}</option>`).join("")}</select></label><button class="btnx pri" id="thParse">Convert to criteria</button></div>
+     <div id="thOut"></div></div>`;
+  $("thSel").onchange=e=>{thesisSel=e.target.value;rThesis();};
+  $("v-thesis").querySelectorAll("[data-open]").forEach(a=>a.onclick=e=>{e.preventDefault();openTarget(a.dataset.open);});
+  $("thParse").onclick=()=>{const txt=$("thText").value, c=parseThesis(txt);
+    $("thOut").innerHTML=`<div class="callout" style="margin-top:10px"><b>Suggested criteria · please confirm</b><div class="crit">${c.sector.map(s=>`<span>Sector: ${SECTOR_LABEL[s]}</span>`).join("")}${c.geo.map(g=>`<span>Geography: ${g}</span>`).join("")}<span>Revenue ₹${c.rev[0]}–${c.rev[1]} cr</span>${c.own.map(o=>`<span>Ownership: ${o}</span>`).join("")}</div><div class="btns" style="margin-top:8px"><button class="btnx pri" id="thSave">Confirm and save</button></div></div>`;
+    $("thSave").onclick=()=>{const id="th"+(THESES.length+1);THESES.push({id,desk:$("thDesk").value,text:txt,c});thesisSel=id;audit("create_thesis",$("thDesk").value);toast("Thesis saved. Matches will refresh in the next weekly run; shown now for the demo.");rThesis();};};
+}
+function parseThesis(txt){ // mock of the LLM step
+  const l=txt.toLowerCase(),c={sector:[],geo:[],rev:[0,99999],own:[]};
+  if(/tyre|tire|rubber compound/.test(l))c.sector.push("tyres"); if(/epc|substation|transmission/.test(l))c.sector.push("epc");
+  if(/\bai\b|analytics|software|it services/.test(l))c.sector.push("it"); if(/pharma|api|formulation/.test(l))c.sector.push("pharma");
+  if(/cable|heat-shrink|joint|electrical/.test(l))c.sector.push("electrical"); if(/tea|estate|plantation/.test(l))c.sector.push("plantations");
+  if(/sensor|iot/.test(l))c.sector.push("sensors"); if(!c.sector.length)c.sector.push("tyres");
+  ["India","ASEAN","Middle East","US","UK"].forEach(g=>{if(l.includes(g.toLowerCase()))c.geo.push(g);}); if(!c.geo.length)c.geo.push("India");
+  const m=txt.replace(/,/g,"").match(/(\d+)\s*[–-]\s*(\d+)/); if(m)c.rev=[Number(m[1]),Number(m[2])];
+  if(/family/.test(l))c.own.push("family"); if(/promoter/.test(l))c.own.push("promoter"); if(/\bpe\b|private equity/.test(l))c.own.push("pe"); if(/founder/.test(l))c.own.push("founder");
+  return c;
+}
+
+/* ---- Competitor M&A tracker ---- */
+function rDeals(){
+  audit("view_deal_tracker",dealFilter);
+  const list=DEALS.filter(d=>dealFilter==="All"||d[6]===dealFilter);
+  const counts={};DEALS.forEach(d=>counts[d[1]]=(counts[d[1]]||0)+1);
+  const top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,6), max=top[0][1];
+  $("v-deals").innerHTML=`
+   <div class="top"><div><span class="crumb"><b>Explore</b> / Rival deals</span><h4>Who is buying what</h4><p class="sub">From exchange filings, stake disclosures (SAST), CCI combination orders, deal databases and news.</p></div></div>
+   <div class="cols"><div class="panel"><div class="filters" style="margin-bottom:8px"><label>RPG company <select id="dF">${["All",...DESKS].map(d=>`<option${d===dealFilter?" selected":""}>${d}</option>`).join("")}</select></label></div>
+     <table class="tbl"><thead><tr><th>Date</th><th>Buyer → target</th><th>Type</th><th>Size</th><th>Source</th></tr></thead><tbody>
+     ${list.map(d=>{const tg=TARGETS.find(t=>t.name===d[2]);return `<tr><td class="mono">${d[0].slice(5).split("-").reverse().join("/")}</td><td><b>${esc(d[1])}</b> → ${tg?`<a href="#" data-open="${tg.id}">${esc(d[2])}</a>`:esc(d[2])}<br><span class="sub" style="font-size:11.5px">${esc(d[5])} · ${esc(d[6])}</span></td><td>${esc(d[3])}</td><td>${esc(d[4])}</td><td class="mono">${esc(d[7])}</td></tr>`;}).join("")}</tbody></table></div>
+     <div style="display:flex;flex-direction:column;gap:14px"><div class="panel"><h5>Most active buyers · 6 months</h5>${top.map(([n,c])=>`<div class="barrow"><span>${esc(n)}</span><div class="pbar"><i style="width:${c/max*100}%"></i></div><span>${c}</span></div>`).join("")}</div>
+     <div class="callout"><b>Watch-out</b><p>Rival A Ltd bought 6% of Meridian Treadworks, a company on the CEAT watchlist, and completed Axle Components in August. It may be assembling a components platform.</p></div></div></div>`;
+  $("dF").onchange=e=>{dealFilter=e.target.value;rDeals();};
+  $("v-deals").querySelectorAll("[data-open]").forEach(a=>a.onclick=e=>{e.preventDefault();openTarget(a.dataset.open);});
+}
+
+
+/* ---- Triggers ---- */
+function rTrig(){
+  audit("view_triggers","all");
+  $("v-trig").innerHTML=`
+   <div class="top"><div><span class="crumb"><b>Radar settings</b> / Watch rules</span><h4>Alert me when…</h4><p class="sub">Rules set by each strategy team. Checked after every daily run.</p></div></div>
+   <div class="panel"><h5>Your triggers</h5><table class="tbl"><thead><tr><th>On</th><th>Rule</th><th>RPG company</th><th>Firing now</th><th></th></tr></thead><tbody>
+   ${TRIGGERS.map(tr=>{const h=tr.on?trigHits(tr):[];return `<tr><td><button class="btnx" data-tog="${tr.id}" aria-pressed="${tr.on}" style="padding:2px 6px"><span class="toggle${tr.on?" on":""}"></span></button></td><td><b>${esc(trigText(tr))}</b></td><td>${esc(tr.desk)}</td><td>${tr.on?(h.length?h.map(t=>`<a href="#" data-open="${t.id}" class="pill2 fired">${esc(t.name.split(" ")[0])}</a>`).join(" "):'<span class="pill2">none</span>'):'<span class="pill2">off</span>'}</td><td><button class="btnx" data-del="${tr.id}">Delete</button></td></tr>`;}).join("")}</tbody></table></div>
+   <div class="panel"><h5>Add a trigger</h5><form class="frm" id="trForm">
+     <label>RPG company<select id="trDesk">${["All",...DESKS].map(d=>`<option>${d}</option>`).join("")}</select></label>
+     <label>Metric<select id="trMetric"><option value="score">Opportunity score</option><option value="pledge">Promoter pledge %</option><option value="rating">Credit rating</option><option value="insolvency">Insolvency filed</option><option value="rivalstake">New stake by a rival</option></select></label>
+     <label>Condition<select id="trOp"><option>above</option><option>below</option><option>is</option></select></label>
+     <label>Value<input id="trVal" value="50"></label>
+     <button class="btnx pri" type="submit">Add trigger</button></form></div>`;
+  $("v-trig").querySelectorAll("[data-tog]").forEach(b=>b.onclick=()=>{const tr=TRIGGERS.find(x=>x.id===b.dataset.tog);tr.on=!tr.on;audit("toggle_trigger",trigText(tr));rTrig();});
+  $("v-trig").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{TRIGGERS=TRIGGERS.filter(x=>x.id!==b.dataset.del);audit("delete_trigger",b.dataset.del);rTrig();});
+  $("v-trig").querySelectorAll("[data-open]").forEach(a=>a.onclick=e=>{e.preventDefault();openTarget(a.dataset.open);});
+  $("trForm").onsubmit=e=>{e.preventDefault();const tr={id:"tr"+Date.now(),desk:$("trDesk").value,metric:$("trMetric").value,op:$("trOp").value,val:$("trVal").value,on:true};
+    if(tr.metric==="insolvency"){tr.op="is";tr.val="filed";} if(tr.metric==="rivalstake"){tr.op="is";tr.val="new";} if(tr.metric==="rating"){tr.op="below";tr.val=tr.val.toUpperCase();}
+    TRIGGERS.push(tr);audit("create_trigger",trigText(tr));const n=trigHits(tr).length;toast(`Trigger added. ${n} compan${n===1?"y matches":"ies match"} right now.`);rTrig();};
+}
+
+
+/* ---- Admin ---- */
+function rAdmin(){
+  $("v-admin").innerHTML=`
+   <div class="top"><div><span class="crumb"><b>Radar settings</b> / Watched companies</span><h4>Watched companies and activity</h4><p class="sub">The sector universe the M&amp;A screens scan every day, and a log of changes made in this demo.</p></div></div>
+   <div class="cols even">
+    <div class="panel"><h5>Sector universe · ${UNIVERSE.length} companies watched</h5><table class="tbl"><thead><tr><th>Company</th><th>RPG company</th><th>Sector</th><th>How added</th></tr></thead><tbody>${UNIVERSE.map(u=>`<tr><td>${esc(u[0])}</td><td>${esc(u[1])}</td><td>${esc(u[2])}</td><td class="mono">${esc(u[3])}</td></tr>`).join("")}</tbody></table>
+     <form class="frm" id="uForm" style="margin-top:10px"><label>Company<input id="uName" placeholder="Company name" required></label><label>RPG company<select id="uDesk">${DESKS.map(d=>`<option${d===cur_co()?" selected":""}>${d}</option>`).join("")}</select></label><button class="btnx pri" type="submit">Add to universe</button></form></div>
+    <div class="panel"><h5>Activity · ${AUDIT.length} changes</h5><table class="tbl"><thead><tr><th>Time</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead><tbody>${AUDIT.slice(0,25).map(a=>`<tr><td class="mono">${a[0]}</td><td>${a[1]}</td><td class="mono">${a[2]}</td><td>${esc(a[3])}</td></tr>`).join("")}</tbody></table><p class="sub" style="font-size:12px;margin-top:8px">Theses, triggers, escalations and universe changes you make in this demo appear here.</p></div>
+   </div>`;
+  $("uForm").onsubmit=e=>{e.preventDefault();UNIVERSE.unshift([$("uName").value,$("uDesk").value,"–","Added by "+$("uDesk").value+" strategy"]);audit("universe_add",$("uName").value);toast("Company added. It will be scanned from the next daily run.");rAdmin();};
+}
+
+/* ================= NEW: Target health check + Deal scenarios (mock data) ================= */
+const YRS=["FY22","FY23","FY24","FY25","FY26"];
+const HEALTH={
+ meridian:{rev:[540,580,610,640,620],m:[13,12.5,12,11.8,11.2],de:4.2,ic:1.6,aud:["bad","FY26 accounts not yet filed with MCA"]},
+ rovan:{rev:[1100,1250,1380,1470,1450],m:[15,14,12,10,8.5],de:3.4,ic:1.9,aud:["bad","Auditor resigned, citing limited access to records"]},
+ sensa:{rev:[20,35,52,74,95],m:[-18,-12,-6,-2,3],de:0,ic:null,aud:["ok","Clean audit report"],early:true},
+ ashford:{rev:[2100,2050,1980,1900,1850],m:[9,8,7,6,5.2],de:2.6,ic:2.1,aud:["bad","Emphasis of matter on overdue project receivables"]},
+ strata:{rev:[1200,1150,1080,1020,980],m:[10,8,5,2,-3],de:9.5,ic:0.4,aud:["bad","Material uncertainty on going concern"]},
+ northfield:{rev:[640,760,880,930,900],m:[16,15,14,12,11],de:4.8,ic:1.8,aud:["ok","Clean audit report"]},
+ solstice:{rev:[180,200,225,245,260],m:[22,23,22,24,23],de:0.3,ic:25,aud:["ok","Clean audit report"]},
+ veltrix:{rev:[610,650,700,740,720],m:[18,17,15,13,11],de:2.1,ic:3.0,aud:["bad","Auditor resigned mid-term"]},
+ corvane:{rev:[290,305,320,335,340],m:[14,14,13,14,13.5],de:0.8,ic:9,aud:["ok","Clean audit report (parent group accounts)"]},
+ palmgrove:{rev:[190,200,205,215,210],m:[9,7,6,5,4],de:3.8,ic:1.4,aud:["bad","Wage arrears noted in the directors' report"]},
+};
+function verdictOf(t,h){
+  const last=h.m[4], fall=h.m[0]-last;
+  const run = fall>=4 || h.aud[0]==="bad" && !/not yet filed/.test(h.aud[1]);
+  const fund = h.de>3 || (h.ic!==null && h.ic<2) || t.pledge>30;
+  if(h.early) return ["Early stage","Revenue is growing fast and it has only just turned profitable. Too early to call it weak; it may need funding to keep growing."];
+  if(run&&fund) return ["Badly run and badly funded","Margins are falling and debt is heavy. A buyer would need to fix both the business and the balance sheet. Usually a turnaround or insolvency-process purchase."];
+  if(fund) return ["Badly funded, business is sound","Margins are holding up, but debt or pledged shares are too high. The core business may be worth more to an owner with a stronger balance sheet."];
+  if(run) return ["Badly run, balance sheet is fine","Debt is manageable, but margins are sliding or the auditor has raised concerns. A buyer would need to fix operations and governance."];
+  return ["Healthy","Stable margins and low debt. Any deal would come from the owner wanting to sell, not from distress."];
+}
+function hbars(vals,fmt){const mx=Math.max(...vals.map(Math.abs))||1;return `<div class="hbars">${vals.map((v,i)=>`<div><span>${fmt(v)}</span><i class="${v<0?"neg":""}" style="height:${Math.max(3,Math.abs(v)/mx*62)}px"></i><span>${YRS[i]}</span></div>`).join("")}</div>`;}
+
+/* ---- Deal scenarios ---- */
+const SCEN={
+ meridian:{rival:"Rival A Ltd",conf:72,basis:"Rival A's 6% stake, its Axle Components deal and 3 similar supplier buyouts",
+  a:{play:["Raises its stake past 25%, triggering an open offer.","Folds Meridian into its components arm with Axle Components.","Moves Meridian's bead wire and bladders in-house for its own tyres."],
+     hit:["High","CEAT buys about 18% of its bead wire from Meridian. That supply could tighten or become costlier."],
+     opts:[["Secure supply now","Sign a 3-year supply contract with Meridian before control changes."],["Qualify a second supplier","Start trials with Kinetic Compounds within 60 days."],["Escalate for evaluation","Consider a bid before Rival A reaches the 25% open-offer level."]]},
+  b:{react:["Rival A may counter-bid, since it already holds 6%.","Rival A could switch its own orders away from Meridian, cutting about 30% of Meridian's revenue.","Other tyre makers may look for new suppliers if a competitor owns Meridian."],
+     risk:["Meridian's revenue depends heavily on rival tyre makers.","The CFO and head of operations have just left, so management needs rebuilding."]}},
+ rovan:{rival:"Global Rival D",conf:55,basis:"news reports (unconfirmed) and Global Rival D's past buys in ASEAN",
+  a:{play:["Buys the PE owner's 45% stake.","Uses Rovan's ASEAN plants to supply mining fleets locally.","Cuts prices in off-highway tyres to win fleet contracts."],
+     hit:["Medium","CEAT's off-highway exports to ASEAN face a stronger local competitor."],
+     opts:[["Lock in fleet contracts","Renew CEAT's top 5 ASEAN mining fleet contracts early."],["Watch the PE exit","Set a trigger for any stake sale by Southeast Growth Partners."]]},
+  b:{react:["Global Rival D may bid higher; it has more cash.","Local rivals may target Rovan's fleet customers during the handover."],
+     risk:["Auditor resigned. Accounts need deep checking.","High promoter pledge (40%) could complicate who controls the shares."]}},
+ sensa:{rival:"Rival A Ltd",conf:48,basis:"Sensa's Series B round and rival interest in sensor startups",
+  a:{play:["Leads Sensa's Series B round and takes a board seat.","Gets first rights to Sensa's tyre-pressure sensors.","Launches 'smart' tyres ahead of CEAT."],
+     hit:["Medium","CEAT, KEC and Raychem RPG all lose a possible sensor partner at once."],
+     opts:[["Joint group investment","CEAT, KEC and Raychem RPG co-invest in the Series B round."],["Commercial partnership","Sign a co-development deal for tyre sensors now."]]},
+  b:{react:["Other investors may push the price up in the round.","Rivals may hire away Sensa's engineers."],
+     risk:["Still barely profitable. Needs cash to grow.","Three RPG companies want it. Agree who owns it first."]}},
+ ashford:{rival:"Competitor B",conf:64,basis:"Competitor B saying it wants to grow by acquisition, and its Deccan Towers deal",
+  a:{play:["Buys Ashford, adding its order book and state-utility approvals.","Uses Ashford's tower plant to ease its own capacity limits.","Bids even lower on state utility tenders."],
+     hit:["High","Competitor B's capacity problem goes away, removing KEC's delivery advantage."],
+     opts:[["Win on delivery now","Bid hard on delivery-critical tenders in the next two rounds."],["Escalate for evaluation","Consider buying Ashford's tower plant alone."]]},
+  b:{react:["Competitor B may bid for the same assets.","Utilities may delay payments during the change of owner."],
+     risk:["Project delays and penalty notices at two utilities.","Receivables are overdue; they need checking."]}},
+ strata:{rival:"Global EPC H",conf:70,basis:"Global EPC H's CCI filing for a related asset and Gulf expansion",
+  a:{play:["Bids in the insolvency process for Strata's order book and licences.","Combines it with Gulf Grid Assets.","Wins Gulf substation tenders that KEC is chasing."],
+     hit:["High","KEC's Gulf substation plans face a larger, local competitor."],
+     opts:[["Look at a resolution bid","Ask Legal how the insolvency process works in this case."],["Partner instead","Offer to take over specific Strata projects with the lenders."]]},
+  b:{react:["Global EPC H is likely to bid in the same process.","Gulf clients may re-tender Strata's projects."],
+     risk:["In insolvency. Any bid goes through the resolution professional.","Rated D, with going-concern doubts."]}},
+ northfield:{rival:"Competitor D",conf:66,basis:"Competitor D's UK GenAI buy and Harborline's fund nearing the end of its holding period",
+  a:{play:["Buys Northfield from Harborline Capital.","Cross-sells AI services to Northfield's US insurers.","Competes directly with Zensar in US insurance."],
+     hit:["High","Zensar faces a stronger rival in its top US insurance accounts."],
+     opts:[["Protect key accounts","Offer AI pilots to Zensar's top 5 US insurers this quarter."],["Talk to Harborline","Ask about its exit timing for Northfield and Solstice together."]]},
+  b:{react:["Competitor D may counter-bid.","Rivals may try to hire away Northfield's delivery leaders."],
+     risk:["Hiring is down 45%. Check whether clients are leaving.","High debt from the PE deal (4.8× EBITDA)."]}},
+ solstice:{rival:"Competitor D",conf:40,basis:"a founder-succession gap and Harborline's 35% stake",
+  a:{play:["Buys the founder's stake.","Adds UK analytics software to its services."],
+     hit:["Low","Zensar loses a possible way into UK building societies."],
+     opts:[["Build a relationship","Arrange a partnership talk with the founder."],["Set a trigger","Get an alert on any change to the founder's stake."]]},
+  b:{react:["Harborline may want to sell its stake at the same time."],
+     risk:["The founder is key to the business. Plan for succession."]}},
+ veltrix:{rival:"Rival L",conf:52,basis:"news reports of an open offer (unconfirmed) and Rival L's brand buys",
+  a:{play:["Launches an open offer for Veltrix shares.","Adds Veltrix's USFDA plant to its own exports.","Pushes cardiac brands in western India."],
+     hit:["Medium","RPG Life Sciences faces a stronger rival in cardiac brands."],
+     opts:[["Defend cardiac brands","Strengthen doctor outreach in western India."],["Escalate for evaluation","Look at the USFDA plant as a possible asset buy."]]},
+  b:{react:["Rival L may raise its offer.","Rivals may use the auditor issue to question Veltrix's quality."],
+     risk:["Auditor resigned mid-term.","Quarterly results filed late."]}},
+ corvane:{rival:"Competitor E",conf:58,basis:"the parent's strategic review and Competitor E's co-investment in JointTech",
+  a:{play:["Buys Corvane from Vasant Group.","Gets its own supply of heat-shrink polymers.","Competes on price in cable accessories."],
+     hit:["Medium","Raychem RPG's rival gets its own supply of key materials."],
+     opts:[["Approach the parent","Contact Vasant Group's advisers during the review."],["Secure materials","Sign a supply contract for key compounds."]]},
+  b:{react:["Competitor E may bid during the parent's review."],
+     risk:["Depends on services shared with its parent group. Plan how to separate them."]}},
+ palmgrove:{rival:"Estate Co. F",conf:50,basis:"Estate Co. F's Highwood deal and the family split",
+  a:{play:["Buys the estates from the family trust.","Adds Nilgiris tea to its own brands."],
+     hit:["Low","Harrisons loses a chance to add estates next to its own."],
+     opts:[["Talk to the trust","Approach the managing trustee before the family split settles."],["Check the land","Check the charges on the pledged estate land."]]},
+  b:{react:["Estate Co. F may bid for the best estates only."],
+     risk:["Wage arrears and labour issues.","Land is pledged for loans."]}},
+};
+
+/* ================= BOOK APP · week digest -> shortlist -> deep-dive book -> follow-up ================= */
+const TODAY="29 Sep";
+
+const DEAL_TITLE={meridian:"Rival A is circling Meridian, a key CEAT supplier",rovan:"Rovan Tyres is under strain and its PE owner may sell",sensa:"Sensa Labs is raising money: a sensor partner for three RPG companies",ashford:"Ashford EPC is struggling while Competitor B looks to buy",strata:"Strata Substations has entered insolvency",northfield:"Northfield's PE owner is nearing its exit",solstice:"Solstice's founder has no named successor",veltrix:"Veltrix Biopharma shows governance red flags",corvane:"Corvane may be sold by its parent group",palmgrove:"Palmgrove Estates faces a family split and rising debt"};
+const DEAL_STORY={
+ meridian:"Meridian makes bead wire and curing bladders that CEAT buys. In six weeks its rating was cut, its accounts went unfiled and two senior leaders left. At the same time Rival A quietly bought 6% of it.",
+ rovan:"Rovan's promoter pledged more shares and its auditor walked out within two weeks. Its PE owner has held the stake for years and may look for a buyer.",
+ sensa:"Sensa is hiring fast, filing sensor patents and raising a Series B. Its sensors are useful to CEAT, KEC and Raychem RPG.",
+ ashford:"Ashford is losing momentum on state utility projects and cutting site hiring. Competitor B has said it wants to grow by acquisition.",
+ strata:"Strata's rating fell to default and an insolvency case was admitted. Its Gulf substation book could be bought through the resolution process.",
+ northfield:"Northfield's PE owner is near the end of its holding period, hiring is down and a delivery head left. Competitor D is buying AI firms.",
+ solstice:"Solstice is healthy, but its 71-year-old founder has no named successor. A sale could come later, on the founder's terms.",
+ veltrix:"Veltrix's auditor resigned mid-term and its quarterly results were late. It owns a USFDA-approved plant that RPG Life Sciences lacks.",
+ corvane:"Corvane's parent group has started a strategic review of non-core businesses. Management has said it is open to a partner.",
+ palmgrove:"Palmgrove's managing trustee is retiring amid a family split, estate land has been pledged and wages are in arrears."};
+const THREAT_TITLE={CEAT:"Rival A is preparing an EV tyre range",KEC:"Competitor B is undercutting state utility tenders",Zensar:"Competitor D is moving into AI deals with insurers","RPG Life Sciences":"Rival C is cutting prices to win domestic share","Raychem RPG":"Competitor E is gearing up for the import duty",Harrisons:"Estate Co. F is moving into branded tea"};
+let CASES=[];
+function buildCases(){
+  CASES=TARGETS.map(t=>({id:"d_"+t.id,kind:"deal",t,co:t.desks[0],cos:t.desks,title:DEAL_TITLE[t.id],date:t.signals[0][1]}))
+   .concat(COS_WS.map(co=>({id:"t_"+co,kind:"threat",co,cos:[co],w:WS[co],title:THREAT_TITLE[co],date:WS[co].timeline[0][0]})));
+  CASES.forEach(c=>{c.stage="digest";c.inBook=false;c.owner=null;c.plan=[];c.updates=[];c.upNext=0;c.outcome=null;c.ovDate=null;});
+  const e=caseById("t_CEAT"); e.stage="act"; e.ovDate="22 Sep"; e.owner="Head of Strategy, CEAT"; e.approved="22 Sep"; e.plan=planFor(e).map((p,i)=>({...p,done:i===0}));
+  e.updates=[["26 Sep","CEAT opened talks with two EV 2-wheeler makers (plan step 1).",false],["24 Sep","Rival A posted 9 more EV battery roles.",false]];
+}
+const caseById=id=>CASES.find(c=>c.id===id);
+function scoreTxt(c){return c.kind==="deal"?`Score ${c.t.score}`:c.w.threat[1];}
+function coLabel(c){return c.cos.join(" · ");}
+
+/* ---------- plan, owners, watch items ---------- */
+function planFor(c){
+  if(c.kind==="deal"){const o=SCEN[c.t.id].a.opts;const r=["Days 0–30","Days 31–60","Days 61–90"];
+    const p=o.slice(0,3).map((x,i)=>({when:r[i],what:x[0]==="Escalate for evaluation"?"Decide on a bid":x[0],how:x[1]}));
+    if(p.length<3)p.push({when:r[p.length],what:"Decide the next step",how:"Formal bid, partnership or stop, based on diligence."});return p;}
+  const o=c.w.war.opts;return [{when:"Days 0–30",what:o[0][1],how:o[0][2]},{when:"Days 31–60",what:o[1][1],how:o[1][2]},{when:"Days 61–90",what:"Review against the rival's moves",how:`Compare results with ${c.w.rival}'s actual moves and adjust.`}];
+}
+function ownersFor(c){return c.kind==="deal"?[`Head of Strategy, ${c.co}`,`CFO, ${c.co}`,"Group M&A team"]:[`Head of Strategy, ${c.co}`,`Business head, ${c.co}`,`Sales head, ${c.co}`];}
+function watchFor(c){
+  if(c.kind==="deal"){const t=c.t,r=SCEN[t.id].rival;return [`Any new stake disclosure (SAST) in ${t.name}`,`Rating change or late filing by ${t.name}`,`Any deal move by ${r}`];}
+  return [`New product launches or plant filings by ${c.w.rival}`,`${c.w.rival} price changes in ${c.co}'s markets`,`Customer complaints about ${c.w.rival} (Voice of Customer)`];
+}
+const NEXT_UPD={d_meridian:["Rival A raised its stake in Meridian from 6% to 9% (SAST disclosure).","Meridian filed its FY26 accounts, five weeks late.","The Kapoor family appointed an investment bank (news)."],
+ "t_CEAT":["Rival A's EV tyre range appeared in a dealer price list.","Rival A cut 2-wheeler tyre prices another 3% in Gujarat."]};
+function nextUpdate(c){const l=NEXT_UPD[c.id]||(c.kind==="deal"?[`No new signals for ${c.t.name} this week.`,`${SCEN[c.t.id].rival} made no new moves.`]:[`${c.w.rival} made no new moves this week.`]);return l[c.upNext++%l.length];}
+
+/* shared blocks */
+function healthHTML(t){const h=HEALTH[t.id], v=verdictOf(t,h), cagr=(Math.pow(h.rev[4]/h.rev[0],1/4)-1)*100;
+  const f=(bad,txt)=>`<span class="${bad?"flagbad":"flagok"}">${bad?"▲ ":"✓ "}${esc(txt)}</span>`;
+  return `<div class="verdict"><small class="crumb">Health verdict · fixed rules</small><br><b>${esc(v[0])}</b><p style="margin:4px 0 0">${esc(v[1])}</p></div>
+   <div class="kv"><div><small>Revenue FY26</small><b>₹${h.rev[4].toLocaleString("en-IN")} cr</b></div><div><small>4-year revenue growth</small><b>${cagr>=0?"+":""}${cagr.toFixed(1)}% a year</b></div><div><small>EBITDA margin FY26</small><b>${h.m[4]}%</b></div><div><small>Net debt / EBITDA</small><b>${h.de}×</b></div><div><small>Interest cover</small><b>${h.ic===null?"No debt":h.ic+"×"}</b></div><div><small>Promoter pledge</small><b>${t.pledge}%</b></div></div>
+   <div class="subcol"><div><h6>Revenue · ₹ crore</h6>${hbars(h.rev,x=>x.toLocaleString("en-IN"))}</div><div><h6>EBITDA margin · %</h6>${hbars(h.m,x=>x+"%")}</div></div>
+   <div class="crit" style="flex-direction:column;align-items:flex-start;gap:6px">${f(h.m[0]-h.m[4]>=4,`Margin ${h.m[0]-h.m[4]>=4?"fell":"moved"} from ${h.m[0]}% to ${h.m[4]}% over 4 years`)}${f(h.de>3,`Net debt is ${h.de}× EBITDA${h.de>3?" (above 3× is stretched)":""}`)}${f(h.ic!==null&&h.ic<2,h.ic===null?"No borrowings":`Profit covers interest ${h.ic}×${h.ic<2?" (below 2× is weak)":""}`)}${f(h.aud[0]==="bad",h.aud[1])}</div>`;}
+function questionsFor(t){const Q={delayed_filing:"Why were the accounts filed late, and is there a dispute with the auditor?",auditor_resigned:"Which records did the auditor say it could not access?",credit_downgrade:"Which loans drove the rating cut, and when are they due?",pledge_rising:"Who holds the pledged shares, and at what price could lenders sell them?",insolvency_filed:"What is the timeline of the resolution process, and who are the main creditors?",leadership_churn:"Why did senior leaders leave, and who runs the business today?",succession_risk:"Who in the family or ownership group decides on a sale?",pe_exit_window:"What return does the PE fund need, and is a sale process already running?",divestment_signal:"Which services does it share with its parent, and how would they be separated?",hiring_scaledown:"Are clients or projects being lost?",press_distress:"How big are the penalties and delays on current projects?",patent_shift:"Who owns the patents, and are key engineers tied in?",press_opportunity:"What terms is the company offering new investors or partners?",hiring_scaleup:"Can the team keep growing without losing quality?"};
+  return t.types.map(k=>Q[k]).concat(["How much revenue comes from the top 5 customers, and are any of them our rivals?"]).slice(0,5);}
+function docHead(c,kindLabel){return `<header class="doc-h"><span class="eb">Detailed overview · v1 · written ${esc(c.ovDate)} · fixed once written</span><h3>${esc(c.title)}</h3><p>${kindLabel} · prepared for ${esc(c.co)} leadership${c.kind==="deal"?" and Group M&amp;A":""}</p></header>`;}
+function planHTML(c){return `<div class="tl">${planFor(c).map(p=>`<div><time>${esc(p.when.replace("Days ",""))}</time><p><b>${esc(p.what)}.</b> ${esc(p.how)}</p></div>`).join("")}</div>`;}
+function decideHTML(c){
+  if(c.stage!=="decide") return `<div class="stamp">${c.owner?`Approved ${esc(c.approved)} · owner: ${esc(c.owner)}`:esc(c.outcome||"")}</div>`;
+  return `<div class="decide-bar"><h5>Decision</h5><p class="sub" style="margin:0">Approving names an owner, turns the 90-day plan into tracked steps and sets up watch rules. The company then moves to Follow-up.</p>
+   <div class="row"><label for="cOwner">Owner<select id="cOwner">${ownersFor(c).map(o=>`<option>${esc(o)}</option>`).join("")}</select></label><button class="btnx pri" id="cApprove">Approve and assign owner</button><button class="btnx" id="cPark">Park for 90 days</button><button class="btnx" id="cReject">Reject</button></div></div>`;}
+
+/* overview · deal */
+function ovDeal(c){const t=c.t, sc=SCEN[t.id], b=makeBrief(t), v=verdictOf(t,HEALTH[t.id]), th=THESES.find(x=>x.desk===c.co), m=th?thesisMatch(th,t):null;
+  const rec=sc.a.opts[0];
+  return `<article class="doc">${docHead(c,"Deal to consider")}
+   <div class="reco"><small>Recommendation</small><b>${esc(rec[0])}.</b><p>${esc(rec[1])}</p><p class="need"><b style="font-family:var(--body);font-size:13.5px">Decision needed:</b> approve a formal evaluation of ${esc(t.name)}, name an owner and release a diligence budget. Confidence ${sc.conf}%.</p></div>
+   <div class="kv"><div><small>Opportunity score</small><b>${t.score} of 100</b></div><div><small>Financial health</small><b>${esc(v[0])}</b></div><div><small>Rival interest</small><b>${t.bidders.length?esc(sc.rival):"None seen"}</b></div><div><small>Deal complexity</small><b>${b.complexity}</b></div><div><small>Competition-law check</small><b>${b.cci}</b></div><div><small>Urgency</small><b>${t.bidders.length?"High · a rival is moving":"Normal"}</b></div></div>
+   <section><h5>1. What happened</h5><p>${esc(DEAL_STORY[t.id])}</p><div class="tl">${t.signals.map(s=>`<div><time>${s[1]}</time><p><b>${TYPE_LABEL[s[0]]}:</b> ${esc(s[2])}</p></div>`).join("")}</div></section>
+   <section><h5>2. Why it matters for ${esc(c.co)}</h5><p><b>Impact if we do nothing: ${sc.a.hit[0]}.</b> ${esc(sc.a.hit[1])}</p><ul>${b.pros.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>${m?`<div class="crit">${m.checks.map(x=>`<span class="${x[1]?"ok":"no"}">${x[1]?"✓":"✗"} ${esc(x[0])}</span>`).join("")}</div>`:""}</section>
+   <section><h5>3. Financial health</h5>${healthHTML(t)}</section>
+   <section><h5>4. What could happen</h5><div class="subcol"><div><h6>If ${esc(sc.rival)} buys it first</h6><div class="tl">${sc.a.play.map((p,i)=>`<div><time>Step ${i+1}</time><p>${esc(p)}</p></div>`).join("")}</div></div><div><h6>If ${esc(c.co)} buys it</h6><div class="tl">${sc.b.react.map((p,i)=>`<div><time>${i===0?"Likely":"Possible"}</time><p>${esc(p)}</p></div>`).join("")}</div></div></div><p class="sub" style="font-size:12px">Simulated by the War Room agent from ${esc(sc.basis)}. A thinking aid, not a forecast.</p></section>
+   <section><h5>5. Who's involved</h5>${graphSVG(t)}${graphLegend()}</section>
+   <section><h5>6. Risks and red flags</h5><ul>${b.cons.concat(sc.b.risk).map(x=>`<li>${esc(x)}</li>`).join("")}</ul><div class="crit">${b.flags.map(f=>`<span>${esc(f)}</span>`).join("")}</div></section>
+   <section><h5>7. Questions for diligence</h5><ol>${questionsFor(t).map(q=>`<li>${esc(q)}</li>`).join("")}</ol></section>
+   <section><h5>8. 90-day plan</h5>${planHTML(c)}</section>
+   <footer><span><b>Sources:</b> ${esc([...new Set(t.signals.map(s=>s[3]))].join(", "))}, MCA filings (paid), SAST disclosures, CCI orders, deal databases.</span><span>Built from public information only. Contains no price or valuation and no non-public information. Not a recommendation to bid.</span><div class="btnrow"><button class="btnx" id="cCopy">Copy summary</button></div></footer>
+  </article>${decideHTML(c)}`;}
+
+/* overview · threat */
+function ovThreat(c){const w=c.w, co=c.co, rec=w.war.opts.find(o=>o[0]==="rec")||w.war.opts[0], f=w.fin, r=f.rivals[w.rival];
+  const ra=f.base.ret["1Y"], rb=r?r.ret["1Y"]:null;
+  return `<article class="doc">${docHead(c,"Threat to answer")}
+   <div class="reco"><small>Recommendation</small><b>${esc(rec[1])}.</b><p>${esc(rec[2])}</p><p class="need"><b style="font-family:var(--body);font-size:13.5px">Decision needed:</b> approve the response plan and name an owner. Simulation confidence ${w.war.conf}%.</p></div>
+   <div class="kv"><div><small>Threat level</small><b>${esc(w.threat[1].replace("Threat: ",""))}</b></div><div><small>Rival</small><b>${esc(w.rival)}</b></div><div><small>Signals in 60 days</small><b>${w.timeline.length}</b></div><div><small>Customer mentions · 30 days</small><b>${w.voc.reduce((a,v)=>a+v[4],0)}</b></div></div>
+   <section><h5>1. What happened</h5><div class="tl">${w.timeline.map(t=>`<div><time>${t[0]}</time><p><b>${esc(t[1])}:</b> ${esc(t[2])}</p></div>`).join("")}</div></section>
+   <section><h5>2. Why it matters for ${esc(co)}</h5><p>${esc(w.analyst)}</p><p><b>Suggested:</b> ${esc(w.suggest)}</p></section>
+   ${r?`<section><h5>3. What the market thinks</h5><p>Over the last year ${esc(w.rival)} returned <b>${rb>=0?"+":""}${rb}%</b> against <b>${ra>=0?"+":""}${ra}%</b> for ${f.listed?esc(co):"the listed sector index"}. ${esc(r.why)}</p><p><b>So what for ${esc(co)}:</b> ${esc(r.act)}</p></section>`:""}
+   <section><h5>${r?4:3}. What customers say</h5><ul>${w.voc.map(v=>`<li><b>${esc(v[1])} · ${esc(v[2])}</b> ${esc(v[3])} (${v[4]} mentions)</li>`).join("")}</ul><p><b>Opening for ${esc(co)}:</b> ${esc(w.opening)}</p></section>
+   <section><h5>${r?5:4}. What could happen</h5><p><b>Scenario:</b> ${esc(w.war.q)}</p><div class="tl">${w.war.play.map(p=>`<div><time>${esc(p[0].replace("Month ","M"))}</time><p>${esc(p[1])}</p></div>`).join("")}</div><p class="sub" style="font-size:12px">Simulated from ${esc(w.war.basis)}.</p></section>
+   <section><h5>${r?6:5}. Response options</h5><div class="opts">${w.war.opts.map(o=>`<div class="opt${o[0]==="rec"?" rec":""}"><span class="sev ${o[0]==="rec"?"opp":"watch"}" style="align-self:flex-start">${o[0]==="rec"?"Recommended":"Fallback"}</span><b>${esc(o[1])}</b><p>${esc(o[2])}</p><div class="rate"><span>Impact</span><b>${o[3]}</b><span>Cost</span><b>${o[4]}</b><span>Risk</span><b>${o[5]}</b></div></div>`).join("")}</div></section>
+   <section><h5>${r?7:6}. 90-day plan</h5>${planHTML(c)}</section>
+   <footer><span><b>Sources:</b> ${esc(w.ask.src.join("; "))}; exchange price data.</span><div class="btnrow"><button class="btnx" id="cCopy">Copy summary</button></div></footer>
+  </article>${decideHTML(c)}`;}
+
+/* tracking */
+function trackHTML(c){const done=c.plan.filter(p=>p.done).length;
+  return `<div class="cols"><div class="stack">
+    <div class="panel"><h5>90-day plan · ${done} of ${c.plan.length} done</h5>${c.plan.map((p,i)=>`<div class="chk${p.done?" done":""}"><input type="checkbox" id="pl_${i}" data-pl="${i}"${p.done?" checked":""}${c.stage==="closed"?" disabled":""}><label for="pl_${i}"><b>${esc(p.when)} · ${esc(p.what)}.</b> ${esc(p.how)}</label></div>`).join("")}</div>
+    <div class="panel"><h5>Updates since the overview</h5>${c.updates.length?c.updates.map(u=>`<div class="upd${u[2]?" fresh":""}"><time>${esc(u[0])}</time><p>${esc(u[1])}</p></div>`).join(""):`<p class="sub">No updates yet.</p>`}${c.stage==="act"?`<div class="btnrow" style="margin-top:10px"><button class="btnx" id="cWeek">Simulate next week's run</button></div>`:""}</div>
+   </div><div class="stack">
+    <div class="panel"><h5>Owner</h5><p style="margin:0"><b>${esc(c.owner)}</b></p><p class="sub" style="font-size:12.5px">Approved ${esc(c.approved)} · progress reviewed in the Monday digest</p></div>
+    <div class="panel"><h5>Watching for</h5><ul style="margin:0;padding-left:18px">${watchFor(c).map(x=>`<li>${esc(x)}</li>`).join("")}</ul><p class="sub" style="font-size:12px;margin-top:6px">Set up automatically on approval. Any hit reopens this case at the top of the pipeline.</p></div>
+    ${c.stage==="act"?`<div class="decide-bar"><h5>Record the outcome</h5><p class="sub" style="margin:0">Outcomes teach the radar which signals led to real decisions (the Learn step).</p><div class="row"><button class="btnx pri" id="cWon">Close: acted on it</button><button class="btnx" id="cDrop">Close: dropped</button></div></div>`:`<div class="callout"><b>Closed · ${esc(c.outcome)}</b><p>Saved to the learning loop. Signal weights are reviewed monthly.</p></div>`}
+   </div></div>`;}
+
+/* ---------- company switching ---------- */
+function setCompany(co){
+  scope=co;
+  if(co!=="All"){cur=co;}
+  boardDesk=co==="All"?"All":co; dealFilter=boardDesk;
+  const th=THESES.find(x=>x.desk===cur_co()); if(th) thesisSel=th.id;
+  document.querySelectorAll(".wsco").forEach(e=>e.textContent=cur);
+  renderComp(); renderAsk(); renderFin();
+}
+$("coSel").innerHTML=`<option value="All">All companies</option>`+COS_WS.map(c=>`<option>${c}</option>`).join("");
+
+
+/* ---------- Competitors: full roster per company ---------- */
+const EXTRA_RIVALS={
+ CEAT:[["Rival E","Tyres · India","Opened 40 new dealer outlets in Uttar Pradesh"],["Rival F","2-wheeler tyres · India","Raised prices 2% on commuter tyres"],["Global Rival G","Tyres · Global","Announced a plant in Vietnam"],["Rival H","Truck tyres · India","New truck radial size for mining fleets"],["Rival I","Tyres · India","CFO change"],["Import brand J","Tyres · China","Cheaper imports rose 12% this quarter"],["Rival K","Off-highway tyres · India","Won a farm-tyre export order"]],
+ KEC:[["Competitor Q","EPC · India","Won a metro rail civil contract"],["Competitor R","Transmission · India","Rights issue to cut debt"],["Global EPC S","EPC · Global","Bid for a Saudi grid package"],["Competitor T","Towers · India","Tower plant expansion in Odisha"],["Competitor U","Cables EPC · India","Joint venture for undersea cables"],["Competitor V","EPC · India","Penalty on a delayed state project"]],
+ Zensar:[["Competitor W","IT services · India","Opened a GenAI lab in Pune"],["Competitor X","IT services · US","Cut 5% of staff"],["Global IT Y","IT services · Global","Acquired a Salesforce partner"],["Competitor Z","Digital engineering · India","Won a UK bank deal"],["Competitor AA","Data services · India","New insurance analytics product"],["Competitor AB","IT services · India","Raised campus hiring 20%"],["Global IT AC","Consulting · Global","Partnered with a cloud provider on AI"],["Competitor AD","Testing services · India","Price cuts on testing contracts"],["Competitor AE","IT services · Europe","Lost a German auto client"]],
+ "RPG Life Sciences":[["Rival N","Pharma · India","Launched a generic cardiac drug"],["Rival O","API · India","USFDA inspection cleared"],["Rival P","Pharma · India","Field force up 15% in the west"],["Global Pharma Q","Pharma · Global","Sold its India brands"],["Rival R","Formulations · India","Price cut on a diabetes brand"]],
+ "Raychem RPG":[["Competitor F","Cable accessories · India","New heat-shrink plant in Gujarat"],["Competitor G2","Electrical · India","Distributor deal in the east"],["Import brand H","Cable joints · China","Imports fell after duty news"],["Competitor I","Switchgear · India","Won a railway electrification order"]],
+ Harrisons:[["Estate Co. S","Tea · India","Sold two Assam estates"],["Estate Co. T","Rubber · India","Replanting 800 hectares"],["Tea brand U","Packaged tea · India","New premium tea brand"]]};
+let compSel={}, followed=new Set();
+function rosterFor(co){const w=WS[co], f=w.fin;
+  const list=[{name:w.rival,seg:w.seg,watch:"Deep",threat:w.threat,sig:w.timeline.length+w.voc.length,last:w.timeline[0][1]+": "+w.timeline[0][2],primary:true}];
+  Object.entries(f.rivals).filter(([n])=>n!==w.rival).forEach(([n,r])=>list.push({name:n,seg:r.seg,watch:followed.has(co+n)?"Deep":"Standard",threat:["watch","Threat: Medium"],sig:2,last:r.ev[1],r}));
+  (EXTRA_RIVALS[co]||[]).forEach(x=>list.push({name:x[0],seg:x[1],watch:followed.has(co+x[0])?"Deep":"Light",threat:["watch","Threat: Low"],sig:1,last:x[2]}));
+  return list;}
+function renderComp(){
+  const co=cur, w=WS[co], list=rosterFor(co); const sel=list.find(x=>x.name===compSel[co])||list[0];
+  let detail="";
+  if(sel.primary){const d=w;
+    detail=`<div class="cols"><div class="stack">
+      <div class="panel"><h5>Timeline of moves</h5><div class="tl">${d.timeline.map(t=>`<div><time>${t[0]}</time><p><b>${esc(t[1])}:</b> ${esc(t[2])} <span class="mini">${esc(t[3])}</span></p></div>`).join("")}</div></div>
+      <div class="panel"><h5>What customers say about ${esc(d.rival)} · last 30 days</h5><div class="voc">${d.voc.map(v=>`<div><span class="sev ${v[0]}">${v[1]}</span><p><b>${esc(v[2])}</b> ${esc(v[3])}</p><span class="num">${v[4]} mentions</span></div>`).join("")}</div></div></div>
+     <div class="stack"><div class="callout"><b>Analyst view</b><p>${esc(d.analyst)}</p><p><b style="font-family:var(--body)">Suggested for ${esc(co)}:</b> ${esc(d.suggest)}</p></div>
+      <div class="panel"><h5>${esc(d.spark.t)}</h5>${sparkSVG(d.spark)}</div><div class="panel"><h5>${esc(d.tone.t)}</h5>${toneSVG(d.tone)}</div>
+      <div class="btnrow"><button class="btnx pri" id="compCase">See it in this week's digest</button></div></div></div>`;
+  } else {
+    const f=followed.has(co+sel.name);
+    detail=`<div class="cols"><div class="stack"><div class="panel"><h5>Latest moves</h5><div class="tl"><div><time>16 Sep</time><p><b>${esc(sel.last)}.</b> ${sel.r?esc(sel.r.why):""} <span class="mini">${sel.r?"Market &amp; Financials Tracker":"Watcher"}</span></p></div></div></div></div>
+     <div class="stack"><div class="callout"><b>${sel.watch} watch</b><p>${sel.watch==="Deep"?"All agents now track this rival, including hiring, patents and customer voice. New moves appear from the next daily run.":sel.watch==="Standard"?"News, exchange filings and share price are tracked. Follow this rival to add hiring, patents and customer voice.":"News only. Follow this rival to track filings, hiring, patents and customer voice."}</p>${sel.r?`<p><b style="font-family:var(--body)">So what for ${esc(co)}:</b> ${esc(sel.r.act)}</p>`:""}</div>
+      <div class="btnrow"><button class="btnx${f?"":" pri"}" id="compFollow">${f?"Following ✓":"Follow this rival"}</button></div></div></div>`;
+  }
+  $("wsComp").innerHTML=`
+   <div class="top"><div><span class="crumb"><b>${esc(co)}</b> / Competitors</span><h4>${esc(co)}'s competitors · ${list.length} tracked</h4><p class="sub">Discovered and kept up to date by the Research Agent. Click a rival to see its moves.</p>${scope==="All"?`<span class="scope-note">Showing ${esc(co)} — pick a company above to change</span>`:""}</div></div>
+   <div class="panel" style="overflow-x:auto"><table class="tbl"><thead><tr><th>Competitor</th><th>Segment</th><th>Watch</th><th>Threat</th><th>Signals · 30 days</th><th>Latest move</th></tr></thead><tbody>
+    ${list.map(x=>`<tr${x.name===sel.name?' style="background:var(--accent-soft)"':""}><td><a href="#" data-rv="${esc(x.name)}"><b>${esc(x.name)}</b></a></td><td>${esc(x.seg)}</td><td><span class="pill2">${x.watch}</span></td><td><span class="sev ${x.threat[0]}">${esc(x.threat[1].replace("Threat: ",""))}</span></td><td class="mono">${x.sig}</td><td>${esc(x.last.length>70?x.last.slice(0,68)+"…":x.last)}</td></tr>`).join("")}
+   </tbody></table></div>
+   <div class="top"><div><h4 style="font-size:17px">${esc(sel.name)} · ${esc(sel.seg)}</h4></div></div>
+   ${detail}`;
+  $("wsComp").querySelectorAll("[data-rv]").forEach(a=>a.onclick=e=>{e.preventDefault();compSel[co]=a.dataset.rv;renderComp();});
+  const oc=$("compCase"); if(oc) oc.onclick=()=>openRow("t_"+co);
+  const fb=$("compFollow"); if(fb) fb.onclick=()=>{const k=co+sel.name; if(followed.has(k)) followed.delete(k); else {followed.add(k);toast(sel.name+" moved to deep watch.");audit("follow_rival",sel.name);} renderComp();};
+}
+
+
+/* ================= SWOT per RPG company (illustrative, built from mock signals) ================= */
+const TOWS={SO:["Strength × Opportunity","Use a strength to seize an opportunity"],WO:["Weakness × Opportunity","Fix a weakness with an opportunity"],ST:["Strength × Threat","Use a strength to counter a threat"],WT:["Weakness × Threat","Close a weakness before a threat hits"]};
+const SWOT={
+ CEAT:{
+  S:["Strong 2-wheeler and commuter tyre brand","Wide dealer network across India","Growing off-highway export business"],
+  W:["Behind rivals on EV-specific tyres","Relies on a few suppliers for bead wire and bladders","Little sensor or smart-tyre technology"],
+  O:[["Meridian, a key supplier, is distressed and may be open to a deal","d_meridian"],["Sensa Labs' sensors could fill the smart-tyre gap","d_sensa"],["EV 2-wheeler makers are choosing tyre partners now",null],["Rovan Tyres may be sold by its PE owner","d_rovan"]],
+  T:[["Rival A is preparing an EV tyre range","t_CEAT"],["Rival A has bought 6% of Meridian","d_meridian"],["Cheaper imported tyres up 12% this quarter",null]],
+  rec:[["WT","Secure Meridian before Rival A does",["W2","T2","O1"],"d_meridian","CEAT depends on Meridian for bead wire. If Rival A takes control, that supply is at risk. Meridian's distress gives CEAT an opening first."],
+       ["WO","Partner with or invest in Sensa Labs",["W3","O2"],"d_sensa","Sensa's sensors close CEAT's smart-tyre gap and are also useful to KEC and Raychem RPG."],
+       ["ST","Use the dealer network to launch EV tyres first",["S1","S2","O3","T1"],"t_CEAT","CEAT's brand and dealers can reach EV riders before Rival A's range arrives."]],
+  skip:[["d_rovan","Fits the off-highway export strength, but the auditor's exit and 40% promoter pledge outweigh the fit. Keep watching."]]},
+ KEC:{
+  S:["Large order book and on-time delivery record","Strong presence in the Middle East","In-house tower fabrication"],
+  W:["Thinner margins than peers","Fabrication capacity nearly full at peak","Small substation EPC scale in the Gulf"],
+  O:[["Strata's Gulf substation book is available through insolvency","d_strata"],["Competitor B's delivery delays open delivery-critical tenders","t_KEC"],["Ashford's tower plant could add capacity","d_ashford"]],
+  T:[["Competitor B is bidding about 8% lower in state tenders","t_KEC"],["Global EPC H is expanding in the Gulf","d_strata"],["Steel prices are volatile",null]],
+  rec:[["ST","Win delivery-critical tenders where Competitor B is late",["S1","O2","T1"],"t_KEC","KEC's delivery record is the answer to Competitor B's low bids, since Competitor B's plants are nearly full."],
+       ["WO","Bid for Strata's Gulf substation book",["W3","S2","O1","T2"],"d_strata","Strata adds substation scale in the Gulf, where KEC is already strong, before Global EPC H takes it."]],
+  skip:[["d_ashford","The capacity gap is real, but Ashford's overdue receivables make it a poor fix. Contracting extra fabrication is cheaper."]]},
+ Zensar:{
+  S:["Deep relationships with US insurers","Strong digital engineering delivery","Healthy cash position"],
+  W:["Smaller GenAI practice than rivals","Thin presence in UK financial services","Few AI products of its own"],
+  O:[["Northfield, an AI firm serving US insurers, may be sold by its PE owner","d_northfield"],["Solstice, a UK BFSI analytics firm, has a succession gap","d_solstice"]],
+  T:[["Competitor D is moving into AI deals with insurers","t_Zensar"],["Pricing pressure on large renewals",null]],
+  rec:[["WO","Add AI scale in insurance through Northfield",["W1","S3","O1","T1"],"d_northfield","Northfield brings the GenAI depth Zensar lacks, in the industry Competitor D is attacking."],
+       ["ST","Protect top insurer accounts with AI pilots",["S1","T1"],"t_Zensar","Zensar's insurer relationships are the asset Competitor D is going after. Pilots keep them close."]],
+  skip:[["d_solstice","Fits the UK gap, but the founder is not selling now. Build a relationship and revisit next year."]]},
+ "RPG Life Sciences":{
+  S:["Strong domestic cardiac and chronic brands","Good doctor reach in western India","Low debt"],
+  W:["No USFDA-approved plant for exports","Small API capacity"],
+  O:[["Veltrix owns a USFDA-approved plant and shows distress","d_veltrix"],["Rival C's USFDA trouble weakens its exports",null]],
+  T:[["Rival C is cutting prices to win domestic share","t_RPG Life Sciences"],["New price controls on some medicines",null]],
+  rec:[["WO","Look at Veltrix's USFDA plant as an asset buy",["W1","S3","O1"],"d_veltrix","A USFDA plant opens exports. Low debt means RPG Life Sciences can move if the governance issues check out."],
+       ["ST","Defend cardiac brands with stronger doctor outreach",["S1","S2","T1"],"t_RPG Life Sciences","Doctor reach in the west is where Rival C is cutting prices. Loyalty there matters more than matching price."]],
+  skip:[]},
+ "Raychem RPG":{
+  S:["Trusted brand in cable joints and heat-shrink","The new import duty favours domestic makers","Utility and railway customers"],
+  W:["Depends on bought-in polymers","Capacity may not meet demand after the duty"],
+  O:[["Corvane, a polymer maker, may be sold by its parent","d_corvane"],["Demand shifts to domestic makers from 1 November",null],["Sensa's sensors for substation monitoring","d_sensa"]],
+  T:[["Competitor E is adding capacity for the duty-driven demand","t_Raychem RPG"],["Copper costs are rising",null]],
+  rec:[["WO","Secure polymer supply by approaching Corvane",["W1","O1"],"d_corvane","Owning Corvane's heat-shrink polymers removes Raychem RPG's biggest supply risk."],
+       ["ST","Add capacity before 1 November to beat Competitor E",["S2","W2","O2","T1"],"t_Raychem RPG","The duty helps whoever can supply first. Competitor E is already preparing."]],
+  skip:[["d_strata","Substation EPC is not Raychem RPG's business. KEC is the better owner."],["d_sensa","Useful later. CEAT is taking the lead on Sensa."]]},
+ Harrisons:{
+  S:["Well-run estates in Kerala and Tamil Nadu","Quality tea with premium buyers"],
+  W:["Little branded, packaged tea","Exposed to rubber price swings"],
+  O:[["Palmgrove's estates next to ours may be sold","d_palmgrove"],["Packaged tea demand is rising",null]],
+  T:[["Estate Co. F is moving into branded tea","t_Harrisons"],["Wage costs are rising",null]],
+  rec:[["SO","Add Palmgrove's estates next to ours",["S1","O1"],"d_palmgrove","Harrisons already runs estates well in the same area. The family split may make a sale possible."]],
+  skip:[["t_Harrisons","Estate Co. F's brand launch has had a mixed response. Watch it before spending on a response."]]},
+};
+function swotItem(co,ref){const q=ref[0],i=Number(ref.slice(1))-1,x=SWOT[co][q][i];return Array.isArray(x)?x[0]:x;}
+function recsFor(co){return SWOT[co].rec.map(r=>({co,type:r[0],title:r[1],uses:r[2],cid:r[3],why:r[4]}));}
+function recForCase(id){for(const co of COS_WS){const r=recsFor(co).find(x=>x.cid===id);if(r)return r;}return null;}
+
+/* ---- positioning: [impact, urgency] for each O and T item (0–100) ---- */
+const POS={
+ CEAT:{O:[[85,90],[70,55],[75,68],[45,35]],T:[[90,75],[80,93],[50,40]]},
+ KEC:{O:[[80,70],[70,82],[50,40]],T:[[82,86],[65,60],[40,50]]},
+ Zensar:{O:[[86,74],[55,25]],T:[[85,82],[42,56]]},
+ "RPG Life Sciences":{O:[[80,60],[55,45]],T:[[72,80],[48,35]]},
+ "Raychem RPG":{O:[[75,64],[82,92],[40,30]],T:[[76,86],[44,62]]},
+ Harrisons:{O:[[72,55],[60,40]],T:[[45,35],[44,52]]}};
+function posItems(co){const used=new Set(recsFor(co).flatMap(r=>r.uses)), out=[];
+  ["O","T"].forEach(q=>SWOT[co][q].forEach((x,i)=>{const id=q+(i+1),p=POS[co][q][i],r=recsFor(co).find(m=>m.uses.includes(id));
+    out.push({id,q,text:x[0],cid:x[1],impact:p[0],urg:p[1],used:used.has(id),move:r?r.title:null});}));
+  return out;}
+function posChart(co){
+  const W=640,H=380,L=52,R=620,T=22,B=330, X=v=>L+(R-L)*v/100, Y=v=>B-(B-T)*v/100, it=posItems(co);
+  let g=`<rect x="${L}" y="${T}" width="${R-L}" height="${B-T}" fill="var(--surface)"/>`;
+  g+=`<rect x="${X(50)}" y="${T}" width="${R-X(50)}" height="${Y(50)-T}" fill="var(--accent-soft)" opacity=".55"/>`;
+  [0,25,50,75,100].forEach(v=>{g+=`<line x1="${L}" x2="${R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--rule)" stroke-width="${v===50?1.2:.6}"${v===50?' stroke-dasharray="4 4"':""}/><line y1="${T}" y2="${B}" x1="${X(v)}" x2="${X(v)}" stroke="var(--rule)" stroke-width="${v===50?1.2:.6}"${v===50?' stroke-dasharray="4 4"':""}/>`;});
+  const ql=(x,y,t,a)=>`<text x="${x}" y="${y}" text-anchor="${a}" class="qlab">${t}</text>`;
+  g+=ql(R-8,T+16,"ACT NOW","end")+ql(L+8,T+16,"PLAN FOR IT","start")+ql(R-8,B-8,"WATCH CLOSELY","end")+ql(L+8,B-8,"KEEP AN EYE ON","start");
+  g+=`<text x="${L}" y="${B+20}" class="ax">Later</text><text x="${R}" y="${B+20}" class="ax" text-anchor="end">Now</text><text x="${(L+R)/2}" y="${B+38}" class="axt" text-anchor="middle">Urgency · how soon it plays out →</text>`;
+  g+=`<text x="${L-8}" y="${B}" class="ax" text-anchor="end">Low</text><text x="${L-8}" y="${T+8}" class="ax" text-anchor="end">High</text><text transform="translate(16 ${(T+B)/2}) rotate(-90)" class="axt" text-anchor="middle">Impact on ${esc(co)} →</text>`;
+  const placed=[];
+  it.forEach(p=>{const cx=X(p.urg),cy=Y(p.impact),col=p.q==="O"?"var(--ch-o)":"var(--ch-t)",fill=p.used?col:"var(--surface)";
+    const mk=p.q==="O"?`<circle cx="${cx}" cy="${cy}" r="8" fill="${fill}" stroke="${col}" stroke-width="2"/>`:`<rect x="${cx-7}" y="${cy-7}" width="14" height="14" transform="rotate(45 ${cx} ${cy})" fill="${fill}" stroke="${col}" stroke-width="2"/>`;
+    let lx=cx+13, anchor="start"; if(placed.some(q=>Math.abs(q[0]-cx)<46&&Math.abs(q[1]-cy)<16)||cx>R-40){lx=cx-13;anchor="end";} placed.push([cx,cy]);
+    g+=`<g class="pt" tabindex="0" role="img" data-id="${p.id}" aria-label="${p.id}: ${esc(p.text)}. Impact ${p.impact}, urgency ${p.urg}.${p.move?" Drives: "+esc(p.move):" Not acted on this week."}"><circle cx="${cx}" cy="${cy}" r="16" fill="transparent"/>${mk}<text x="${lx}" y="${cy+4}" text-anchor="${anchor}" class="plab">${p.id}</text></g>`;});
+  return `<div class="panel poschart"><div class="intro"><div><h5 style="margin:0">Where the opportunities and threats sit</h5><p class="sub" style="font-size:12.5px;margin:2px 0 0">Impact on ${esc(co)} against how soon each one plays out. Filled marks drive a recommended move.</p></div>
+    <div class="plegend"><span><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="var(--ch-o)"/></svg>Opportunity</span><span><svg width="14" height="14" aria-hidden="true"><rect x="3" y="3" width="8" height="8" transform="rotate(45 7 7)" fill="var(--ch-t)"/></svg>Threat</span><span><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="var(--surface)" stroke="var(--muted)" stroke-width="1.8"/></svg>Hollow = not acted on</span></div></div>
+    <div class="pchart" id="pchart"><svg viewBox="0 0 ${W} ${H}" role="group" aria-label="Opportunity and threat positioning for ${esc(co)}">${g}</svg><div class="ptip" id="ptip" hidden></div></div>
+    <details class="ptable"><summary>View as table</summary><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Item</th><th>Impact</th><th>Urgency</th><th>Drives</th></tr></thead><tbody>${it.map(p=>`<tr><td><b class="mono">${p.id}</b> ${esc(p.text)}</td><td class="mono">${p.impact}</td><td class="mono">${p.urg}</td><td>${p.move?esc(p.move):'<span class="sub">Not acted on</span>'}</td></tr>`).join("")}</tbody></table></div></details></div>`;
+}
+function bindPosChart(co){const wrap=$("pchart"); if(!wrap) return; const tip=$("ptip"), it=posItems(co);
+  const showTip=g=>{const p=it.find(x=>x.id===g.dataset.id), r=g.getBoundingClientRect(), w=wrap.getBoundingClientRect();
+    tip.innerHTML=`<b>${p.id} · ${p.q==="O"?"Opportunity":"Threat"}</b><p>${esc(p.text)}</p><span>Impact <b>${p.impact}</b> · Urgency <b>${p.urg}</b></span><span>${p.move?"Drives: "+esc(p.move):"Not acted on this week"}</span>`;
+    tip.hidden=false; let x=r.left-w.left+r.width/2+14, y=r.top-w.top-10; if(x+240>w.width) x=r.left-w.left-254; tip.style.left=Math.max(4,x)+"px"; tip.style.top=Math.max(4,y)+"px";
+    const e=$("sw_"+p.id); if(e){e.classList.add("hl");document.querySelector("#v-home .swot")?.classList.add("dim");}};
+  const hide=()=>{tip.hidden=true;document.querySelectorAll("#v-home .swot li.hl").forEach(e=>e.classList.remove("hl"));document.querySelector("#v-home .swot")?.classList.remove("dim");};
+  wrap.querySelectorAll(".pt").forEach(g=>{g.addEventListener("mouseenter",()=>showTip(g));g.addEventListener("mouseleave",hide);g.addEventListener("focus",()=>showTip(g));g.addEventListener("blur",hide);
+    g.addEventListener("click",()=>{const p=it.find(x=>x.id===g.dataset.id); if(p.cid) openRow(p.cid);});});
+}
+
+/* ---------- helpers ---------- */
+const MON={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+const dnum=d=>{const [a,b]=d.split(" ");return (MON[b]||0)*100+Number(a);};
+const prio=c=>c.kind==="deal"?c.t.score:({High:85,Medium:60,Low:35}[c.w.threat[1].replace("Threat: ","")]||50);
+const who=c=>c.kind==="deal"?c.t.name:c.w.rival;
+const kindLabel=c=>c.kind==="deal"?"Target · deal to consider":"Rival · threat to answer";
+const recOf=c=>c.kind==="deal"?SCEN[c.t.id].a.opts[0][0]:((c.w.war.opts.find(o=>o[0]==="rec")||c.w.war.opts[0])[1]);
+function sigCount(c){return c.kind==="deal"?c.t.signals.length:c.w.timeline.length;}
+
+/* ---------- state ---------- */
+let view="home", scope="All", guideOn=true, shortlist=new Set(), bookOrder=[], bookPage=0, followSel=null, deepIds=[], deepTick=0, deepTimer=null, kindF="all";
+const JOURNEY=[["SWOT","Where each company stands"],["Shortlist","Pick the moves that fit"],["Deep dive","Agents do the expensive work"],["Read the book","One page per company"],["Follow up","Plan, watch, outcome"]];
+const NAV=[["Radar",[["home","This week"],["book","Deep-dive book"],["follow","Follow-up"]]],["Explore",[["comp","Competitors"],["fin","Market performance"],["deals","Rival deals"],["ask","Ask Radar"]]],["Radar settings",[["thesis","Acquisition theses"],["trig","Watch rules"],["admin","Watched companies"]]]];
+const RENDER={home:rHome,deep:rDeep,book:rBook,follow:rFollow,deals:rDeals,thesis:rThesis,trig:rTrig,admin:rAdmin};
+function cur_co(){return scope==="All"?cur:scope;}
+function inScope(c){return scope==="All"||c.cos.includes(scope);}
+const bookCases=()=>bookOrder.map(caseById);
+const followCases=()=>CASES.filter(c=>c.owner);
+
+function renderNav(){
+  const cnt={home:CASES.filter(c=>inScope(c)&&c.stage==="digest").length,book:bookOrder.length,follow:followCases().filter(c=>c.stage==="act").length};
+  const c=view==="deep"?"book":view;
+  $("sideNav").innerHTML=NAV.map(([g,items])=>`<div class="navgrp">${esc(g)}</div>`+items.map(([k,l])=>`<button class="navbtn" data-v="${k}"${k===c?' aria-current="page"':""}><span>${esc(l)}</span>${cnt[k]!==undefined?`<em>${cnt[k]}</em>`:""}</button>`).join("")).join("")+
+   `<div class="sep">Signed in: ${esc(scope==="All"?"Group strategy":scope+" strategy team")}</div>`;
+  $("sideNav").querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>show(b.dataset.v));
+}
+function show(v){view=v;document.querySelectorAll(".view").forEach(s=>s.hidden=s.id!=="v-"+v);if(RENDER[v])RENDER[v]();renderNav();renderGuide();window.scrollTo(0,0);}
+function journeyHTML(){const cur={home:shortlist.size?1:0,deep:2,book:3,follow:4}[view];
+  return `<div class="stepper journey" aria-label="How the radar works">${JOURNEY.map(([l,q],i)=>`<div class="stp ${i<cur?"done":i===cur?"now":""}"${i===cur?' aria-current="step"':""}><b>${i<cur?"✓ ":""}${i+1}. ${l}</b><small>${q}</small></div>`).join("")}</div>`;}
+
+/* ---------- 1. This week: analyst view, digest, signals ---------- */
+function rowDetail(c){
+  if(c.kind==="deal"){const t=c.t, th=THESES.find(x=>x.desk===c.co), m=th?thesisMatch(th,t):null;
+    return `<div class="cols"><div class="stack"><p style="margin:0">${esc(DEAL_STORY[t.id])}</p>
+      <div class="tl">${t.signals.map(s=>`<div><time>${s[1]}</time><p><b>${TYPE_LABEL[s[0]]}:</b> ${esc(s[2])} <span class="mini">${esc(s[3])}</span></p></div>`).join("")}</div></div>
+     <div class="stack"><div><small class="crumb">Score ${t.score}</small><p class="sub" style="font-size:12.5px;margin:2px 0 0">${t.types.map(k=>`${TYPE_LABEL[k].toLowerCase()} ${W[k]}`).join(" + ")} = ${t.base}, × ${t.m} for ${t.types.length} signal types${t.raw>100?", capped at 100":""}</p></div>
+      ${m?`<div><small class="crumb">Fit with ${esc(c.co)}'s thesis · ${m.ok} of ${m.total}</small><div class="crit" style="margin-top:4px">${m.checks.map(x=>`<span class="${x[1]?"ok":"no"}">${x[1]?"✓":"✗"} ${esc(x[0])}</span>`).join("")}</div></div>`:""}
+      <div><small class="crumb">Who's involved</small><p class="sub" style="font-size:12.5px;margin:2px 0 0">${t.owners.map(o=>`${esc(o[0])} ${o[1]}%`).join(" · ")}${t.bidders.length?`<br><b>Rival interest:</b> ${t.bidders.map(esc).join("; ")}`:""}</p></div></div></div>`;}
+  const w=c.w;
+  return `<div class="cols"><div class="stack"><p style="margin:0">${esc(w.analyst)}</p><div class="tl">${w.timeline.map(t=>`<div><time>${t[0]}</time><p><b>${esc(t[1])}:</b> ${esc(t[2])} <span class="mini">${esc(t[3])}</span></p></div>`).join("")}</div></div>
+    <div class="stack"><div><small class="crumb">${esc(w.spark.t)}</small>${sparkSVG(w.spark)}</div><div><small class="crumb">What customers say</small><p class="sub" style="font-size:12.5px;margin:2px 0 0"><b>${esc(w.voc[0][1])} · ${esc(w.voc[0][2])}</b> ${esc(w.voc[0][3])}</p></div></div></div>`;
+}
+function statusPill(c){return {deep:"Deep dive running",decide:"In the book · awaiting decision",act:"In follow-up",closed:c.outcome||"Closed"}[c.stage];}
+function swotBox(co,big){const s=SWOT[co];
+  const Q=[["S","Strengths","Internal · helps",s.S],["W","Weaknesses","Internal · hurts",s.W],["O","Opportunities","External · helps",s.O],["T","Threats","External · hurts",s.T]];
+  return `<div class="swot${big?" big":""}" aria-label="SWOT for ${esc(co)}">${Q.map(([k,l,sub,items])=>`<div class="sq q${k}"><div class="sqh"><b>${l}</b><small>${sub}</small></div>${big?`<ol>${items.map((x,i)=>{const t=Array.isArray(x)?x[0]:x, cid=Array.isArray(x)?x[1]:null;return `<li id="sw_${k}${i+1}" class="${cid?"sig":""}"><span class="mono">${k}${i+1}</span><span>${esc(t)}${cid?` <a href="#" class="sw-link" data-row="${esc(cid)}">signals</a>`:""}</span></li>`;}).join("")}</ol>`:`<p><b class="mono">${items.length}</b> ${esc((Array.isArray(items[0])?items[0][0]:items[0]))}</p>`}</div>`).join("")}</div>`;}
+function recCard(r){const c=caseById(r.cid), inD=c.stage==="digest", on=shortlist.has(c.id), k=c.id.replace(/\W/g,"_");
+  const badge=c.kind==="deal"?`<div class="score ${sCls(c.t.score)}" style="width:54px;height:46px"><b style="font-size:19px">${c.t.score}</b><small>score</small></div>`:`<span class="sev ${c.w.threat[0]}">${esc(c.w.threat[1].replace("Threat: ",""))}</span>`;
+  return `<div class="drow rec${on?" on":""}" id="row_${k}" data-uses="${r.uses.join(" ")}" data-co="${esc(r.co)}" tabindex="-1">
+    <div class="dmain">${inD?`<label class="slbox" for="sl_${k}"><input type="checkbox" id="sl_${k}" data-sl="${esc(c.id)}"${on?" checked":""}><span>Shortlist</span></label>`:`<span class="slbox done" aria-hidden="true">✓</span>`}
+     <div class="dtxt"><span class="tows t${r.type}">${TOWS[r.type][0]} · ${TOWS[r.type][1]}</span>
+      <p class="rt">${esc(r.title)}</p><p class="sub" style="font-size:12.8px">${esc(r.why)}</p>
+      <div class="uses">${r.uses.map(u=>`<span class="u${u[0]}" title="${esc(swotItem(r.co,u))}">${u}</span>`).join("")}<span class="sub" style="font-size:11.5px">${scope==="All"?esc(r.co)+" · ":""}${esc(who(c))} · ${c.kind==="deal"?"target":"rival"}</span></div>
+      ${inD?"":`<p class="sub" style="font-size:12px;margin-top:4px"><span class="esc-badge${c.stage==="closed"?" closed":""}">${c.stage==="closed"?"Closed":"Escalated"}</span><b>${esc(statusPill(c))}</b> · <a href="#" class="esc-link" data-go="${esc(c.id)}">${c.owner?"Open follow-up":"Open book page"}</a></p>`}</div>
+     ${badge}</div>
+    <details id="det_${k}"><summary>Signals and quick look · ${esc(who(c))}</summary>${rowDetail(c)}</details></div>`;}
+function groupSkips(){const rec=new Set(COS_WS.flatMap(recsFor).map(r=>r.cid));const rows=[];COS_WS.forEach(co=>SWOT[co].skip.forEach(([cid,why])=>{if(!rec.has(cid))rows.push([co,cid,why]);}));return rows;}
+function skipList(cos){const rows=[];if(cos.length>1)rows.push(...groupSkips());else cos.forEach(co=>SWOT[co].skip.forEach(([cid,why])=>rows.push([co,cid,why])));
+  if(!rows.length) return "";
+  return `<details class="panel skip"><summary><b>Watched, not recommended · ${rows.length}</b> <span class="sub">companies with signals that don't fit the SWOT this week</span></summary>
+   <div class="skiplist">${rows.map(([co,cid,why])=>{const c=caseById(cid);return `<div id="row_${cid.replace(/\W/g,"_")}_s"><b>${esc(who(c))}</b> <span class="pill2">${esc(co)}</span><p class="sub" style="margin:2px 0 0;font-size:12.5px">${esc(why)}</p></div>`;}).join("")}</div></details>`;}
+function analystText(){
+  if(scope==="All"){const n=COS_WS.flatMap(recsFor).length, k=groupSkips().length; return `Across the group, the radar found ${n} moves that fit and set ${k} aside. The strongest fits close a weakness: CEAT's supplier risk at Meridian, Zensar's GenAI gap through Northfield and RPG Life Sciences' missing USFDA plant at Veltrix.`;}
+  const r=recsFor(scope);
+  return `${WS[scope].analyst} Against ${scope}'s strengths and weaknesses, ${r.length} move${r.length>1?"s fit":" fits"} this week${SWOT[scope].skip.length?`; ${SWOT[scope].skip.length} other${SWOT[scope].skip.length===1?" was":"s were"} set aside`:""}.`;
+}
+function rHome(){
+  const cos=scope==="All"?COS_WS:[scope], recs=cos.flatMap(recsFor);
+  const feed=[];CASES.filter(c=>scope==="All"||c.cos.includes(scope)).forEach(c=>{if(c.kind==="deal")c.t.signals.forEach(s=>feed.push([s[1],who(c),TYPE_LABEL[s[0]],s[2],c.id]));else c.w.timeline.forEach(t=>feed.push([t[0],who(c),t[1],t[2],c.id]));});
+  feed.sort((a,b)=>dnum(b[0])-dnum(a[0]));
+  
+  $("v-home").innerHTML=`
+   <div><span class="crumb"><b>This week</b> · Week 40 · ${esc(scope==="All"?"all companies":scope)}</span><h4>${scope==="All"?"Where each RPG company stands, and the moves that fit":esc(scope)+": where it stands, and the moves that fit"}</h4><p class="sub">SWOT rebuilt from today's 17:00 run · ${feed.length} signals · illustrative data</p></div>
+   ${journeyHTML()}
+   ${scope==="All"?`<div class="swgrid">${COS_WS.map(co=>`<button class="swtile" data-co="${esc(co)}"><span class="swt-h"><b>${esc(co)}</b><span class="sub">${recsFor(co).length} move${recsFor(co).length>1?"s":""} fit · ${SWOT[co].skip.length} set aside</span></span>${swotBox(co,false)}</button>`).join("")}</div>`
+     :swotBox(scope,true)+posChart(scope)}
+   <div class="callout analyst"><b>Analyst overview</b><p>${esc(analystText())}</p><span class="sub" style="font-size:12px">Opportunities and threats come from the signals. Strengths and weaknesses come from ${scope==="All"?"each company's":esc(scope)+"'s"} own filings and plans. A move is recommended only when it links the two.</span></div>
+   <div class="homecols">
+    <div class="stack" style="min-width:0">
+     <div class="intro"><h5 style="margin:0;font-family:var(--display);font-size:16px">Recommended moves · ${recs.length}</h5><span class="sub" style="font-size:12px">${scope==="All"?"Pick a company above to see its full SWOT":"Hover a move to see the SWOT items behind it"}</span></div>
+     <div class="digest">${recs.map(recCard).join("")}</div>
+     ${skipList(cos)}
+    </div>
+    <aside class="panel feed" aria-label="Signals behind the SWOT"><h5>Signals behind the SWOT</h5>${feed.slice(0,14).map(f=>`<button class="fitem" data-row="${esc(f[4])}"><time>${esc(f[0])}</time><span><b>${esc(f[1])}</b> · ${esc(f[2])}<br><span class="sub">${esc(f[3].length>90?f[3].slice(0,88)+"…":f[3])}</span></span></button>`).join("")}<p class="sub" style="font-size:11.5px;margin-top:8px">${feed.length} signals in total.</p></aside>
+   </div>
+   <div class="slbar" id="slbar"></div>`;
+  const hv=$("v-home");
+  hv.querySelectorAll("[data-sl]").forEach(x=>x.onchange=()=>{const id=x.dataset.sl;
+    if(x.checked){if(shortlist.size>=5){x.checked=false;toast("Shortlist up to 5 companies at a time.");return;}shortlist.add(id);}else shortlist.delete(id);
+    hv.querySelectorAll(`[data-sl="${CSS.escape(id)}"]`).forEach(y=>{y.checked=x.checked;y.closest(".drow").classList.toggle("on",x.checked);});
+    renderSlbar(); renderGuide(); hv.querySelector(".journey").outerHTML=journeyHTML();});
+  hv.querySelectorAll(".drow.rec").forEach(card=>{const hl=on=>{if(scope==="All")return;card.dataset.uses.split(" ").forEach(u=>{const e=$("sw_"+u);if(e)e.classList.toggle("hl",on);});hv.querySelector(".swot")?.classList.toggle("dim",on);};
+    card.addEventListener("mouseenter",()=>hl(true));card.addEventListener("mouseleave",()=>hl(false));card.addEventListener("focusin",()=>hl(true));card.addEventListener("focusout",()=>hl(false));});
+  if(scope!=="All") bindPosChart(scope);
+  hv.querySelectorAll(".swtile").forEach(b=>b.onclick=()=>{$("coSel").value=b.dataset.co;setCompany(b.dataset.co);show("home");});
+  hv.querySelectorAll("[data-row]").forEach(b=>b.onclick=e=>{e.preventDefault();openRow(b.dataset.row);});
+  hv.querySelectorAll("[data-go]").forEach(a=>a.onclick=e=>{e.preventDefault();const c=caseById(a.dataset.go);if(c.owner){followSel=c.id;show("follow");}else openBookAt(c.id);});
+  renderSlbar();
+}
+function renderSlbar(){const b=$("slbar"); if(!b) return; const names=[...shortlist].map(id=>who(caseById(id)));
+  b.innerHTML=names.length?`<span><b>${names.length} shortlisted:</b> ${names.map(esc).join(", ")}</span><span class="spacer"></span><button class="btnx" id="slClear">Clear</button><button class="btnx pri" id="slGo">Escalate ${names.length} for deep dive</button>`
+   :`<span class="sub">Tick <b>Shortlist</b> on the moves you want to pursue (up to 5). Only those get a deep dive and a page in the book.</span>`;
+  const c=$("slClear"); if(c) c.onclick=()=>{shortlist.clear();rHome();renderGuide();};
+  const g=$("slGo"); if(g) g.onclick=startDeep;
+}
+function openRow(id){const c=caseById(id), r=recForCase(id);
+  const home=r?r.co:c.co;
+  if(scope!=="All"&&!(recsFor(scope).some(x=>x.cid===id)||SWOT[scope].skip.some(x=>x[0]===id))){$("coSel").value=home;setCompany(home);}
+  if(view!=="home") show("home"); else rHome();
+  const k=id.replace(/\W/g,"_"); let row=$("row_"+k); const d=$("det_"+k);
+  if(!row){row=$("row_"+k+"_s"); const sk=document.querySelector("#v-home details.skip"); if(sk) sk.open=true;}
+  if(d) d.open=true;
+  // Open any collapsed container first (instant, no animation) and let the browser
+  // finish that layout pass before we compute the scroll target — otherwise the
+  // details block finishing its reflow mid-scroll causes a second, jarring jump.
+  if(row){requestAnimationFrame(()=>{row.scrollIntoView({block:"center",behavior:"smooth"});row.classList.add("flash");setTimeout(()=>row.classList.remove("flash"),1600);});}}
+function openTarget(id){openRow("d_"+id);}
+
+/* ---------- 3. Deep dive for the shortlist ---------- */
+function stepsOf(c){return c.kind==="deal"?DD_DEAL:DD_THREAT;}
+function startDeep(){
+  deepIds=[...shortlist]; shortlist.clear(); deepTick=0;
+  deepIds.forEach(id=>{const c=caseById(id);c.stage="deep";audit("escalate",who(c));});
+  show("deep"); clearInterval(deepTimer);
+  const total=7+deepIds.length-1;
+  deepTimer=setInterval(()=>{deepTick++;
+    if(deepTick>total){clearInterval(deepTimer);deepIds.forEach(id=>{const c=caseById(id);c.stage="decide";c.ovDate=TODAY;c.inBook=true;if(!bookOrder.includes(id))bookOrder.push(id);});
+      audit("book_written",deepIds.length+" pages");toast(`The deep-dive book is ready: ${deepIds.length} page${deepIds.length>1?"s":""}.`);
+      bookPage=0; if(view==="deep") show("book"); else {renderNav();renderGuide();} return;}
+    if(view==="deep") rDeep();},450);
+}
+const DD_DEAL=[["Pulling five years of filed financials","Financial Analyst · MCA via Probe42 / Tofler (paid)"],["Mapping owners and director links","Relationship Mapper · MCA director data"],["Scanning rival deals and bidders","M&A Scout · SAST, CCI, deal databases"],["Running what-if scenarios","War Room agent (LLM)"],["Checking risks and red flags","Risk Checker · IBBI, NCLT, rating rationales"],["Verifying every claim","Fact-Checker · 2+ sources"],["Writing the page","Briefing writer (LLM)"]];
+const DD_THREAT=[["Collecting 12 months of moves","Watcher, Patent Scout, Talent Tracker"],["Comparing market performance","Market & Financials Tracker"],["Reading what customers say","Voice of Customer"],["Simulating the rival's playbook","War Room agent (LLM)"],["Drafting response options","Strategy Analyst (LLM)"],["Verifying every claim","Fact-Checker · 2+ sources"],["Writing the page","Briefing writer (LLM)"]];
+function rDeep(){
+  $("v-deep").innerHTML=`<div><span class="crumb"><b>Deep dive</b> · ${deepIds.length} compan${deepIds.length>1?"ies":"y"}</span><h4>Agents are preparing one page per company</h4><p class="sub">This is the expensive work only shortlisted companies get: paid financial data, ownership trees, rival deals and what-if scenarios. About 2 hours in production, a few seconds here.</p></div>
+   ${journeyHTML()}
+   <div class="dd">${deepIds.map((id,i)=>{const c=caseById(id), st=stepsOf(c), s=Math.max(0,Math.min(st.length,deepTick-i)), done=s>=st.length;
+     return `<div class="${done?"ok":"run"}"><span class="ic">${done?"✓":""}</span><div style="min-width:0"><p><b>${esc(who(c))}</b> · ${esc(c.title)}</p><div class="match" style="margin:6px 0 4px"><div class="pbar"><i style="width:${Math.round(s/st.length*100)}%"></i></div><span class="mono" style="font-size:11.5px">${s}/${st.length}</span></div><small>${done?"Page written":esc(st[Math.min(s,st.length-1)][0])+" · "+esc(st[Math.min(s,st.length-1)][1])}</small></div></div>`;}).join("")}</div>`;
+}
+
+/* ---------- 4. The deep-dive book ---------- */
+function openBookAt(id){const i=bookOrder.indexOf(id);bookPage=i<0?0:i+1;show("book");}
+function pagesCount(){return bookOrder.length?bookOrder.length+2:0;}
+function coverHTML(){const cs=bookCases();
+  return `<article class="doc page"><header class="doc-h"><span class="eb">Deep-dive book · Week 40 · written ${TODAY}</span><h3>${cs.length} compan${cs.length>1?"ies":"y"} for decision</h3><p>Escalated by ${esc(scope==="All"?"Group strategy":scope+" strategy team")} · prepared by 7 agents · each page is fixed once written</p></header>
+   <section><h5>Contents</h5><div class="toc">${cs.map((c,i)=>`<button class="tocrow" data-pg="${i+1}"><span class="mono">p. ${i+2}</span><span><b>${esc(who(c))}</b> <span class="kchip ${c.kind}">${c.kind==="deal"?"Target":"Rival"}</span><br><span class="sub">${esc(c.title)}</span></span><span class="sub" style="text-align:right">Recommends: ${esc(recOf(c))}<br><b>${esc(c.stage==="decide"?"Decision pending":c.owner?"Approved":c.outcome||"")}</b></span></button>`).join("")}</div></section>
+   <section><h5>How to read this book</h5><p>Each page covers one company: what happened, why it matters, what could happen, the risks and a 90-day plan. Every page ends with a decision. The last page lists all decisions.</p></section>
+   <div class="btnrow"><button class="btnx pri" data-pg="1">Start reading</button></div></article>`;}
+function decisionsHTML(){const cs=bookCases();
+  return `<article class="doc page"><header class="doc-h"><span class="eb">Deep-dive book · last page</span><h3>Decisions</h3><p>${cs.filter(c=>c.stage!=="decide").length} of ${cs.length} decided</p></header>
+   <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Company</th><th>Recommendation</th><th>Decision</th><th>Owner</th></tr></thead><tbody>${cs.map((c,i)=>`<tr><td><a href="#" data-pg="${i+1}">${esc(who(c))}</a></td><td>${esc(recOf(c))}</td><td>${c.stage==="decide"?'<span class="pill2 fired">Pending</span>':esc(c.owner?"Approved":c.outcome||"")}</td><td>${esc(c.owner||"–")}</td></tr>`).join("")}</tbody></table></div>
+   ${followCases().some(c=>c.inBook)?`<div class="btnrow"><button class="btnx pri" id="toFollow">Go to follow-up</button></div>`:""}</article>`;}
+function rBook(){
+  const N=pagesCount();
+  if(!N){$("v-book").innerHTML=`<div><span class="crumb"><b>Deep-dive book</b></span><h4>No pages yet</h4></div>${journeyHTML()}<div class="empty2" style="padding:28px">Shortlist companies on <b>This week</b> and escalate them. Agents then write one page per company here.<div class="btnrow" style="justify-content:center;margin-top:12px"><button class="btnx pri" id="toHome">Go to This week</button></div></div>`;$("toHome").onclick=()=>show("home");return;}
+  bookPage=Math.max(0,Math.min(bookPage,N-1));
+  const cs=bookCases(), c=bookPage>=1&&bookPage<=cs.length?cs[bookPage-1]:null;
+  const body=bookPage===0?coverHTML():c?(c.kind==="deal"?ovDeal(c):ovThreat(c)).replace('<article class="doc">','<article class="doc page">').replace('</header>','</header>'+whyBox(c)):decisionsHTML();
+  const tabs=[["Cover",0]].concat(cs.map((x,i)=>[who(x),i+1])).concat([["Decisions",N-1]]);
+  $("v-book").innerHTML=`<div><span class="crumb"><b>Deep-dive book</b> · Week 40</span><h4>${cs.length} compan${cs.length>1?"ies":"y"} · one page each</h4></div>
+   ${journeyHTML()}
+   <div class="booknav"><button class="btnx" id="bkPrev"${bookPage===0?" disabled":""}>← Previous</button><div class="bktabs">${tabs.map(([l,i])=>`<button type="button" data-pg="${i}" aria-current="${i===bookPage?"page":"false"}">${esc(l)}${i>=1&&i<=cs.length&&cs[i-1].stage==="decide"?' <i class="dot"></i>':""}</button>`).join("")}</div><button class="btnx" id="bkNext"${bookPage===N-1?" disabled":""}>Next →</button></div>
+   <div class="pagewrap turn">${body}<div class="pgno">Page ${bookPage+1} of ${N}</div></div>
+   <div class="booknav bottom"><button class="btnx" id="bkPrev2"${bookPage===0?" disabled":""}>← Previous</button><span class="sub">Tip: use the ← → keys to turn pages</span><button class="btnx pri" id="bkNext2"${bookPage===N-1?" disabled":""}>Next page →</button></div>`;
+  const go=p=>{bookPage=p;rBook();window.scrollTo(0,0);renderGuide();};
+  $("v-book").querySelectorAll("[data-pg]").forEach(b=>b.onclick=e=>{e.preventDefault();go(Number(b.dataset.pg));});
+  ["bkPrev","bkPrev2"].forEach(id=>$(id).onclick=()=>go(bookPage-1)); ["bkNext","bkNext2"].forEach(id=>$(id).onclick=()=>go(bookPage+1));
+  const tf=$("toFollow"); if(tf) tf.onclick=()=>show("follow");
+  if(c) bindDecision(c);
+}
+function whyBox(c){const r=recForCase(c.id); if(!r) return "";
+  return `<div class="whybox"><small>Why this is in the book · from ${esc(r.co)}'s SWOT</small><b>${esc(r.title)}</b><div class="uses">${r.uses.map(u=>`<span class="u${u[0]}">${u}</span> <span class="sub" style="font-size:12.5px">${esc(swotItem(r.co,u))}</span>`).join("<br>")}</div></div>`;}
+function bindDecision(c){
+  const on=(id,fn)=>{const e=$(id); if(e) e.onclick=fn;};
+  const done=msg=>{toast(msg);rBook();renderNav();renderGuide();};
+  on("cApprove",()=>{c.owner=$("cOwner").value;c.approved=TODAY;c.stage="act";c.plan=planFor(c).map(p=>({...p,done:false}));audit("approve",who(c)+" · owner "+c.owner);done(`Approved. ${who(c)} moves to Follow-up with ${c.owner}.`);});
+  on("cPark",()=>{c.stage="closed";c.outcome="Parked for 90 days";audit("park",who(c));done("Parked. It comes back in 90 days or on a new signal.");});
+  on("cReject",()=>{c.stage="closed";c.outcome="Rejected";audit("reject",who(c));done("Rejected.");});
+  on("cCopy",()=>{const txt=`${who(c)}: ${c.title}\n${$("v-book").querySelector(".reco")?.innerText||""}`;(navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast("Summary copied.")).catch(()=>toast("Copy isn't available here. Select the text instead."));});
+}
+document.addEventListener("keydown",e=>{if(view!=="book"||/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;const N=pagesCount();
+  if(e.key==="ArrowRight"&&bookPage<N-1){bookPage++;rBook();window.scrollTo(0,0);renderGuide();} if(e.key==="ArrowLeft"&&bookPage>0){bookPage--;rBook();window.scrollTo(0,0);renderGuide();}});
+
+/* ---------- 5. Follow-up ---------- */
+function rFollow(){
+  const fs=followCases().filter(inScope);
+  if(!fs.length){$("v-follow").innerHTML=`<div><span class="crumb"><b>Follow-up</b></span><h4>Nothing to follow up yet</h4></div>${journeyHTML()}<div class="empty2" style="padding:28px">Approve a page in the deep-dive book and it appears here with its plan and watch rules.</div>`;return;}
+  if(!fs.find(c=>c.id===followSel)) followSel=fs[fs.length-1].id;
+  const c=caseById(followSel);
+  $("v-follow").innerHTML=`<div><span class="crumb"><b>Follow-up</b> · ${fs.length} approved</span><h4>Plans, watch rules and outcomes</h4><p class="sub">Each approved company has an owner, a 90-day plan and automatic watch rules. New signals land here after every daily run.</p></div>
+   ${journeyHTML()}
+   <div class="kfilter" role="tablist" aria-label="Approved companies">${fs.map(x=>`<button type="button" role="tab" data-fs="${esc(x.id)}" aria-pressed="${x.id===followSel}">${esc(who(x))}${x.stage==="closed"?" · closed":""}</button>`).join("")}</div>
+   <div class="top"><div><h4 style="font-size:17px">${esc(who(c))} · ${esc(c.title)}</h4><p class="sub">${kindLabel(c)} · for ${esc(coLabel(c))} · <a href="#" id="fBook">${c.inBook?"Read its book page":"Approved from an earlier book"}</a></p></div></div>
+   ${trackHTML(c)}`;
+  $("v-follow").querySelectorAll("[data-fs]").forEach(b=>b.onclick=()=>{followSel=b.dataset.fs;rFollow();});
+  $("fBook").onclick=e=>{e.preventDefault();if(c.inBook)openBookAt(c.id);};
+  const on=(id,fn)=>{const e=$(id); if(e) e.onclick=fn;};
+  on("cWeek",()=>{c.updates.forEach(u=>u[2]=false);const d=["6 Oct","13 Oct","20 Oct","27 Oct"][Math.min(c.upNext,3)];c.updates.unshift([d,nextUpdate(c),true]);audit("weekly_run",who(c));toast("Next week's run added an update.");rFollow();});
+  on("cWon",()=>{c.stage="closed";c.outcome="Acted on it";audit("outcome",who(c)+" · acted");toast("Outcome saved.");rFollow();renderNav();renderGuide();});
+  on("cDrop",()=>{c.stage="closed";c.outcome="Dropped after follow-up";audit("outcome",who(c)+" · dropped");toast("Outcome saved.");rFollow();renderNav();renderGuide();});
+  $("v-follow").querySelectorAll("[data-pl]").forEach(x=>x.onchange=()=>{c.plan[x.dataset.pl].done=x.checked;audit("plan_step",c.plan[x.dataset.pl].what);rFollow();});
+}
+
+/* ---------- guided demo ---------- */
+function renderGuide(){
+  const g=$("guide"); g.hidden=!guideOn; document.body.classList.toggle("guide-on",guideOn); $("guideBtn").setAttribute("aria-pressed",String(guideOn)); if(!guideOn) return;
+  const pending=bookCases().filter(c=>c.stage==="decide"), newFollow=followCases().filter(c=>c.inBook);
+  let n,title,text,go=null;
+  if(deepIds.some(id=>caseById(id).stage==="deep")){n=3;title="Deep dive";text="Agents are writing one page per shortlisted company. Only these companies get the paid data and deeper research.";go=view!=="deep"?["Watch progress",()=>show("deep")]:null;}
+  else if(shortlist.size){n=2;title="Escalate";text=`${shortlist.size} shortlisted. Add up to 5, then press Escalate in the bar at the bottom.`;go=view!=="home"?["Back to This week",()=>show("home")]:null;}
+  else if(pending.length){n=4;title="Read the book";text="One page per company, like a book. Turn pages with Next or the arrow keys. Each page ends with a decision: approve with an owner, park or reject.";go=view!=="book"?["Open the book",()=>show("book")]:null;}
+  else if(newFollow.length&&!newFollow.every(c=>c.stage==="closed")){n=5;title="Follow up";text="Approved companies get a tracked plan and watch rules. Tick a step, press 'Simulate next week's run', then record the outcome.";go=view!=="follow"?["Open follow-up",()=>show("follow")]:null;}
+  else if(bookOrder.length){n=5;title="That's the full story";text="From the week's signals to a shortlist, a book of decisions and follow-up. Restart to try it with other companies.";}
+  else {n=1;title="Start with the SWOT";text="Each RPG company's SWOT is rebuilt from the signals. Only moves that link a strength or weakness to an opportunity or threat are recommended. Hover a move to see its SWOT items, then tick Shortlist on 2 or 3.";go=view!=="home"?["Go to This week",()=>show("home")]:null;}
+  g.innerHTML=`<small>Guided demo · step ${n} of 5</small><div class="gdots">${[1,2,3,4,5].map(i=>`<i class="${i<=n?"on":""}"></i>`).join("")}</div><b>${esc(title)}</b><p>${esc(text)}</p>
+   <div class="gb">${go?`<button class="pri" id="gGo">${esc(go[0])}</button>`:""}<button id="gRestart">Restart</button><button id="gHide">Hide guide</button></div>`;
+  if(go) $("gGo").onclick=go[1];
+  $("gRestart").onclick=()=>{clearInterval(deepTimer);shortlist.clear();bookOrder=[];bookPage=0;deepIds=[];followSel=null;buildCases();$("coSel").value="CEAT";setCompany("CEAT");kindF="all";show("home");};
+  $("gHide").onclick=()=>{guideOn=false;renderGuide();};
+}
+$("guideBtn").onclick=()=>{guideOn=!guideOn;renderGuide();};
+$("coSel").onchange=e=>{setCompany(e.target.value); show(view==="deep"?"deep":view);};
+
+/* ---------- boot ---------- */
+buildCases(); $("coSel").value="CEAT"; setCompany("CEAT"); show("home");
+</script>
+
+</body>
+</html>
