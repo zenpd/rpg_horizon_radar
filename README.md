@@ -63,9 +63,18 @@ See [DESIGN.md §15](DESIGN.md#15-addendum--live-signals-on-real-companies). In 
   approves it. Companies can also be added by hand.
 - **Admin → Live Sources:** which connectors are configured, their pace and daily budgets, the
   schedule (daily ingestion at 17:00, weekly discovery) and the last run's errors.
-- **SWOT Briefs:** a cited SWOT per subsidiary, rebuilt after each run that brings new signals. Add the
-  strategy team's strengths and weaknesses there; the brief takes those only from the team's notes.
+- **This week (SWOT):** each RPG company's SWOT and TOWS moves, rebuilt by the SWOT Analyst after a run
+  brings new signals. The approved rival's live signals replace the demo rival story; each item shows
+  its sources and reasoning.
 - Tests: `cd app && pytest` (no network; connectors and the model are faked).
+
+## The app's screens
+
+The UI is the Horizon Radar radar design (see [DESIGN.md §16](DESIGN.md#16-addendum--the-radar-screens-the-apps-main-ui)):
+This week (SWOT), Deep-dive book, Follow-up, Explore (Competitors, Market performance, Rival deals, Ask
+Radar), Radar settings (theses, watch rules, watched companies), and the Restricted desk (Signal
+board, Digest archive, Admin). Every screen needs a reviewer login, follows the scope and sector-gate
+rule, and is audit-logged.
 
 ## Deploy to Azure Container Apps
 ```bash

@@ -13,10 +13,10 @@ import pytest
 from sqlalchemy import select
 
 from db import base
-from db.models import AuditLog, ClusterSubsidiaryLink, Entity, RawSignal, SignalCluster, Subsidiary
+from db.models import AuditLog, ClusterSubsidiaryLink, Entity, RawSignal, SignalCluster
 from ingestion.connectors.live.common import SourceError, classify_headline, short_name
 from ingestion.connectors.live.filings import NSE, Fincrux, nse_type
-from services import discovery, swot
+from services import discovery
 from services.ingest import run_ingest_for_open_subsidiaries
 
 PASSWORD = "ChangeMe123!"
@@ -204,48 +204,6 @@ def test_discovery_proposes_only_grounded_companies_for_open_gates(seeded, setti
     assert len(calls) == 4
 
 
-# ---------- SWOT ----------
-EVIDENCE = [
-    {"id": "E1", "kind": "signal", "entity": "Apollo Tyres Ltd", "signal_type": "earnings_decline", "provider": "Fincrux",
-     "headline": "Apollo Tyres Ltd Jun 2026 quarter: net profit -24% YoY", "excerpt": "", "url": None, "observed_at": "2026-09-26T00:00:00"},
-    {"id": "E2", "kind": "signal", "entity": "MRF", "signal_type": "press_opportunity", "provider": "GNews",
-     "headline": "MRF bags large OEM order", "excerpt": "", "url": "https://x", "observed_at": "2026-09-20T00:00:00"},
-    {"id": "N1", "kind": "team_note", "quadrant": "strengths", "headline": "Strong replacement-market brand"},
-]
-
-
-def _ext(text, entity, ev, impact=60, urgency=55):
-    return {"text": text, "entity": entity, "impact": impact, "urgency": urgency, "evidence": ev, "reasoning": "Because the filing shows it."}
-
-
-GOOD = {"summary": "A rival's profit fell while another won an OEM order.",
-        "strengths": [{"text": "Strong brand.", "evidence": ["N1"], "reasoning": "The team rates the brand highly."}],
-        "weaknesses": [],
-        "opportunities": [_ext("Rival margin pressure opens replacement share.", "Apollo Tyres Ltd", ["E1"])],
-        "threats": [_ext("MRF gains OEM volume.", "MRF", ["E2"])]}
-
-
-def test_swot_check_catches_unsupported_items():
-    bad = {**GOOD, "weaknesses": [{"text": "Weak in E2.", "evidence": ["E2"], "reasoning": "x"}],
-           "threats": [_ext("MRF gains.", "Apollo Tyres Ltd", ["E2"])]}
-    errs = swot.check(bad, EVIDENCE)
-    assert any("must cite team notes" in e for e in errs)
-    assert any("names Apollo Tyres Ltd, but none of the signals" in e for e in errs)
-    assert any("mention ids (E2)" in e for e in errs)
-    assert swot.check(GOOD, EVIDENCE) == []
-    assert any("no team notes" in e for e in swot.check(GOOD, EVIDENCE[:2]))
-
-
-def test_swot_agent_revises_until_the_rules_pass():
-    sub = Subsidiary(code="CEAT", name="CEAT", sectors=["tyres"], signal_focus="tyres")
-    drafter = FakeDrafter({**GOOD, "opportunities": []} | {"threats": []}, GOOD)
-    draft, rounds, model = swot.run(sub, EVIDENCE, drafter)
-    assert (draft, rounds, model) == (GOOD, 2, "fake:model")
-    assert "at least one opportunity or threat" in drafter.calls[1][-1]["content"]
-    with pytest.raises(swot.SwotError, match="No signals"):
-        swot.run(sub, EVIDENCE[2:], FakeDrafter())
-
-
 # ---------- API ----------
 def test_watchlist_is_admin_only_and_approval_is_audited(seeded):
     admin = login(seeded, "compliance.admin@rpg-demo.local")
@@ -268,16 +226,6 @@ def test_watchlist_is_admin_only_and_approval_is_audited(seeded):
     sources = seeded.get("/api/v1/watchlist/sources", headers=admin).json()
     assert {c["name"] for c in sources["connectors"]} >= {"NSE", "Fincrux", "GNews", "Adzuna", "EPO patents"}
     assert sources["scheduler"]["enabled"] is False
-
-
-def test_swot_follows_signal_visibility(seeded):
-    admin = login(seeded, "compliance.admin@rpg-demo.local")
-    kec = login(seeded, "strategy.kec@rpg-demo.local")
-    assert seeded.get("/api/v1/swot/CEAT", headers=kec).status_code == 404, "out of scope reads like it does not exist"
-    assert seeded.put("/api/v1/swot/CEAT/team-notes", headers=kec, json={"strengths": ["x"]}).status_code == 403
-    r = seeded.put("/api/v1/swot/CEAT/team-notes", headers=admin, json={"strengths": [" Brand ", ""], "weaknesses": []})
-    assert r.json() == {"strengths": ["Brand"], "weaknesses": []}
-    assert seeded.post("/api/v1/swot/KEC/rebuild", headers=admin).status_code == 409, "closed gate"
 
 
 def test_ingest_runs_as_a_background_job(seeded):

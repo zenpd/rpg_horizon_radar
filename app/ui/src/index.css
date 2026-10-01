@@ -1,3 +1,8 @@
+/* Tailwind's preflight reset, scoped to .tw (tailwind.config.js turns the global one off): the
+   radar screens (src/radar, plain CSS in radar/styles.css) are the app's shell; the ZenLabs
+   screens (Signal Board, Digests, Admin, Login) render inside a .tw wrapper. */
+@import "./tw-preflight.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -15,13 +20,11 @@
     --footer-h: 44px;
   }
 
-  * { @apply antialiased; }
+  .tw, .tw * { @apply antialiased; }
 
-  html { font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; }
-
-  body {
-    @apply bg-gray-50 text-gray-900;
-    -webkit-font-smoothing: antialiased;
+  .tw {
+    font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
+    @apply text-gray-900;
   }
 
   ::-webkit-scrollbar { width: 5px; height: 5px; }

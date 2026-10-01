@@ -17,6 +17,7 @@ from api.schemas.watchlist import ConnectorStatus, SourcesStatus, WatchlistCreat
 from db.base import get_db_session
 from db.models import Entity, RawSignal, Reviewer, SignalCluster, Subsidiary
 from ingestion.connectors.live import live_connectors
+from radar import bridge as radar_bridge
 from services import discovery, jobs, scheduler
 from services import state as state_store
 from services.audit import write_audit
@@ -63,6 +64,7 @@ async def add_company(payload: WatchlistCreate, admin: Reviewer = Depends(requir
     db.add(e)
     await db.commit()
     await write_audit(db, admin, "admin_change", "entity", resource_id=e.id, detail=f"watchlist_add name={name} sectors={','.join(payload.sectors)}")
+    await radar_bridge.sync()
     return (await _out(db, [e]))[0]
 
 
@@ -89,6 +91,7 @@ async def update_company(entity_id: int, payload: WatchlistUpdate, admin: Review
     await db.commit()
     if changes:
         await write_audit(db, admin, "admin_change", "entity", resource_id=e.id, detail=f"watchlist {e.name}: " + "; ".join(changes))
+        await radar_bridge.sync()
     return (await _out(db, [e]))[0]
 
 
@@ -96,7 +99,9 @@ async def update_company(entity_id: int, payload: WatchlistUpdate, admin: Review
 async def discover(admin: Reviewer = Depends(require_role("compliance_admin"))):
     async def work():
         async with get_db_session() as db:
-            return await discovery.discover(db, admin)
+            res = await discovery.discover(db, admin)
+        await radar_bridge.sync()
+        return res
     return jobs.start("discovery", work, started_by=admin.name)
 
 

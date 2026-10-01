@@ -68,9 +68,6 @@ class Subsidiary(Base):
     sectors: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     compliance_gate: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     signal_focus: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    # Corporate Strategy's own view of the subsidiary, the only evidence a SWOT
-    # brief's strengths and weaknesses may rest on: {strengths: [...], weaknesses: [...]}
-    team_notes: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
 
 
 class Entity(Base):
@@ -318,10 +315,10 @@ class ConnectorState(Base):
 
 
 class SwotBrief(Base):
-    """An LLM-drafted SWOT for one subsidiary, built only from the signals
-    routed to it and Corporate Strategy's team notes, every item citing the
-    evidence it rests on. Kept as history: the newest row is the current brief.
-    Never feeds scoring (services/scoring.py stays rule-based)."""
+    """A SWOT the radar's SWOT Analyst agent built for one subsidiary (radar/swot_agent.py),
+    one row per rebuild; the newest row is current and is loaded back into the radar at
+    startup (radar/bridge.py). Every item cites its evidence. Never feeds scoring
+    (services/scoring.py stays rule-based)."""
 
     __tablename__ = "swot_briefs"
 
@@ -331,9 +328,9 @@ class SwotBrief(Base):
     generated_by_id: Mapped[int | None] = mapped_column(ForeignKey("reviewers.id"), nullable=True)  # None = scheduler
     model: Mapped[str] = mapped_column(String(128), nullable=False, default="")
     rounds: Mapped[int] = mapped_column(nullable=False, default=1)
-    # {summary, strengths, weaknesses, opportunities, threats}; each item {text, evidence: [ids], reasoning, impact?, urgency?, entity?}
+    # {swot, positions, detail, source}: the SWOT and TOWS moves, impact/urgency per item, each
+    # item's reasoning and cited sources, and how it was built (model, rounds, evidence mix)
     content: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
-    # The numbered evidence exactly as the model saw it: [{id, kind, entity, signal_type, provider, headline, url, observed_at}]
     evidence: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
 
     generated_by: Mapped["Reviewer | None"] = relationship(lazy="selectin")

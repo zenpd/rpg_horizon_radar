@@ -3,34 +3,35 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AuthProvider } from "./context/AuthContext";
 import { AdminRoute, ProtectedRoute } from "./components/ProtectedRoute";
-import AppShell from "./components/layout/AppShell";
+import RadarApp from "./radar/RadarApp";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import SignalDetail from "./pages/SignalDetail";
 import DigestArchive, { DigestDetail } from "./pages/DigestArchive";
 import Admin from "./pages/Admin";
-import Swot from "./pages/Swot";
 
+// The radar shell (src/radar) is the app: "/" shows its screens (SWOT home, deep-dive book,
+// follow-up, explore, radar settings). The restricted M&A desk screens render inside it.
 export default function App() {
   return (
     <AuthProvider>
       <Toaster position="top-right" toastOptions={{ style: { fontSize: "13px" } }} />
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<div className="tw"><Login /></div>} />
 
         <Route
           element={
             <ProtectedRoute>
-              <AppShell />
+              <RadarApp />
             </ProtectedRoute>
           }
         >
-          <Route index element={<Dashboard />} />
+          <Route index element={null} />
+          <Route path="board" element={<Dashboard />} />
           <Route path="signals/:id" element={<SignalDetail />} />
           <Route path="digests" element={<DigestArchive />} />
           <Route path="digests/:id" element={<DigestDetail />} />
-          <Route path="swot" element={<Swot />} />
           <Route
             path="admin"
             element={

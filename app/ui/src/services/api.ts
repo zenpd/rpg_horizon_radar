@@ -15,8 +15,6 @@ import type {
   SignalClusterSummary,
   SourcesStatus,
   Subsidiary,
-  SwotBrief,
-  TeamNotes,
   TokenResponse,
   User,
   WatchlistEntity,
@@ -144,13 +142,6 @@ export interface DiscoveryResult {
 }
 export const runDiscovery = () => api.post<Job<DiscoveryResult>>("/watchlist/discover").then((r) => r.data);
 export const getSourcesStatus = () => api.get<SourcesStatus>("/watchlist/sources").then((r) => r.data);
-
-// ---- SWOT briefs ----
-export const getSwot = (code: string) => api.get<SwotBrief>(`/swot/${code}`).then((r) => r.data);
-export const rebuildSwot = (code: string) => api.post<Job>(`/swot/${code}/rebuild`).then((r) => r.data);
-export const getTeamNotes = (code: string) => api.get<TeamNotes>(`/swot/${code}/team-notes`).then((r) => r.data);
-export const putTeamNotes = (code: string, notes: TeamNotes) =>
-  api.put<TeamNotes>(`/swot/${code}/team-notes`, notes).then((r) => r.data);
 
 // ---- Reviewers ----
 export const getReviewers = () => api.get<Reviewer[]>("/reviewers").then((r) => r.data);

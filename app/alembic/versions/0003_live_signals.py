@@ -1,4 +1,4 @@
-"""live signals — real watched entities, connector state, SWOT briefs
+"""live signals — real watched entities, connector state, radar SWOTs
 
 Lifts the fictional-only CHECK on entities (see DESIGN.md §15) and replaces it
 with the approval workflow: discovered companies arrive as ``proposed`` and are
@@ -46,9 +46,6 @@ def upgrade() -> None:
     with op.batch_alter_table("raw_signals") as batch:
         batch.add_column(sa.Column("provider", sa.String(length=64), nullable=False, server_default="mock"))
 
-    with op.batch_alter_table("subsidiaries") as batch:
-        batch.add_column(sa.Column("team_notes", sa.JSON(), nullable=False, server_default="{}"))
-
     op.create_table(
         "connector_state",
         sa.Column("key", sa.String(length=128), primary_key=True),
@@ -74,8 +71,6 @@ def downgrade() -> None:
     op.drop_index("ix_swot_briefs_subsidiary_code", table_name="swot_briefs")
     op.drop_table("swot_briefs")
     op.drop_table("connector_state")
-    with op.batch_alter_table("subsidiaries") as batch:
-        batch.drop_column("team_notes")
     with op.batch_alter_table("raw_signals") as batch:
         batch.drop_column("provider")
     # Real companies cannot satisfy the restored fictional-only CHECK, so they

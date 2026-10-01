@@ -1,0 +1,1249 @@
+[
+ {
+  "id": "meridian",
+  "name": "Meridian Treadworks Pvt Ltd",
+  "desks": [
+   "CEAT"
+  ],
+  "sector": "tyres",
+  "category": "Tyre components",
+  "geo": "India",
+  "revenue": 620,
+  "listed": false,
+  "ownership": "family",
+  "rating": "BB",
+  "pledge": 0,
+  "business": "Makes bead wire, tread rubber and tyre-curing bladders for truck and 2-wheeler tyre makers.",
+  "signals": [
+   [
+    "credit_downgrade",
+    "12 Sep",
+    "Rating cut two notches to BB by a rating agency.",
+    "Rating agency"
+   ],
+   [
+    "delayed_filing",
+    "29 Aug",
+    "Annual financial statements not filed with MCA by the due date.",
+    "MCA via vendor"
+   ],
+   [
+    "leadership_churn",
+    "08 Aug",
+    "CFO and head of operations resigned in the same month.",
+    "News"
+   ]
+  ],
+  "owners": [
+   [
+    "Kapoor family (promoters)",
+    62,
+    "family"
+   ],
+   [
+    "Brightwater PE Fund II",
+    18,
+    "pe"
+   ],
+   [
+    "Other shareholders",
+    20,
+    "public"
+   ]
+  ],
+  "directors": [
+   [
+    "R. Kapoor",
+    "Chairman",
+    [
+     "Kapoor Holdings"
+    ]
+   ],
+   [
+    "S. Menon",
+    "Independent director",
+    [
+     "Axle Components Ltd"
+    ]
+   ],
+   [
+    "A. Rao",
+    "Director",
+    [
+     "Rival A Ltd (supplier board)"
+    ]
+   ]
+  ],
+  "subs": [
+   "Meridian Bladders Pvt Ltd",
+   "Meridian Exports FZE (UAE)"
+  ],
+  "bidders": [
+   "Rival A Ltd: bought 6% stake (SAST, Sep)"
+  ],
+  "usfda": false,
+  "title": "Rival A is circling Meridian, a key CEAT supplier",
+  "story": "Meridian makes bead wire and curing bladders that CEAT buys. In six weeks its rating was cut, its accounts went unfiled and two senior leaders left. At the same time Rival A quietly bought 6% of it.",
+  "health": {
+   "rev": [
+    540,
+    580,
+    610,
+    640,
+    620
+   ],
+   "m": [
+    13,
+    12.5,
+    12,
+    11.8,
+    11.2
+   ],
+   "de": 4.2,
+   "ic": 1.6,
+   "aud": [
+    "bad",
+    "FY26 accounts not yet filed with MCA"
+   ]
+  },
+  "scenario": {
+   "rival": "Rival A Ltd",
+   "conf": 72,
+   "basis": "Rival A's 6% stake, its Axle Components deal and 3 similar supplier buyouts",
+   "a": {
+    "play": [
+     "Raises its stake past 25%, triggering an open offer.",
+     "Folds Meridian into its components arm with Axle Components.",
+     "Moves Meridian's bead wire and bladders in-house for its own tyres."
+    ],
+    "hit": [
+     "High",
+     "CEAT buys about 18% of its bead wire from Meridian. That supply could tighten or become costlier."
+    ],
+    "opts": [
+     [
+      "Secure supply now",
+      "Sign a 3-year supply contract with Meridian before control changes."
+     ],
+     [
+      "Qualify a second supplier",
+      "Start trials with Kinetic Compounds within 60 days."
+     ],
+     [
+      "Escalate for evaluation",
+      "Consider a bid before Rival A reaches the 25% open-offer level."
+     ]
+    ]
+   },
+   "b": {
+    "react": [
+     "Rival A may counter-bid, since it already holds 6%.",
+     "Rival A could switch its own orders away from Meridian, cutting about 30% of Meridian's revenue.",
+     "Other tyre makers may look for new suppliers if a competitor owns Meridian."
+    ],
+    "risk": [
+     "Meridian's revenue depends heavily on rival tyre makers.",
+     "The CFO and head of operations have just left, so management needs rebuilding."
+    ]
+   }
+  }
+ },
+ {
+  "id": "rovan",
+  "name": "Rovan Tyres Co.",
+  "desks": [
+   "CEAT"
+  ],
+  "sector": "tyres",
+  "category": "Off-highway tyres",
+  "geo": "ASEAN",
+  "revenue": 1450,
+  "listed": true,
+  "ownership": "pe",
+  "rating": "BBB-",
+  "pledge": 40,
+  "business": "Off-the-road tyres for mining and construction fleets in Thailand, Indonesia and Vietnam.",
+  "signals": [
+   [
+    "pledge_rising",
+    "15 Sep",
+    "Promoter pledge rose from 22% to 40% of promoter shares.",
+    "Exchange filing"
+   ],
+   [
+    "auditor_resigned",
+    "02 Sep",
+    "Statutory auditor resigned, citing limited access to records.",
+    "Exchange filing"
+   ]
+  ],
+  "owners": [
+   [
+    "Southeast Growth Partners (PE)",
+    45,
+    "pe"
+   ],
+   [
+    "Founder family",
+    30,
+    "family"
+   ],
+   [
+    "Public float",
+    25,
+    "public"
+   ]
+  ],
+  "directors": [
+   [
+    "T. Somchai",
+    "CEO",
+    []
+   ],
+   [
+    "L. Wei",
+    "PE nominee",
+    [
+     "Southeast Growth Partners",
+     "Kinetic Compounds"
+    ]
+   ]
+  ],
+  "subs": [
+   "Rovan Vietnam Co."
+  ],
+  "bidders": [
+   "Global Rival D: rumoured interest (news, unconfirmed)"
+  ],
+  "usfda": false,
+  "title": "Rovan Tyres is under strain and its PE owner may sell",
+  "story": "Rovan's promoter pledged more shares and its auditor walked out within two weeks. Its PE owner has held the stake for years and may look for a buyer.",
+  "health": {
+   "rev": [
+    1100,
+    1250,
+    1380,
+    1470,
+    1450
+   ],
+   "m": [
+    15,
+    14,
+    12,
+    10,
+    8.5
+   ],
+   "de": 3.4,
+   "ic": 1.9,
+   "aud": [
+    "bad",
+    "Auditor resigned, citing limited access to records"
+   ]
+  },
+  "scenario": {
+   "rival": "Global Rival D",
+   "conf": 55,
+   "basis": "news reports (unconfirmed) and Global Rival D's past buys in ASEAN",
+   "a": {
+    "play": [
+     "Buys the PE owner's 45% stake.",
+     "Uses Rovan's ASEAN plants to supply mining fleets locally.",
+     "Cuts prices in off-highway tyres to win fleet contracts."
+    ],
+    "hit": [
+     "Medium",
+     "CEAT's off-highway exports to ASEAN face a stronger local competitor."
+    ],
+    "opts": [
+     [
+      "Lock in fleet contracts",
+      "Renew CEAT's top 5 ASEAN mining fleet contracts early."
+     ],
+     [
+      "Watch the PE exit",
+      "Set a trigger for any stake sale by Southeast Growth Partners."
+     ]
+    ]
+   },
+   "b": {
+    "react": [
+     "Global Rival D may bid higher; it has more cash.",
+     "Local rivals may target Rovan's fleet customers during the handover."
+    ],
+    "risk": [
+     "Auditor resigned. Accounts need deep checking.",
+     "High promoter pledge (40%) could complicate who controls the shares."
+    ]
+   }
+  }
+ },
+ {
+  "id": "sensa",
+  "name": "Sensa Labs",
+  "desks": [
+   "CEAT",
+   "KEC",
+   "Raychem RPG"
+  ],
+  "sector": "sensors",
+  "category": "IoT sensors",
+  "geo": "India",
+  "revenue": 95,
+  "listed": false,
+  "ownership": "founder",
+  "rating": "–",
+  "pledge": 0,
+  "business": "Low-cost IoT sensors for tyre pressure, transmission-line sag and substation temperature.",
+  "signals": [
+   [
+    "press_opportunity",
+    "20 Sep",
+    "Reported to be raising a Series B round.",
+    "News"
+   ],
+   [
+    "hiring_scaleup",
+    "14 Sep",
+    "Hiring 35 embedded and firmware engineers.",
+    "Job data vendor"
+   ],
+   [
+    "patent_shift",
+    "03 Sep",
+    "Filed 4 patents on low-power sensor modules.",
+    "EPO OPS"
+   ]
+  ],
+  "owners": [
+   [
+    "Founders",
+    58,
+    "family"
+   ],
+   [
+    "Seed and Series A investors",
+    42,
+    "pe"
+   ]
+  ],
+  "directors": [
+   [
+    "N. Iyer",
+    "Founder, CEO",
+    []
+   ],
+   [
+    "P. Shah",
+    "Investor nominee",
+    [
+     "Gridwise AI"
+    ]
+   ]
+  ],
+  "subs": [],
+  "bidders": [],
+  "usfda": false,
+  "title": "Sensa Labs is raising money: a sensor partner for three RPG companies",
+  "story": "Sensa is hiring fast, filing sensor patents and raising a Series B. Its sensors are useful to CEAT, KEC and Raychem RPG.",
+  "health": {
+   "rev": [
+    20,
+    35,
+    52,
+    74,
+    95
+   ],
+   "m": [
+    -18,
+    -12,
+    -6,
+    -2,
+    3
+   ],
+   "de": 0,
+   "ic": null,
+   "aud": [
+    "ok",
+    "Clean audit report"
+   ],
+   "early": true
+  },
+  "scenario": {
+   "rival": "Rival A Ltd",
+   "conf": 48,
+   "basis": "Sensa's Series B round and rival interest in sensor startups",
+   "a": {
+    "play": [
+     "Leads Sensa's Series B round and takes a board seat.",
+     "Gets first rights to Sensa's tyre-pressure sensors.",
+     "Launches 'smart' tyres ahead of CEAT."
+    ],
+    "hit": [
+     "Medium",
+     "CEAT, KEC and Raychem RPG all lose a possible sensor partner at once."
+    ],
+    "opts": [
+     [
+      "Joint group investment",
+      "CEAT, KEC and Raychem RPG co-invest in the Series B round."
+     ],
+     [
+      "Commercial partnership",
+      "Sign a co-development deal for tyre sensors now."
+     ]
+    ]
+   },
+   "b": {
+    "react": [
+     "Other investors may push the price up in the round.",
+     "Rivals may hire away Sensa's engineers."
+    ],
+    "risk": [
+     "Still barely profitable. Needs cash to grow.",
+     "Three RPG companies want it. Agree who owns it first."
+    ]
+   }
+  }
+ },
+ {
+  "id": "ashford",
+  "name": "Ashford EPC Projects Ltd",
+  "desks": [
+   "KEC"
+  ],
+  "sector": "epc",
+  "category": "Transmission EPC",
+  "geo": "India",
+  "revenue": 1850,
+  "listed": true,
+  "ownership": "promoter",
+  "rating": "BBB",
+  "pledge": 12,
+  "business": "Mid-sized contractor for transmission lines and rural electrification projects.",
+  "signals": [
+   [
+    "press_distress",
+    "18 Sep",
+    "Two state utilities reported project delays and penalty notices.",
+    "News"
+   ],
+   [
+    "hiring_scaledown",
+    "10 Sep",
+    "Site engineering postings down 60% vs normal.",
+    "Job data vendor"
+   ]
+  ],
+  "owners": [
+   [
+    "Promoter group",
+    51,
+    "family"
+   ],
+   [
+    "Mutual funds",
+    19,
+    "public"
+   ],
+   [
+    "Public",
+    30,
+    "public"
+   ]
+  ],
+  "directors": [
+   [
+    "V. Reddy",
+    "Managing director",
+    []
+   ]
+  ],
+  "subs": [
+   "Ashford Towers Pvt Ltd"
+  ],
+  "bidders": [
+   "Competitor B: open about growth by acquisition (earnings call)"
+  ],
+  "usfda": false,
+  "title": "Ashford EPC is struggling while Competitor B looks to buy",
+  "story": "Ashford is losing momentum on state utility projects and cutting site hiring. Competitor B has said it wants to grow by acquisition.",
+  "health": {
+   "rev": [
+    2100,
+    2050,
+    1980,
+    1900,
+    1850
+   ],
+   "m": [
+    9,
+    8,
+    7,
+    6,
+    5.2
+   ],
+   "de": 2.6,
+   "ic": 2.1,
+   "aud": [
+    "bad",
+    "Emphasis of matter on overdue project receivables"
+   ]
+  },
+  "scenario": {
+   "rival": "Competitor B",
+   "conf": 64,
+   "basis": "Competitor B saying it wants to grow by acquisition, and its Deccan Towers deal",
+   "a": {
+    "play": [
+     "Buys Ashford, adding its order book and state-utility approvals.",
+     "Uses Ashford's tower plant to ease its own capacity limits.",
+     "Bids even lower on state utility tenders."
+    ],
+    "hit": [
+     "High",
+     "Competitor B's capacity problem goes away, removing KEC's delivery advantage."
+    ],
+    "opts": [
+     [
+      "Win on delivery now",
+      "Bid hard on delivery-critical tenders in the next two rounds."
+     ],
+     [
+      "Escalate for evaluation",
+      "Consider buying Ashford's tower plant alone."
+     ]
+    ]
+   },
+   "b": {
+    "react": [
+     "Competitor B may bid for the same assets.",
+     "Utilities may delay payments during the change of owner."
+    ],
+    "risk": [
+     "Project delays and penalty notices at two utilities.",
+     "Receivables are overdue; they need checking."
+    ]
+   }
+  }
+ },
+ {
+  "id": "strata",
+  "name": "Strata Substations Pvt Ltd",
+  "desks": [
+   "KEC",
+   "Raychem RPG"
+  ],
+  "sector": "epc",
+  "category": "Substation EPC",
+  "geo": "Middle East",
+  "revenue": 980,
+  "listed": false,
+  "ownership": "family",
+  "rating": "D",
+  "pledge": 0,
+  "business": "Builds gas-insulated substations in the UAE and Oman.",
+  "signals": [
+   [
+    "insolvency_filed",
+    "21 Sep",
+    "Insolvency petition admitted; resolution process started (IBBI announcement).",
+    "IBBI"
+   ],
+   [
+    "credit_downgrade",
+    "05 Sep",
+    "Rating moved to default (D).",
+    "Rating agency"
+   ],
+   [
+    "leadership_churn",
+    "22 Aug",
+    "CEO stepped down.",
+    "News"
+   ]
+  ],
+  "owners": [
+   [
+    "Al-Noor family",
+    80,
+    "family"
+   ],
+   [
+    "Management",
+    20,
+    "public"
+   ]
+  ],
+  "directors": [
+   [
+    "K. Al-Noor",
+    "Chairman",
+    [
+     "Al-Noor Trading"
+    ]
+   ],
+   [
+    "J. Mathew",
+    "Director",
+    [
+     "Ashford EPC Projects Ltd"
+    ]
+   ]
+  ],
+  "subs": [],
+  "bidders": [
+   "Global EPC H: filed with competition regulator for a related asset (CCI)"
+  ],
+  "usfda": false,
+  "title": "Strata Substations has entered insolvency",
+  "story": "Strata's rating fell to default and an insolvency case was admitted. Its Gulf substation book could be bought through the resolution process.",
+  "health": {
+   "rev": [
+    1200,
+    1150,
+    1080,
+    1020,
+    980
+   ],
+   "m": [
+    10,
+    8,
+    5,
+    2,
+    -3
+   ],
+   "de": 9.5,
+   "ic": 0.4,
+   "aud": [
+    "bad",
+    "Material uncertainty on going concern"
+   ]
+  },
+  "scenario": {
+   "rival": "Global EPC H",
+   "conf": 70,
+   "basis": "Global EPC H's CCI filing for a related asset and Gulf expansion",
+   "a": {
+    "play": [
+     "Bids in the insolvency process for Strata's order book and licences.",
+     "Combines it with Gulf Grid Assets.",
+     "Wins Gulf substation tenders that KEC is chasing."
+    ],
+    "hit": [
+     "High",
+     "KEC's Gulf substation plans face a larger, local competitor."
+    ],
+    "opts": [
+     [
+      "Look at a resolution bid",
+      "Ask Legal how the insolvency process works in this case."
+     ],
+     [
+      "Partner instead",
+      "Offer to take over specific Strata projects with the lenders."
+     ]
+    ]
+   },
+   "b": {
+    "react": [
+     "Global EPC H is likely to bid in the same process.",
+     "Gulf clients may re-tender Strata's projects."
+    ],
+    "risk": [
+     "In insolvency. Any bid goes through the resolution professional.",
+     "Rated D, with going-concern doubts."
+    ]
+   }
+  }
+ },
+ {
+  "id": "northfield",
+  "name": "Northfield Cognitive Systems Inc",
+  "desks": [
+   "Zensar"
+  ],
+  "sector": "it",
+  "category": "AI / GenAI services",
+  "geo": "US",
+  "revenue": 900,
+  "listed": false,
+  "ownership": "pe",
+  "rating": "–",
+  "pledge": 0,
+  "business": "AI engineering and data services for US insurers and banks. About $110M revenue.",
+  "signals": [
+   [
+    "pe_exit_window",
+    "16 Sep",
+    "Majority PE owner invested in 2019; fund is near the end of its holding period.",
+    "Deal database"
+   ],
+   [
+    "hiring_scaledown",
+    "09 Sep",
+    "Postings down 45% over two months.",
+    "Job data vendor"
+   ],
+   [
+    "leadership_churn",
+    "30 Aug",
+    "Chief delivery officer left.",
+    "News"
+   ]
+  ],
+  "owners": [
+   [
+    "Harborline Capital (PE)",
+    70,
+    "pe"
+   ],
+   [
+    "Founders",
+    20,
+    "family"
+   ],
+   [
+    "Employees",
+    10,
+    "public"
+   ]
+  ],
+  "directors": [
+   [
+    "E. Walsh",
+    "CEO",
+    []
+   ],
+   [
+    "M. Chen",
+    "PE nominee",
+    [
+     "Harborline Capital",
+     "Solstice BFSI Analytics"
+    ]
+   ]
+  ],
+  "subs": [
+   "Northfield India Pvt Ltd"
+  ],
+  "bidders": [
+   "Competitor D: acquired a GenAI boutique in the UK (Sep)"
+  ],
+  "usfda": false,
+  "title": "Northfield's PE owner is nearing its exit",
+  "story": "Northfield's PE owner is near the end of its holding period, hiring is down and a delivery head left. Competitor D is buying AI firms.",
+  "health": {
+   "rev": [
+    640,
+    760,
+    880,
+    930,
+    900
+   ],
+   "m": [
+    16,
+    15,
+    14,
+    12,
+    11
+   ],
+   "de": 4.8,
+   "ic": 1.8,
+   "aud": [
+    "ok",
+    "Clean audit report"
+   ]
+  },
+  "scenario": {
+   "rival": "Competitor D",
+   "conf": 66,
+   "basis": "Competitor D's UK GenAI buy and Harborline's fund nearing the end of its holding period",
+   "a": {
+    "play": [
+     "Buys Northfield from Harborline Capital.",
+     "Cross-sells AI services to Northfield's US insurers.",
+     "Competes directly with Zensar in US insurance."
+    ],
+    "hit": [
+     "High",
+     "Zensar faces a stronger rival in its top US insurance accounts."
+    ],
+    "opts": [
+     [
+      "Protect key accounts",
+      "Offer AI pilots to Zensar's top 5 US insurers this quarter."
+     ],
+     [
+      "Talk to Harborline",
+      "Ask about its exit timing for Northfield and Solstice together."
+     ]
+    ]
+   },
+   "b": {
+    "react": [
+     "Competitor D may counter-bid.",
+     "Rivals may try to hire away Northfield's delivery leaders."
+    ],
+    "risk": [
+     "Hiring is down 45%. Check whether clients are leaving.",
+     "High debt from the PE deal (4.8× EBITDA)."
+    ]
+   }
+  }
+ },
+ {
+  "id": "solstice",
+  "name": "Solstice BFSI Analytics Ltd",
+  "desks": [
+   "Zensar"
+  ],
+  "sector": "it",
+  "category": "BFSI analytics",
+  "geo": "UK",
+  "revenue": 260,
+  "listed": false,
+  "ownership": "founder",
+  "rating": "–",
+  "pledge": 0,
+  "business": "Risk and fraud analytics software for UK building societies.",
+  "signals": [
+   [
+    "succession_risk",
+    "11 Sep",
+    "Founder, 71, has no named successor in the annual report.",
+    "Annual report"
+   ]
+  ],
+  "owners": [
+   [
+    "Founder",
+    65,
+    "family"
+   ],
+   [
+    "Harborline Capital (PE)",
+    35,
+    "pe"
+   ]
+  ],
+  "directors": [
+   [
+    "G. Hart",
+    "Founder, chair",
+    []
+   ],
+   [
+    "M. Chen",
+    "PE nominee",
+    [
+     "Harborline Capital",
+     "Northfield Cognitive Systems Inc"
+    ]
+   ]
+  ],
+  "subs": [],
+  "bidders": [],
+  "usfda": false,
+  "title": "Solstice's founder has no named successor",
+  "story": "Solstice is healthy, but its 71-year-old founder has no named successor. A sale could come later, on the founder's terms.",
+  "health": {
+   "rev": [
+    180,
+    200,
+    225,
+    245,
+    260
+   ],
+   "m": [
+    22,
+    23,
+    22,
+    24,
+    23
+   ],
+   "de": 0.3,
+   "ic": 25,
+   "aud": [
+    "ok",
+    "Clean audit report"
+   ]
+  },
+  "scenario": {
+   "rival": "Competitor D",
+   "conf": 40,
+   "basis": "a founder-succession gap and Harborline's 35% stake",
+   "a": {
+    "play": [
+     "Buys the founder's stake.",
+     "Adds UK analytics software to its services."
+    ],
+    "hit": [
+     "Low",
+     "Zensar loses a possible way into UK building societies."
+    ],
+    "opts": [
+     [
+      "Build a relationship",
+      "Arrange a partnership talk with the founder."
+     ],
+     [
+      "Set a trigger",
+      "Get an alert on any change to the founder's stake."
+     ]
+    ]
+   },
+   "b": {
+    "react": [
+     "Harborline may want to sell its stake at the same time."
+    ],
+    "risk": [
+     "The founder is key to the business. Plan for succession."
+    ]
+   }
+  }
+ },
+ {
+  "id": "veltrix",
+  "name": "Veltrix Biopharma Ltd",
+  "desks": [
+   "RPG Life Sciences"
+  ],
+  "sector": "pharma",
+  "category": "API / formulations",
+  "geo": "India",
+  "revenue": 720,
+  "listed": true,
+  "ownership": "promoter",
+  "rating": "BBB+",
+  "pledge": 18,
+  "usfda": true,
+  "business": "Active ingredients and cardiac formulations; one USFDA-approved plant in Gujarat.",
+  "signals": [
+   [
+    "delayed_filing",
+    "19 Sep",
+    "Quarterly results delayed beyond the exchange deadline.",
+    "Exchange filing"
+   ],
+   [
+    "auditor_resigned",
+    "06 Sep",
+    "Auditor resigned mid-term.",
+    "Exchange filing"
+   ]
+  ],
+  "owners": [
+   [
+    "Promoter group",
+    48,
+    "family"
+   ],
+   [
+    "Institutions",
+    22,
+    "public"
+   ],
+   [
+    "Public",
+    30,
+    "public"
+   ]
+  ],
+  "directors": [
+   [
+    "H. Desai",
+    "Managing director",
+    []
+   ]
+  ],
+  "subs": [
+   "Veltrix Labs Pvt Ltd"
+  ],
+  "bidders": [
+   "Rival L: open offer rumoured (news, unconfirmed)"
+  ],
+  "title": "Veltrix Biopharma shows governance red flags",
+  "story": "Veltrix's auditor resigned mid-term and its quarterly results were late. It owns a USFDA-approved plant that RPG Life Sciences lacks.",
+  "health": {
+   "rev": [
+    610,
+    650,
+    700,
+    740,
+    720
+   ],
+   "m": [
+    18,
+    17,
+    15,
+    13,
+    11
+   ],
+   "de": 2.1,
+   "ic": 3,
+   "aud": [
+    "bad",
+    "Auditor resigned mid-term"
+   ]
+  },
+  "scenario": {
+   "rival": "Rival L",
+   "conf": 52,
+   "basis": "news reports of an open offer (unconfirmed) and Rival L's brand buys",
+   "a": {
+    "play": [
+     "Launches an open offer for Veltrix shares.",
+     "Adds Veltrix's USFDA plant to its own exports.",
+     "Pushes cardiac brands in western India."
+    ],
+    "hit": [
+     "Medium",
+     "RPG Life Sciences faces a stronger rival in cardiac brands."
+    ],
+    "opts": [
+     [
+      "Defend cardiac brands",
+      "Strengthen doctor outreach in western India."
+     ],
+     [
+      "Escalate for evaluation",
+      "Look at the USFDA plant as a possible asset buy."
+     ]
+    ]
+   },
+   "b": {
+    "react": [
+     "Rival L may raise its offer.",
+     "Rivals may use the auditor issue to question Veltrix's quality."
+    ],
+    "risk": [
+     "Auditor resigned mid-term.",
+     "Quarterly results filed late."
+    ]
+   }
+  }
+ },
+ {
+  "id": "corvane",
+  "name": "Corvane Materials Systems Ltd",
+  "desks": [
+   "Raychem RPG"
+  ],
+  "sector": "electrical",
+  "category": "Cable accessory materials",
+  "geo": "India",
+  "revenue": 340,
+  "listed": false,
+  "ownership": "subsidiary",
+  "rating": "A-",
+  "pledge": 0,
+  "business": "Heat-shrink polymers and cable-joint compounds. Owned by a diversified group.",
+  "signals": [
+   [
+    "divestment_signal",
+    "17 Sep",
+    "Parent group announced a strategic review of non-core businesses.",
+    "Exchange filing (parent)"
+   ],
+   [
+    "press_opportunity",
+    "12 Sep",
+    "Management open to a strategic partner (interview).",
+    "News"
+   ]
+  ],
+  "owners": [
+   [
+    "Parent: Vasant Group",
+    100,
+    "family"
+   ]
+  ],
+  "directors": [
+   [
+    "D. Kulkarni",
+    "CEO",
+    []
+   ]
+  ],
+  "subs": [],
+  "bidders": [],
+  "usfda": false,
+  "title": "Corvane may be sold by its parent group",
+  "story": "Corvane's parent group has started a strategic review of non-core businesses. Management has said it is open to a partner.",
+  "health": {
+   "rev": [
+    290,
+    305,
+    320,
+    335,
+    340
+   ],
+   "m": [
+    14,
+    14,
+    13,
+    14,
+    13.5
+   ],
+   "de": 0.8,
+   "ic": 9,
+   "aud": [
+    "ok",
+    "Clean audit report (parent group accounts)"
+   ]
+  },
+  "scenario": {
+   "rival": "Competitor E",
+   "conf": 58,
+   "basis": "the parent's strategic review and Competitor E's co-investment in JointTech",
+   "a": {
+    "play": [
+     "Buys Corvane from Vasant Group.",
+     "Gets its own supply of heat-shrink polymers.",
+     "Competes on price in cable accessories."
+    ],
+    "hit": [
+     "Medium",
+     "Raychem RPG's rival gets its own supply of key materials."
+    ],
+    "opts": [
+     [
+      "Approach the parent",
+      "Contact Vasant Group's advisers during the review."
+     ],
+     [
+      "Secure materials",
+      "Sign a supply contract for key compounds."
+     ]
+    ]
+   },
+   "b": {
+    "react": [
+     "Competitor E may bid during the parent's review."
+    ],
+    "risk": [
+     "Depends on services shared with its parent group. Plan how to separate them."
+    ]
+   }
+  }
+ },
+ {
+  "id": "palmgrove",
+  "name": "Palmgrove Estates Cooperative",
+  "desks": [
+   "Harrisons"
+  ],
+  "sector": "plantations",
+  "category": "Tea and rubber estates",
+  "geo": "India",
+  "revenue": 210,
+  "listed": false,
+  "ownership": "family",
+  "rating": "BB+",
+  "pledge": 35,
+  "business": "Five tea and two rubber estates in the Nilgiris and Idukki.",
+  "signals": [
+   [
+    "succession_risk",
+    "14 Sep",
+    "Managing trustee retiring; family split reported.",
+    "News"
+   ],
+   [
+    "pledge_rising",
+    "07 Sep",
+    "Estate land pledged for new loans.",
+    "MCA charges via vendor"
+   ],
+   [
+    "press_distress",
+    "27 Aug",
+    "Wage arrears reported at two estates.",
+    "News"
+   ]
+  ],
+  "owners": [
+   [
+    "Menon family trust",
+    75,
+    "family"
+   ],
+   [
+    "Members",
+    25,
+    "public"
+   ]
+  ],
+  "directors": [
+   [
+    "V. Menon",
+    "Managing trustee",
+    [
+     "Menon Holdings"
+    ]
+   ]
+  ],
+  "subs": [],
+  "bidders": [],
+  "usfda": false,
+  "title": "Palmgrove Estates faces a family split and rising debt",
+  "story": "Palmgrove's managing trustee is retiring amid a family split, estate land has been pledged and wages are in arrears.",
+  "health": {
+   "rev": [
+    190,
+    200,
+    205,
+    215,
+    210
+   ],
+   "m": [
+    9,
+    7,
+    6,
+    5,
+    4
+   ],
+   "de": 3.8,
+   "ic": 1.4,
+   "aud": [
+    "bad",
+    "Wage arrears noted in the directors' report"
+   ]
+  },
+  "scenario": {
+   "rival": "Estate Co. F",
+   "conf": 50,
+   "basis": "Estate Co. F's Highwood deal and the family split",
+   "a": {
+    "play": [
+     "Buys the estates from the family trust.",
+     "Adds Nilgiris tea to its own brands."
+    ],
+    "hit": [
+     "Low",
+     "Harrisons loses a chance to add estates next to its own."
+    ],
+    "opts": [
+     [
+      "Talk to the trust",
+      "Approach the managing trustee before the family split settles."
+     ],
+     [
+      "Check the land",
+      "Check the charges on the pledged estate land."
+     ]
+    ]
+   },
+   "b": {
+    "react": [
+     "Estate Co. F may bid for the best estates only."
+    ],
+    "risk": [
+     "Wage arrears and labour issues.",
+     "Land is pledged for loans."
+    ]
+   }
+  }
+ }
+]

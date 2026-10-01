@@ -1,0 +1,1793 @@
+{
+ "CEAT": {
+  "rival": "Rival A",
+  "seg": "Tyres",
+  "tracked": 11,
+  "threat": [
+   "crit",
+   "Threat: High"
+  ],
+  "timeline": [
+   [
+    "22 Sep",
+    "Hiring surge",
+    "13 EV battery and thermal engineering roles posted this week (40 this month).",
+    "Talent Tracker"
+   ],
+   [
+    "18 Sep",
+    "Patents",
+    "4 filings on sensor-embedded tyre carcasses.",
+    "Patent Scout"
+   ],
+   [
+    "11 Sep",
+    "Price cut",
+    "2-wheeler tyres down 6% in Maharashtra, Gujarat and Karnataka.",
+    "Price Tracker"
+   ],
+   [
+    "04 Sep",
+    "Earnings call",
+    "Management's tone on exports turned cautious for the second quarter running.",
+    "Earnings Decoder"
+   ],
+   [
+    "28 Aug",
+    "New plant",
+    "Filing for a greenfield site in Tamil Nadu.",
+    "Watcher"
+   ]
+  ],
+  "analyst": "The hiring, patents and new plant point to a dedicated EV tyre range, likely launching within 12 months and aimed at 2-wheeler makers.",
+  "suggest": "lock in EV maker partnerships now and build or partner for sensor technology before the launch.",
+  "voc": [
+   [
+    "crit",
+    "Negative",
+    "Sidewall cracking",
+    "on 2-wheeler tyres. Complaints tripled on dealer forums and reviews.",
+    312
+   ],
+   [
+    "opp",
+    "Positive",
+    "Mileage",
+    "on its new commuter range is praised by fleet riders.",
+    188
+   ],
+   [
+    "high",
+    "Negative",
+    "Slow warranty claims,",
+    "reported by dealers in 3 states.",
+    96
+   ]
+  ],
+  "opening": "highlight sidewall strength and quick claims in dealer campaigns where Rival A is weakest.",
+  "spark": {
+   "t": "EV roles posted per week",
+   "v": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    9,
+    12,
+    13
+   ],
+   "a": "Aug",
+   "b": "Sep 22"
+  },
+  "tone": {
+   "t": "Export confidence in earnings calls",
+   "v": [
+    80,
+    75,
+    55,
+    40
+   ]
+  },
+  "war": {
+   "q": "What if Rival A launches a dedicated EV tyre range in India within 12 months?",
+   "conf": 68,
+   "basis": "23 signals about Rival A and 4 comparable launches in other markets",
+   "play": [
+    [
+     "Month 0–3",
+     "Sign supply deals with two leading EV 2-wheeler makers."
+    ],
+    [
+     "Month 4–8",
+     "Launch from the new Tamil Nadu plant with low introductory pricing."
+    ],
+    [
+     "Month 9–12",
+     "Market “smart” tyres with built-in sensors to fleet operators."
+    ]
+   ],
+   "opts": [
+    [
+     "rec",
+     "Move first with EV makers",
+     "Offer CEAT's EV range to 2-wheeler makers now, with co-development deals.",
+     "High",
+     "Medium",
+     "Medium"
+    ],
+    [
+     "rec",
+     "Build sensor capability",
+     "Build or license sensor technology. Any buy option goes to Corporate Strategy separately.",
+     "High",
+     "Medium",
+     "Medium"
+    ],
+    [
+     "fb",
+     "Defend on price",
+     "Match introductory prices in the replacement market only.",
+     "Medium",
+     "Low",
+     "Margin loss"
+    ]
+   ]
+  },
+  "ask": {
+   "q": "What has Rival A done in truck and bus tyres in the last 6 months?",
+   "lead": "Rival A is pushing hard into fleet customers:",
+   "pts": [
+    [
+     "Launched 3 new truck radial sizes aimed at mining and logistics fleets.",
+     1
+    ],
+    [
+     "Raised dealer credit for fleet orders from 60 to 90 days.",
+     2
+    ],
+    [
+     "Management called truck radials its “top growth priority for FY27”.",
+     3
+    ],
+    [
+     "Its truck radial plant is near full capacity, so supply may be tight in peak season.",
+     3
+    ]
+   ],
+   "mean": "expect pressure on fleet credit terms. Rival A's capacity limit may open doors with large mining fleets next quarter.",
+   "conf": 81,
+   "src": [
+    "Rival A product launch releases, Apr–Sep 2026",
+    "14 dealer scheme circulars and dealer forum posts",
+    "Rival A Q1 FY27 earnings call transcript"
+   ],
+   "try": [
+    "Which rivals are hiring for EV roles?",
+    "Where is Rival A cutting prices?"
+   ]
+  },
+  "fin": {
+   "listed": true,
+   "base": {
+    "ret": {
+     "1M": 3,
+     "6M": 9,
+     "1Y": 18,
+     "3Y": 62
+    },
+    "vol": 1.1,
+    "m": [
+     "24×",
+     "11.5×",
+     "12%",
+     "13.8%",
+     "1.1×",
+     "18 · 6 · 2"
+    ]
+   },
+   "rivals": {
+    "Rival A": {
+     "seg": "Tyres · India",
+     "ret": {
+      "1M": 6,
+      "6M": 14,
+      "1Y": 24,
+      "3Y": 48
+     },
+     "vol": 1.3,
+     "m": [
+      "28×",
+      "13.2×",
+      "15%",
+      "14.5%",
+      "0.8×",
+      "20 · 5 · 1"
+     ],
+     "ev": [
+      0.72,
+      "Q1 beat + EV plans"
+     ],
+     "why": "The market is rewarding Rival A's EV plans, which the Competitors page has been tracking. Its higher P/E shows investors expect faster growth.",
+     "act": "If CEAT announces EV maker deals, part of this gap could close."
+    },
+    "Rival B": {
+     "seg": "Tyres · India",
+     "ret": {
+      "1M": -2,
+      "6M": 4,
+      "1Y": 7,
+      "3Y": 35
+     },
+     "vol": 1.2,
+     "m": [
+      "17×",
+      "7.8×",
+      "6%",
+      "10.9%",
+      "2.4×",
+      "8 · 12 · 5"
+     ],
+     "ev": [
+      0.45,
+      "Margin warning"
+     ],
+     "why": "Rising raw material costs and higher debt are weighing on Rival B.",
+     "act": "Watch for price cuts as Rival B tries to protect volume."
+    },
+    "Rival C": {
+     "seg": "Tyres · India",
+     "ret": {
+      "1M": 1,
+      "6M": -5,
+      "1Y": -3,
+      "3Y": 20
+     },
+     "vol": 1.4,
+     "m": [
+      "14×",
+      "6.9×",
+      "2%",
+      "9.4%",
+      "1.9×",
+      "5 · 10 · 9"
+     ],
+     "ev": [
+      0.58,
+      "Export slowdown"
+     ],
+     "why": "An export slowdown and a product recall have hit Rival C. It has the lowest valuation in CEAT's peer group.",
+     "act": "A weaker Rival C may cut prices to win volume. Watch the replacement market closely."
+    },
+    "Global Rival D": {
+     "seg": "Tyres · Global",
+     "ret": {
+      "1M": 0,
+      "6M": 6,
+      "1Y": 11,
+      "3Y": 28
+     },
+     "vol": 0.9,
+     "m": [
+      "19×",
+      "8.4×",
+      "5%",
+      "16.2%",
+      "1.3×",
+      "14 · 11 · 3"
+     ],
+     "ev": [
+      0.3,
+      "Currency swing"
+     ],
+     "why": "Global Rival D moves with worldwide car demand and currency swings.",
+     "act": "Use it as the benchmark for CEAT's global off-highway business."
+    }
+   }
+  },
+  "threat_title": "Rival A is preparing an EV tyre range",
+  "extra_rivals": [
+   {
+    "name": "Rival E",
+    "segment": "Tyres · India",
+    "latest_move": "Opened 40 new dealer outlets in Uttar Pradesh"
+   },
+   {
+    "name": "Rival F",
+    "segment": "2-wheeler tyres · India",
+    "latest_move": "Raised prices 2% on commuter tyres"
+   },
+   {
+    "name": "Global Rival G",
+    "segment": "Tyres · Global",
+    "latest_move": "Announced a plant in Vietnam"
+   },
+   {
+    "name": "Rival H",
+    "segment": "Truck tyres · India",
+    "latest_move": "New truck radial size for mining fleets"
+   },
+   {
+    "name": "Rival I",
+    "segment": "Tyres · India",
+    "latest_move": "CFO change"
+   },
+   {
+    "name": "Import brand J",
+    "segment": "Tyres · China",
+    "latest_move": "Cheaper imports rose 12% this quarter"
+   },
+   {
+    "name": "Rival K",
+    "segment": "Off-highway tyres · India",
+    "latest_move": "Won a farm-tyre export order"
+   }
+  ]
+ },
+ "KEC": {
+  "rival": "Competitor B",
+  "seg": "Power transmission EPC",
+  "tracked": 9,
+  "threat": [
+   "high",
+   "Threat: Medium"
+  ],
+  "timeline": [
+   [
+    "20 Sep",
+    "Tender wins",
+    "Won 3 state utility tenders at prices about 8% below its usual level.",
+    "Tender Intelligence"
+   ],
+   [
+    "14 Sep",
+    "Hiring",
+    "25 tower design engineers hired for Middle East projects.",
+    "Talent Tracker"
+   ],
+   [
+    "06 Sep",
+    "Earnings call",
+    "Management said it is “prioritising order book over margin”.",
+    "Earnings Decoder"
+   ],
+   [
+    "30 Aug",
+    "Joint venture",
+    "JV with a Gulf firm to build substations in Saudi Arabia.",
+    "Watcher"
+   ],
+   [
+    "21 Aug",
+    "Capacity",
+    "Tower fabrication plants reported running at about 95%.",
+    "Supply Chain Mapper"
+   ]
+  ],
+  "analyst": "Competitor B is buying market share in India while expanding in the Gulf. Its fabrication capacity is nearly full, so delivery delays are likely on the projects it has just won.",
+  "suggest": "hold margin on routine tenders and compete hard on delivery-critical projects where Competitor B cannot keep up.",
+  "voc": [
+   [
+    "crit",
+    "Negative",
+    "Project delays",
+    "on two state transmission lines, raised by utility officials.",
+    41
+   ],
+   [
+    "opp",
+    "Positive",
+    "Fast site mobilisation",
+    "praised in a utility's contractor review.",
+    18
+   ],
+   [
+    "high",
+    "Negative",
+    "Safety incident",
+    "reported at one of its tower sites.",
+    9
+   ]
+  ],
+  "opening": "pitch KEC's on-time delivery and safety record to the utilities affected by the delays.",
+  "spark": {
+   "t": "Tender wins per month",
+   "v": [
+    1,
+    1,
+    2,
+    1,
+    2,
+    3,
+    2,
+    3
+   ],
+   "a": "Feb",
+   "b": "Sep"
+  },
+  "tone": {
+   "t": "Margin confidence in earnings calls",
+   "v": [
+    70,
+    62,
+    50,
+    38
+   ]
+  },
+  "war": {
+   "q": "What if Competitor B keeps bidding 8% below market for the next 12 months?",
+   "conf": 64,
+   "basis": "19 tender results and Competitor B's last 4 earnings calls",
+   "play": [
+    [
+     "Month 0–3",
+     "Win most state tenders on price to fill its order book."
+    ],
+    [
+     "Month 4–8",
+     "Capacity strain leads to delays on newly won lines."
+    ],
+    [
+     "Month 9–12",
+     "Raise prices again or seek new funding for capacity."
+    ]
+   ],
+   "opts": [
+    [
+     "rec",
+     "Win on delivery",
+     "Hold margin and target delivery-critical projects with firm deadlines.",
+     "High",
+     "Low",
+     "Medium"
+    ],
+    [
+     "rec",
+     "Add fabrication capacity",
+     "Contract extra tower fabrication so KEC can bid on fast-track work.",
+     "High",
+     "Medium",
+     "Medium"
+    ],
+    [
+     "fb",
+     "Match prices selectively",
+     "Match Competitor B only on strategic state tenders.",
+     "Medium",
+     "Low",
+     "Margin loss"
+    ]
+   ]
+  },
+  "ask": {
+   "q": "What has Competitor B done in transmission tenders in the last 6 months?",
+   "lead": "Competitor B has become much more aggressive on price in domestic tenders:",
+   "pts": [
+    [
+     "Won 7 of 19 state utility tenders it bid for, up from 3 of 17 in the previous six months.",
+     1
+    ],
+    [
+     "Winning bids averaged about 8% below its usual pricing.",
+     1
+    ],
+    [
+     "Management said it is “prioritising order book over margin”.",
+     2
+    ],
+    [
+     "It is short of tower fabrication capacity, so delivery delays are possible.",
+     3
+    ]
+   ],
+   "mean": "expect price pressure in the next two state rounds. Its capacity gap may create openings on delivery-critical projects.",
+   "conf": 84,
+   "src": [
+    "State utility tender award notices, Apr–Sep 2026 (12 documents)",
+    "Competitor B Q1 FY27 earnings call transcript",
+    "Supply Chain Mapper: vendor filings and industry news"
+   ],
+   "try": [
+    "Which rivals won Gulf substation orders?",
+    "Where are steel costs rising fastest?"
+   ]
+  },
+  "fin": {
+   "listed": true,
+   "base": {
+    "ret": {
+     "1M": 2,
+     "6M": 11,
+     "1Y": 28,
+     "3Y": 85
+    },
+    "vol": 1.2,
+    "m": [
+     "31×",
+     "14.1×",
+     "14%",
+     "7.2%",
+     "1.6×",
+     "16 · 5 · 2"
+    ]
+   },
+   "rivals": {
+    "Competitor B": {
+     "seg": "EPC · India",
+     "ret": {
+      "1M": 4,
+      "6M": 15,
+      "1Y": 35,
+      "3Y": 110
+     },
+     "vol": 1.4,
+     "m": [
+      "35×",
+      "16.0×",
+      "18%",
+      "8.1%",
+      "1.2×",
+      "18 · 4 · 1"
+     ],
+     "ev": [
+      0.6,
+      "Big order win"
+     ],
+     "why": "Investors are rewarding Competitor B's fast order book growth, even though its margins are thin.",
+     "act": "KEC's story can be steadier margins and delivery. Watch whether Competitor B's delays start to show."
+    },
+    "Competitor G": {
+     "seg": "Transmission · India",
+     "ret": {
+      "1M": -3,
+      "6M": 2,
+      "1Y": 9,
+      "3Y": 40
+     },
+     "vol": 1.3,
+     "m": [
+      "22×",
+      "10.4×",
+      "7%",
+      "6.5%",
+      "2.1×",
+      "7 · 9 · 4"
+     ],
+     "ev": [
+      0.4,
+      "Project write-off"
+     ],
+     "why": "A project write-off and high debt have held Competitor G back.",
+     "act": "It may withdraw from some tenders, leaving room for KEC."
+    },
+    "Global EPC H": {
+     "seg": "EPC · Global",
+     "ret": {
+      "1M": 1,
+      "6M": 5,
+      "1Y": 12,
+      "3Y": 30
+     },
+     "vol": 0.9,
+     "m": [
+      "18×",
+      "9.2×",
+      "5%",
+      "9.8%",
+      "0.9×",
+      "12 · 10 · 2"
+     ],
+     "ev": [
+      0.35,
+      "Middle East slowdown"
+     ],
+     "why": "Global EPC H tracks Middle East project spending and oil prices.",
+     "act": "Use it as a benchmark for KEC's international business."
+    }
+   }
+  },
+  "threat_title": "Competitor B is undercutting state utility tenders",
+  "extra_rivals": [
+   {
+    "name": "Competitor Q",
+    "segment": "EPC · India",
+    "latest_move": "Won a metro rail civil contract"
+   },
+   {
+    "name": "Competitor R",
+    "segment": "Transmission · India",
+    "latest_move": "Rights issue to cut debt"
+   },
+   {
+    "name": "Global EPC S",
+    "segment": "EPC · Global",
+    "latest_move": "Bid for a Saudi grid package"
+   },
+   {
+    "name": "Competitor T",
+    "segment": "Towers · India",
+    "latest_move": "Tower plant expansion in Odisha"
+   },
+   {
+    "name": "Competitor U",
+    "segment": "Cables EPC · India",
+    "latest_move": "Joint venture for undersea cables"
+   },
+   {
+    "name": "Competitor V",
+    "segment": "EPC · India",
+    "latest_move": "Penalty on a delayed state project"
+   }
+  ]
+ },
+ "Zensar": {
+  "rival": "Competitor D",
+  "seg": "IT services",
+  "tracked": 12,
+  "threat": [
+   "high",
+   "Threat: Medium"
+  ],
+  "timeline": [
+   [
+    "23 Sep",
+    "Large deal",
+    "Signed a multi-year AI services deal with a US insurer.",
+    "Watcher"
+   ],
+   [
+    "15 Sep",
+    "Acquisition",
+    "Bought a small GenAI consulting firm in the UK.",
+    "Watcher"
+   ],
+   [
+    "09 Sep",
+    "Hiring",
+    "300 GenAI engineering roles posted this month.",
+    "Talent Tracker"
+   ],
+   [
+    "02 Sep",
+    "Guidance",
+    "Lowered its outlook for Europe, citing slower spending.",
+    "Earnings Decoder"
+   ],
+   [
+    "25 Aug",
+    "Pricing",
+    "Offered price cuts on managed services renewals.",
+    "Price Tracker"
+   ]
+  ],
+  "analyst": "Competitor D is shifting to AI-led deals in insurance, which is one of Zensar's core industries, while cutting prices to hold on to existing contracts.",
+  "suggest": "package Zensar's AI offerings for its top 10 insurance clients before renewal talks start.",
+  "voc": [
+   [
+    "opp",
+    "Positive",
+    "Strong AI proofs of concept,",
+    "praised in client peer reviews.",
+    64
+   ],
+   [
+    "crit",
+    "Negative",
+    "Delivery team churn,",
+    "raised in client reviews and on employee forums.",
+    52
+   ],
+   [
+    "high",
+    "Negative",
+    "Slow support response",
+    "on managed services tickets.",
+    27
+   ]
+  ],
+  "opening": "stress Zensar's delivery stability with clients that are worried about Competitor D's team churn.",
+  "spark": {
+   "t": "GenAI roles posted per week",
+   "v": [
+    20,
+    25,
+    30,
+    40,
+    55,
+    70,
+    85,
+    90
+   ],
+   "a": "Aug",
+   "b": "Sep 22"
+  },
+  "tone": {
+   "t": "Europe demand confidence in earnings calls",
+   "v": [
+    75,
+    68,
+    52,
+    41
+   ]
+  },
+  "war": {
+   "q": "What if Competitor D uses its insurance AI deal to target Zensar's insurance clients?",
+   "conf": 70,
+   "basis": "31 signals about Competitor D and its last 3 large deal announcements",
+   "play": [
+    [
+     "Month 0–3",
+     "Publish case studies from the US insurer deal."
+    ],
+    [
+     "Month 4–8",
+     "Offer free AI pilots to mid-sized insurers."
+    ],
+    [
+     "Month 9–12",
+     "Bundle AI with managed services at a low price."
+    ]
+   ],
+   "opts": [
+    [
+     "rec",
+     "Pre-empt with AI pilots",
+     "Offer AI pilots to Zensar's top insurance clients first.",
+     "High",
+     "Medium",
+     "Low"
+    ],
+    [
+     "rec",
+     "Partner with a cloud provider",
+     "Co-invest with a cloud provider to lower the cost of AI projects.",
+     "High",
+     "Medium",
+     "Medium"
+    ],
+    [
+     "fb",
+     "Discount renewals",
+     "Cut prices on at-risk renewals only.",
+     "Medium",
+     "Low",
+     "Margin loss"
+    ]
+   ]
+  },
+  "ask": {
+   "q": "How is Competitor D winning AI deals in insurance?",
+   "lead": "Competitor D is combining acquisitions, hiring and pricing:",
+   "pts": [
+    [
+     "Its new UK acquisition brings a team with insurance claims AI experience.",
+     1
+    ],
+    [
+     "It has posted about 300 GenAI roles this month, mostly for US insurance clients.",
+     2
+    ],
+    [
+     "It offers fixed-price AI pilots that convert into multi-year contracts.",
+     3
+    ],
+    [
+     "It lowered its outlook for Europe, so its focus is shifting to the US.",
+     3
+    ]
+   ],
+   "mean": "expect Competitor D to approach Zensar's US insurance clients within two quarters.",
+   "conf": 78,
+   "src": [
+    "Competitor D acquisition press release, Sep 2026",
+    "Job posting data, Aug–Sep 2026",
+    "Competitor D Q1 FY27 earnings call transcript"
+   ],
+   "try": [
+    "Which rivals cut prices on renewals?",
+    "Who is hiring the most GenAI engineers?"
+   ]
+  },
+  "fin": {
+   "listed": true,
+   "base": {
+    "ret": {
+     "1M": -1,
+     "6M": 6,
+     "1Y": 14,
+     "3Y": 70
+    },
+    "vol": 1.2,
+    "m": [
+     "24×",
+     "15.2×",
+     "9%",
+     "15.8%",
+     "Net cash",
+     "11 · 8 · 3"
+    ]
+   },
+   "rivals": {
+    "Competitor D": {
+     "seg": "IT services · India",
+     "ret": {
+      "1M": 2,
+      "6M": 10,
+      "1Y": 22,
+      "3Y": 60
+     },
+     "vol": 1.3,
+     "m": [
+      "27×",
+      "17.0×",
+      "11%",
+      "17.2%",
+      "Net cash",
+      "15 · 6 · 2"
+     ],
+     "ev": [
+      0.8,
+      "US insurer deal"
+     ],
+     "why": "The market is rewarding Competitor D's large AI deal wins.",
+     "act": "A strong AI deal announcement from Zensar could close part of the gap."
+    },
+    "Competitor J": {
+     "seg": "IT services · India",
+     "ret": {
+      "1M": -4,
+      "6M": -8,
+      "1Y": -2,
+      "3Y": 25
+     },
+     "vol": 1.5,
+     "m": [
+      "16×",
+      "10.1×",
+      "2%",
+      "12.4%",
+      "Net cash",
+      "4 · 10 · 7"
+     ],
+     "ev": [
+      0.5,
+      "Client loss"
+     ],
+     "why": "Losing a large client has hurt Competitor J.",
+     "act": "Its clients may look for new partners. A chance for Zensar's sales teams."
+    },
+    "Global IT K": {
+     "seg": "IT services · Global",
+     "ret": {
+      "1M": 0,
+      "6M": 4,
+      "1Y": 9,
+      "3Y": 35
+     },
+     "vol": 0.9,
+     "m": [
+      "21×",
+      "13.0×",
+      "6%",
+      "16.0%",
+      "0.3×",
+      "13 · 12 · 3"
+     ],
+     "ev": [
+      0.3,
+      "Guidance cut"
+     ],
+     "why": "Global IT K reflects overall tech spending in the US and Europe.",
+     "act": "Use it to judge whether Zensar is gaining or losing ground against the market."
+    }
+   }
+  },
+  "threat_title": "Competitor D is moving into AI deals with insurers",
+  "extra_rivals": [
+   {
+    "name": "Competitor W",
+    "segment": "IT services · India",
+    "latest_move": "Opened a GenAI lab in Pune"
+   },
+   {
+    "name": "Competitor X",
+    "segment": "IT services · US",
+    "latest_move": "Cut 5% of staff"
+   },
+   {
+    "name": "Global IT Y",
+    "segment": "IT services · Global",
+    "latest_move": "Acquired a Salesforce partner"
+   },
+   {
+    "name": "Competitor Z",
+    "segment": "Digital engineering · India",
+    "latest_move": "Won a UK bank deal"
+   },
+   {
+    "name": "Competitor AA",
+    "segment": "Data services · India",
+    "latest_move": "New insurance analytics product"
+   },
+   {
+    "name": "Competitor AB",
+    "segment": "IT services · India",
+    "latest_move": "Raised campus hiring 20%"
+   },
+   {
+    "name": "Global IT AC",
+    "segment": "Consulting · Global",
+    "latest_move": "Partnered with a cloud provider on AI"
+   },
+   {
+    "name": "Competitor AD",
+    "segment": "Testing services · India",
+    "latest_move": "Price cuts on testing contracts"
+   },
+   {
+    "name": "Competitor AE",
+    "segment": "IT services · Europe",
+    "latest_move": "Lost a German auto client"
+   }
+  ]
+ },
+ "RPG Life Sciences": {
+  "rival": "Rival C",
+  "seg": "Pharmaceuticals",
+  "tracked": 8,
+  "threat": [
+   "high",
+   "Threat: Medium"
+  ],
+  "timeline": [
+   [
+    "19 Sep",
+    "Price cut",
+    "5% cut on two cardiac brands in western India.",
+    "Price Tracker"
+   ],
+   [
+    "12 Sep",
+    "Launch",
+    "New diabetes combination brand launched.",
+    "Watcher"
+   ],
+   [
+    "05 Sep",
+    "Regulatory",
+    "USFDA observation at one of its export plants.",
+    "Policy & Regulation"
+   ],
+   [
+    "27 Aug",
+    "Hiring",
+    "120 medical representative roles posted for north India.",
+    "Talent Tracker"
+   ],
+   [
+    "18 Aug",
+    "Earnings call",
+    "Cautious on exports after the plant observation.",
+    "Earnings Decoder"
+   ]
+  ],
+  "analyst": "With exports under regulatory pressure, Rival C is pushing for domestic share: lower prices on cardiac brands and a bigger sales force in the north.",
+  "suggest": "defend RPG Life Sciences' cardiac brands with doctor programmes, especially in the north.",
+  "voc": [
+   [
+    "opp",
+    "Positive",
+    "Price cut noticed",
+    "by chemists in western India.",
+    140
+   ],
+   [
+    "crit",
+    "Negative",
+    "Stock-outs",
+    "of one of its cardiac brands, reported by chemists.",
+    85
+   ],
+   [
+    "high",
+    "Negative",
+    "Side-effect complaints",
+    "about its new diabetes combination.",
+    22
+   ]
+  ],
+  "opening": "make sure supply is strong in the areas where Rival C's cardiac brand is out of stock.",
+  "spark": {
+   "t": "Medical rep roles posted per week",
+   "v": [
+    4,
+    6,
+    5,
+    8,
+    12,
+    18,
+    26,
+    30
+   ],
+   "a": "Aug",
+   "b": "Sep 22"
+  },
+  "tone": {
+   "t": "Export confidence in earnings calls",
+   "v": [
+    78,
+    70,
+    48,
+    35
+   ]
+  },
+  "war": {
+   "q": "What if Rival C extends its price cuts to all its cardiac brands across India?",
+   "conf": 66,
+   "basis": "17 signals about Rival C and 3 similar price moves in the last 2 years",
+   "play": [
+    [
+     "Month 0–3",
+     "Extend price cuts from the west to the north."
+    ],
+    [
+     "Month 4–8",
+     "Use the new sales force to push doctors to switch."
+    ],
+    [
+     "Month 9–12",
+     "Launch a combination cardiac brand."
+    ]
+   ],
+   "opts": [
+    [
+     "rec",
+     "Doctor loyalty programme",
+     "Deepen doctor engagement for RPG Life Sciences' top cardiac brands.",
+     "High",
+     "Medium",
+     "Low"
+    ],
+    [
+     "rec",
+     "Supply guarantee",
+     "Promise chemists reliable supply where Rival C has stock-outs.",
+     "Medium",
+     "Low",
+     "Low"
+    ],
+    [
+     "fb",
+     "Match prices on two brands",
+     "Cut prices only where Rival C has cut.",
+     "Medium",
+     "Low",
+     "Margin loss"
+    ]
+   ]
+  },
+  "ask": {
+   "q": "Where is Rival C gaining share in cardiac medicines?",
+   "lead": "Rival C's gains are concentrated in western India:",
+   "pts": [
+    [
+     "Its prescription share in two cardiac categories rose about 2 points in 3 months.",
+     1
+    ],
+    [
+     "Its 5% price cut is being passed on by chemists.",
+     2
+    ],
+    [
+     "It is hiring 120 medical reps for the north, the next likely target.",
+     3
+    ],
+    [
+     "Stock-outs are limiting its gains in some cities.",
+     2
+    ]
+   ],
+   "mean": "protect the north before Rival C's new sales force is in place.",
+   "conf": 76,
+   "src": [
+    "Prescription audit data, Jun–Aug 2026",
+    "Chemist surveys and trade forum posts",
+    "Job posting data, Aug–Sep 2026"
+   ],
+   "try": [
+    "Which rivals have USFDA issues?",
+    "Who launched new diabetes brands?"
+   ]
+  },
+  "fin": {
+   "listed": true,
+   "base": {
+    "ret": {
+     "1M": 3,
+     "6M": 12,
+     "1Y": 25,
+     "3Y": 140
+    },
+    "vol": 1.3,
+    "m": [
+     "29×",
+     "17.5×",
+     "13%",
+     "24.1%",
+     "Net cash",
+     "6 · 2 · 0"
+    ]
+   },
+   "rivals": {
+    "Rival C": {
+     "seg": "Pharma · India",
+     "ret": {
+      "1M": -2,
+      "6M": -6,
+      "1Y": 4,
+      "3Y": 55
+     },
+     "vol": 1.4,
+     "m": [
+      "21×",
+      "12.8×",
+      "7%",
+      "19.5%",
+      "0.6×",
+      "9 · 8 · 3"
+     ],
+     "ev": [
+      0.55,
+      "USFDA observation"
+     ],
+     "why": "The USFDA observation at its export plant has weighed on Rival C.",
+     "act": "Its push into the domestic market is likely to continue. Protect cardiac share."
+    },
+    "Rival L": {
+     "seg": "Pharma · India",
+     "ret": {
+      "1M": 1,
+      "6M": 9,
+      "1Y": 18,
+      "3Y": 90
+     },
+     "vol": 1.1,
+     "m": [
+      "33×",
+      "20.1×",
+      "15%",
+      "25.3%",
+      "Net cash",
+      "14 · 3 · 1"
+     ],
+     "ev": [
+      0.65,
+      "New launch"
+     ],
+     "why": "Rival L's strong launches in chronic therapies are driving its shares.",
+     "act": "Track its launch pipeline for areas that overlap with RPG Life Sciences."
+    },
+    "Rival M": {
+     "seg": "Pharma · India",
+     "ret": {
+      "1M": 0,
+      "6M": 3,
+      "1Y": 10,
+      "3Y": 45
+     },
+     "vol": 1,
+     "m": [
+      "19×",
+      "11.6×",
+      "6%",
+      "17.8%",
+      "0.4×",
+      "6 · 7 · 2"
+     ],
+     "ev": [
+      0.4,
+      "Price controls"
+     ],
+     "why": "New price controls on some medicines have limited Rival M's growth.",
+     "act": "Check which RPG Life Sciences brands face the same price controls."
+    }
+   }
+  },
+  "threat_title": "Rival C is cutting prices to win domestic share",
+  "extra_rivals": [
+   {
+    "name": "Rival N",
+    "segment": "Pharma · India",
+    "latest_move": "Launched a generic cardiac drug"
+   },
+   {
+    "name": "Rival O",
+    "segment": "API · India",
+    "latest_move": "USFDA inspection cleared"
+   },
+   {
+    "name": "Rival P",
+    "segment": "Pharma · India",
+    "latest_move": "Field force up 15% in the west"
+   },
+   {
+    "name": "Global Pharma Q",
+    "segment": "Pharma · Global",
+    "latest_move": "Sold its India brands"
+   },
+   {
+    "name": "Rival R",
+    "segment": "Formulations · India",
+    "latest_move": "Price cut on a diabetes brand"
+   }
+  ]
+ },
+ "Raychem RPG": {
+  "rival": "Competitor E",
+  "seg": "Cable accessories",
+  "tracked": 7,
+  "threat": [
+   "high",
+   "Threat: Medium"
+  ],
+  "timeline": [
+   [
+    "21 Sep",
+    "Policy",
+    "Stands to gain from the new import duty on cable accessories.",
+    "Policy & Regulation"
+   ],
+   [
+    "16 Sep",
+    "New plant",
+    "Announced a cable joints plant in Gujarat.",
+    "Watcher"
+   ],
+   [
+    "08 Sep",
+    "Partnership",
+    "Tie-up with a smart-meter maker for utility projects.",
+    "Watcher"
+   ],
+   [
+    "01 Sep",
+    "Price rise",
+    "4% increase on cable joints.",
+    "Price Tracker"
+   ],
+   [
+    "22 Aug",
+    "Hiring",
+    "30 field service engineers hired.",
+    "Talent Tracker"
+   ]
+  ],
+  "analyst": "Competitor E is preparing to capture demand that the import duty will shift to domestic makers, with new capacity and a bigger field service team.",
+  "suggest": "sign long-term distributor deals before Competitor E's new plant opens.",
+  "voc": [
+   [
+    "crit",
+    "Negative",
+    "Joint failures",
+    "in humid coastal regions, reported by installers.",
+    58
+   ],
+   [
+    "opp",
+    "Positive",
+    "Easy installation",
+    "praised by electrical contractors.",
+    44
+   ],
+   [
+    "high",
+    "Negative",
+    "Long lead times",
+    "on large utility orders.",
+    31
+   ]
+  ],
+  "opening": "promote Raychem RPG's reliability in humid and coastal regions where Competitor E's joints are failing.",
+  "spark": {
+   "t": "Field service roles posted per week",
+   "v": [
+    2,
+    2,
+    3,
+    3,
+    4,
+    5,
+    7,
+    8
+   ],
+   "a": "Aug",
+   "b": "Sep 22"
+  },
+  "tone": {
+   "t": "Utility demand confidence in public statements",
+   "v": [
+    60,
+    66,
+    72,
+    78
+   ]
+  },
+  "war": {
+   "q": "What if Competitor E's Gujarat plant opens 6 months early?",
+   "conf": 61,
+   "basis": "12 signals about Competitor E and its past plant timelines",
+   "play": [
+    [
+     "Month 0–3",
+     "Sign up distributors in western India."
+    ],
+    [
+     "Month 4–8",
+     "Offer introductory prices to state utilities."
+    ],
+    [
+     "Month 9–12",
+     "Bundle joints with its smart-meter partner's products."
+    ]
+   ],
+   "opts": [
+    [
+     "rec",
+     "Lock distributor contracts",
+     "Sign multi-year deals with key distributors now.",
+     "High",
+     "Low",
+     "Low"
+    ],
+    [
+     "rec",
+     "Reliability campaign",
+     "Market proven performance in humid and coastal regions.",
+     "Medium",
+     "Low",
+     "Low"
+    ],
+    [
+     "fb",
+     "Cut prices on joints",
+     "Match any introductory pricing.",
+     "Medium",
+     "Low",
+     "Margin loss"
+    ]
+   ]
+  },
+  "ask": {
+   "q": "How will the new import duty change the cable accessories market?",
+   "lead": "Demand should shift towards domestic makers:",
+   "pts": [
+    [
+     "The duty applies to imported cable joints and terminations from 1 November.",
+     1
+    ],
+    [
+     "Imports supplied an estimated quarter of utility demand last year.",
+     2
+    ],
+    [
+     "Competitor E is adding capacity in Gujarat to capture it.",
+     3
+    ],
+    [
+     "Lead times across the market are likely to stretch in the first months.",
+     2
+    ]
+   ],
+   "mean": "secure capacity and distributor commitments now to capture demand that shifts from imports.",
+   "conf": 88,
+   "src": [
+    "Official customs duty notification, Sep 2026",
+    "Import data and industry association reports",
+    "Competitor E plant announcement"
+   ],
+   "try": [
+    "Which rivals are partnering with smart-meter makers?",
+    "Where are installers reporting failures?"
+   ]
+  },
+  "fin": {
+   "listed": false,
+   "baseName": "Sector index",
+   "base": {
+    "ret": {
+     "1M": 1,
+     "6M": 7,
+     "1Y": 16,
+     "3Y": 58
+    },
+    "vol": 1,
+    "m": [
+     "30×",
+     "18.0×",
+     "12%",
+     "14.0%",
+     "0.4×",
+     "—"
+    ]
+   },
+   "rivals": {
+    "Competitor E": {
+     "seg": "Electrical · India",
+     "ret": {
+      "1M": 5,
+      "6M": 18,
+      "1Y": 30,
+      "3Y": 95
+     },
+     "vol": 1.3,
+     "m": [
+      "38×",
+      "22.5×",
+      "17%",
+      "15.6%",
+      "0.2×",
+      "17 · 4 · 1"
+     ],
+     "ev": [
+      0.85,
+      "Import duty news"
+     ],
+     "why": "Investors expect Competitor E to benefit most from the import duty.",
+     "act": "Raychem RPG should move first on distributors to share in that demand."
+    },
+    "Competitor N": {
+     "seg": "Electrical · India",
+     "ret": {
+      "1M": -1,
+      "6M": 4,
+      "1Y": 11,
+      "3Y": 50
+     },
+     "vol": 1.1,
+     "m": [
+      "26×",
+      "15.3×",
+      "8%",
+      "12.1%",
+      "0.7×",
+      "8 · 9 · 3"
+     ],
+     "ev": [
+      0.5,
+      "Copper cost spike"
+     ],
+     "why": "Copper cost increases have squeezed Competitor N's margins.",
+     "act": "Raychem RPG can use its pricing to win share if Competitor N raises prices."
+    },
+    "Global Electrical P": {
+     "seg": "Electrical · Global",
+     "ret": {
+      "1M": 2,
+      "6M": 6,
+      "1Y": 14,
+      "3Y": 42
+     },
+     "vol": 0.9,
+     "m": [
+      "24×",
+      "14.0×",
+      "6%",
+      "18.5%",
+      "0.9×",
+      "15 · 9 · 2"
+     ],
+     "ev": [
+      0.35,
+      "Grid spending"
+     ],
+     "why": "Global Electrical P follows worldwide grid investment.",
+     "act": "A benchmark for the global technology Raychem RPG draws on."
+    }
+   }
+  },
+  "threat_title": "Competitor E is gearing up for the import duty",
+  "extra_rivals": [
+   {
+    "name": "Competitor F",
+    "segment": "Cable accessories · India",
+    "latest_move": "New heat-shrink plant in Gujarat"
+   },
+   {
+    "name": "Competitor G2",
+    "segment": "Electrical · India",
+    "latest_move": "Distributor deal in the east"
+   },
+   {
+    "name": "Import brand H",
+    "segment": "Cable joints · China",
+    "latest_move": "Imports fell after duty news"
+   },
+   {
+    "name": "Competitor I",
+    "segment": "Switchgear · India",
+    "latest_move": "Won a railway electrification order"
+   }
+  ]
+ },
+ "Harrisons": {
+  "rival": "Estate Co. F",
+  "seg": "Tea and rubber plantations",
+  "tracked": 6,
+  "threat": [
+   "watch",
+   "Threat: Low"
+  ],
+  "timeline": [
+   [
+    "18 Sep",
+    "Asset sale",
+    "Sold a tea estate in the Nilgiris.",
+    "Watcher"
+   ],
+   [
+    "11 Sep",
+    "Replanting",
+    "Started a rubber replanting programme.",
+    "Watcher"
+   ],
+   [
+    "03 Sep",
+    "Wages",
+    "Wage settlement signed with unions.",
+    "Policy & Regulation"
+   ],
+   [
+    "26 Aug",
+    "New brand",
+    "Launched a packaged tea brand online.",
+    "Watcher"
+   ],
+   [
+    "15 Aug",
+    "Earnings call",
+    "Positive on rubber prices for the year.",
+    "Earnings Decoder"
+   ]
+  ],
+  "analyst": "Estate Co. F is moving from bulk sales to branded tea and selling weaker estates, while betting on higher rubber prices.",
+  "suggest": "review Harrisons' own branded tea plans for online channels.",
+  "voc": [
+   [
+    "opp",
+    "Positive",
+    "Aroma",
+    "of its new packaged tea is praised in online reviews.",
+    210
+   ],
+   [
+    "crit",
+    "Negative",
+    "Packaging damage",
+    "during delivery, raised in reviews.",
+    64
+   ],
+   [
+    "high",
+    "Negative",
+    "High price",
+    "compared with similar teas.",
+    40
+   ]
+  ],
+  "opening": "compete with good-value packs online, where shoppers say Estate Co. F is expensive.",
+  "spark": {
+   "t": "Natural rubber price index",
+   "v": [
+    100,
+    101,
+    103,
+    102,
+    105,
+    107,
+    108,
+    109
+   ],
+   "a": "Aug",
+   "b": "Sep 22"
+  },
+  "tone": {
+   "t": "Tea price confidence in public statements",
+   "v": [
+    55,
+    50,
+    58,
+    63
+   ]
+  },
+  "war": {
+   "q": "What if Estate Co. F's online tea brand takes 10% of the premium segment?",
+   "conf": 58,
+   "basis": "9 signals about Estate Co. F and online tea sales trends",
+   "play": [
+    [
+     "Month 0–3",
+     "Heavy discounts on online marketplaces."
+    ],
+    [
+     "Month 4–8",
+     "Expand into quick-commerce apps in big cities."
+    ],
+    [
+     "Month 9–12",
+     "Launch a single-estate premium range."
+    ]
+   ],
+   "opts": [
+    [
+     "rec",
+     "Launch value packs online",
+     "Sell Harrisons tea online at a clear value price.",
+     "Medium",
+     "Low",
+     "Low"
+    ],
+    [
+     "rec",
+     "Estate-origin story",
+     "Market the heritage and origin of Harrisons' estates.",
+     "Medium",
+     "Low",
+     "Low"
+    ],
+    [
+     "fb",
+     "Stay with bulk sales",
+     "Keep selling mainly through auctions.",
+     "Low",
+     "Low",
+     "Lost growth"
+    ]
+   ]
+  },
+  "ask": {
+   "q": "What is happening to natural rubber prices, and why?",
+   "lead": "Prices have risen about 9% in three weeks:",
+   "pts": [
+    [
+     "Kerala's monsoon has been below normal, cutting tapping days.",
+     1
+    ],
+    [
+     "Imports have slowed after changes to import rules.",
+     2
+    ],
+    [
+     "Tyre makers are building stock ahead of the festive season.",
+     3
+    ],
+    [
+     "Rival estates expect prices to stay firm this year.",
+     3
+    ]
+   ],
+   "mean": "a good time to review how much rubber to sell now and how much to hold. CEAT is affected in the opposite way.",
+   "conf": 80,
+   "src": [
+    "Rubber Board price data, Sep 2026",
+    "Trade and import data",
+    "Estate Co. F Q1 FY27 earnings call transcript"
+   ],
+   "try": [
+    "Which estates are selling land?",
+    "Who launched tea brands online?"
+   ]
+  },
+  "fin": {
+   "listed": true,
+   "base": {
+    "ret": {
+     "1M": 4,
+     "6M": 8,
+     "1Y": 20,
+     "3Y": 60
+    },
+    "vol": 1.3,
+    "m": [
+     "12×",
+     "8.5×",
+     "6%",
+     "9.0%",
+     "0.9×",
+     "2 · 1 · 0"
+    ]
+   },
+   "rivals": {
+    "Estate Co. F": {
+     "seg": "Plantations · India",
+     "ret": {
+      "1M": 2,
+      "6M": 5,
+      "1Y": 10,
+      "3Y": 35
+     },
+     "vol": 1.2,
+     "m": [
+      "14×",
+      "9.1×",
+      "4%",
+      "8.2%",
+      "0.7×",
+      "3 · 2 · 0"
+     ],
+     "ev": [
+      0.6,
+      "Estate sale"
+     ],
+     "why": "Estate Co. F's estate sale and new brand have had a mixed response.",
+     "act": "Watch whether its branded tea gains share online."
+    },
+    "Estate Co. Q": {
+     "seg": "Plantations · India",
+     "ret": {
+      "1M": -3,
+      "6M": -1,
+      "1Y": 6,
+      "3Y": 28
+     },
+     "vol": 1.4,
+     "m": [
+      "10×",
+      "7.2×",
+      "2%",
+      "6.5%",
+      "1.4×",
+      "1 · 3 · 1"
+     ],
+     "ev": [
+      0.4,
+      "Wage costs"
+     ],
+     "why": "Rising wage costs have hurt Estate Co. Q.",
+     "act": "Wage settlements may affect Harrisons too. Plan for the cost impact."
+    },
+    "Commodity Co. R": {
+     "seg": "Rubber trading · India",
+     "ret": {
+      "1M": 1,
+      "6M": 9,
+      "1Y": 15,
+      "3Y": 40
+     },
+     "vol": 1.3,
+     "m": [
+      "15×",
+      "9.8×",
+      "7%",
+      "5.1%",
+      "1.0×",
+      "4 · 2 · 1"
+     ],
+     "ev": [
+      0.75,
+      "Rubber price rise"
+     ],
+     "why": "Commodity Co. R rises and falls with rubber prices.",
+     "act": "A useful signal for when to sell Harrisons' rubber."
+    }
+   }
+  },
+  "threat_title": "Estate Co. F is moving into branded tea",
+  "extra_rivals": [
+   {
+    "name": "Estate Co. S",
+    "segment": "Tea · India",
+    "latest_move": "Sold two Assam estates"
+   },
+   {
+    "name": "Estate Co. T",
+    "segment": "Rubber · India",
+    "latest_move": "Replanting 800 hectares"
+   },
+   {
+    "name": "Tea brand U",
+    "segment": "Packaged tea · India",
+    "latest_move": "New premium tea brand"
+   }
+  ]
+ }
+}

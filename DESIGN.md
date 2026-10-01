@@ -264,7 +264,7 @@ requires the network/access scoping above, which is outside what the pipeline it
 | Tool drifting into a decisioning role | "Mark Under Active Evaluation" is one-way and removes the item from the live system — there is no path back to "just a flag" once escalated, by design. |
 | Real connectors introducing unvetted data before sign-off | Sector gate blocks ingestion, not just display — no data for a closed sector is ever fetched or stored. |
 | A real company watched without anyone deciding to | Discovery only *proposes*; a `compliance_admin` approves each real company (audit-logged), and there is no auto-approve setting (§15). |
-| A model inventing a company or a fact | Discovery keeps only names found in the search results the model cites; SWOT briefs are rule-checked against their numbered evidence and never feed scores (§15). |
+| A model inventing a company or a fact | Discovery keeps only names found in the search results the model cites; the SWOT Analyst's drafts are rule-checked against their numbered evidence and never feed scores (§15). |
 
 ## 13. Success Metrics (for the pilot)
 
@@ -354,22 +354,49 @@ reasoning model picks up to 5 competitors / adjacent players, and a grounding ch
 appear in the results it cites. The model picks names; it never scores. Proposals carry the model's
 one-line reason and the source links the admin reviews before approving.
 
-**SWOT briefs** (`services/swot.py`, page *SWOT Briefs*): per subsidiary, an LLM drafts a SWOT from
-numbered evidence — the routed companies' signals (E1…) and the strategy team's own notes (N1…). Rules
-then check it: strengths/weaknesses may rest only on team notes; each opportunity/threat must cite a
-signal about the company it names; citations must exist; no ids in prose. Failures go back to the model
-for revision (up to 3 drafts); a draft that never passes is not saved. The brief stores the evidence
-exactly as the model saw it, shows each item's reasoning and sources, and a "How this brief was built"
-section. It carries no valuation or deal recommendation and never changes a score. Reads follow the
-signal visibility rule and are audited (`view_swot`).
+**SWOT** (the radar's SWOT Analyst, `radar/swot_agent.py`; see §16): per RPG company, an LLM drafts the
+SWOT and TOWS moves from numbered evidence — the strategy team's list, the primary approved rival's live
+signals (which replace the demo rival story) and the deal targets on the company's desk. Rules then
+check it (counts, citations exist, every move links a strength/weakness to an opportunity/threat,
+act-now items drive a move, no ids in prose, scores not gamed). Failures go back to the model for
+revision (up to 3 drafts); a draft that never passes leaves the current SWOT in place. Each item shows
+its reasoning and cited sources (live / demo / team). It carries no valuation and never changes a score.
+Rebuilds are stored in `swot_briefs` and reloaded at startup.
 
 **LLM routes** (`shared/llm_chat.py`): Groq `openai/gpt-oss-120b` at low reasoning effort, then NVIDIA
-Nemotron 3 Super, then the Azure OpenAI deployment — used only for discovery and SWOT briefs.
+Nemotron 3 Super, then the Azure OpenAI deployment — used only for discovery and the SWOT Analyst
+(thesis parsing and Ask Radar use the Azure deployment directly, with rule-based fallbacks).
 
 **Scheduling** (`services/scheduler.py`): an in-process task runs live ingestion daily at
 `INGEST_DAILY_AT` (default 17:00) and discovery every `DISCOVERY_EVERY_DAYS` (default 7), then rebuilds
-SWOT briefs whose signals changed. Ingestion still goes through `IngestionWorkflow` on Temporal when
-reachable (activity timeout raised to 30 minutes for paced connectors), inline otherwise. `POST
-/ingest/run`, `/watchlist/discover` and `/swot/{code}/rebuild` return 202 with a job polled at
-`GET /jobs/{id}`. With several API replicas, run the scheduler in one only, or replace it with a
-Temporal Schedule.
+the SWOT of each RPG company whose signals changed. Ingestion still goes through `IngestionWorkflow` on
+Temporal when reachable (activity timeout raised to 30 minutes for paced connectors), inline otherwise.
+`POST /ingest/run` and `/watchlist/discover` return 202 with a job polled at `GET /jobs/{id}`. With
+several API replicas, run the scheduler in one only, or replace it with a Temporal Schedule.
+
+## 16. Addendum — The radar screens (the app's main UI)
+
+The UI is the Horizon Radar design the Corporate Strategy team worked with as a prototype, built on this
+repo: `app/ui/src/radar/` (screens) and `app/radar/` (their API, mounted at `/api/v1/radar`).
+
+| Group | Screens |
+|---|---|
+| Radar | **This week** — per-company SWOT with each item's sources and reasoning, the impact/urgency chart, TOWS moves to shortlist; **Deep-dive book** — one page per escalated case with a decision (approve with owner / park / reject); **Follow-up** — tracked plan, weekly updates, outcome |
+| Explore | Competitors, Market performance, Rival deals, Ask Radar |
+| Radar settings | Acquisition theses (plain-language thesis → criteria), Watch rules, Watched companies (universe, activity, rivals and live sources) |
+| Restricted desk | This repo's Signal board, Digest archive and Admin (reviewers, sector gates, watchlist, live sources, audit log), rendered inside the radar shell |
+
+**Same access model.** Every `/api/v1/radar` request needs a reviewer login and passes `radar/access.py`:
+a reviewer sees only RPG companies in their subsidiary scope whose compliance gate is open (others
+answer 404); only a `compliance_admin` gets the group-wide "All" view, rebuilds a SWOT, runs ingestion
+or discovery, or resets the demo; lists (book, theses, rules, universe) are filtered to the reviewer's
+companies; every request writes an audit row (`view_radar` / `radar_change`). The persistent
+"Restricted — UPSI-adjacent" strip sits on every screen.
+
+**What is live and what is demo.** Live: the approved watchlist companies' signals (via
+`radar/bridge.py`) and the SWOTs built from them. Demo: the rival placeholders ("Rival A") where no rival
+is approved yet, the deal targets (fictional, like the seed entities), market series, and the
+in-memory book, follow-up, theses and rules — those reset on restart, as in the prototype. Moving them
+to tables is the next step before a pilot. The two UIs' styles are kept apart: the radar uses its own
+CSS; the ZenLabs screens render inside `.tw`, which carries Tailwind's preflight scoped by
+`app/ui/scripts/scope-preflight.mjs`.

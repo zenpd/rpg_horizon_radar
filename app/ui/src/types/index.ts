@@ -192,52 +192,6 @@ export interface SourcesStatus {
   scheduler: SchedulerStatus;
 }
 
-// ---- SWOT briefs ----
-export interface SwotItem {
-  text: string;
-  evidence: string[];
-  reasoning: string;
-  entity?: string | null;
-  impact?: number;
-  urgency?: number;
-}
-
-export interface SwotEvidence {
-  id: string;
-  kind: "signal" | "team_note";
-  headline: string;
-  entity?: string;
-  fictional?: boolean;
-  signal_type?: string;
-  provider?: string;
-  excerpt?: string;
-  url?: string | null;
-  observed_at?: string;
-  quadrant?: string;
-}
-
-export interface SwotBrief {
-  id: number;
-  subsidiary_code: string;
-  generated_at: string;
-  generated_by: string;
-  model: string;
-  rounds: number;
-  content: {
-    summary: string;
-    strengths: SwotItem[];
-    weaknesses: SwotItem[];
-    opportunities: SwotItem[];
-    threats: SwotItem[];
-  };
-  evidence: SwotEvidence[];
-}
-
-export interface TeamNotes {
-  strengths: string[];
-  weaknesses: string[];
-}
-
 // ---- Reviewers ----
 export interface Reviewer {
   id: number;

@@ -1,19 +1,18 @@
-"""One entry point for an ingestion run, shared by the ingest router and the
-scheduler. Primary path: IngestionWorkflow on Temporal (durable, retried on
-transient failure). Fallback: if Temporal or the worker isn't reachable —
-e.g. the API running alone without ``docker compose up`` — run the same
-services.ingest code inline. Afterwards, SWOT briefs are rebuilt for the
-subsidiaries whose signals changed (AUTO_SWOT)."""
+"""One entry point for an ingestion run, shared by the ingest router, the radar's
+"Refresh live signals" and the scheduler. Primary path: IngestionWorkflow on
+Temporal (durable, retried on transient failure). Fallback: if Temporal or the
+worker isn't reachable — e.g. the API running alone without ``docker compose
+up`` — run the same services.ingest code inline. Afterwards the radar screens
+reload the live signals (radar/bridge.py), and the SWOT Analyst rebuilds the
+SWOT of each subsidiary whose signals changed (AUTO_SWOT)."""
 from __future__ import annotations
 
 from temporalio.client import Client
 
 from db.base import get_db_session
-from services import swot
 from services.audit import write_audit
 from services.ingest import run_ingest_for_open_subsidiaries
 from shared.config import get_settings
-from shared.llm_chat import LLMError
 from shared.logger import get_logger
 
 log = get_logger("services.pipeline")
@@ -36,6 +35,8 @@ async def _run_via_temporal() -> dict | None:
 
 
 async def run_ingest(reviewer=None, rebuild_swots: bool | None = None) -> dict:
+    from radar import bridge, swot_agent  # imported here: radar.api imports this module
+
     result = await _run_via_temporal()
     via = "temporal"
     if result is None:
@@ -51,12 +52,12 @@ async def run_ingest(reviewer=None, rebuild_swots: bool | None = None) -> dict:
                    f"errors={len(result['errors'])}",
         )
 
+    await bridge.sync()
     if rebuild_swots if rebuild_swots is not None else get_settings().auto_swot:
         for code in result["changed_subsidiaries"]:
-            try:
-                async with get_db_session() as db:
-                    await swot.build(db, code, reviewer)
+            co = bridge.CODE_TO_CO.get(code)
+            if co:
+                # A background job; it saves the SWOT (swot_briefs) when its draft passes the rules.
+                swot_agent.start(co, reviewer.name if reviewer else "scheduler")
                 result["swot_rebuilt"].append(code)
-            except (swot.SwotError, LLMError) as e:
-                result["swot_errors"].append(f"{code}: {e}")
     return result

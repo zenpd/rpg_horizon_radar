@@ -93,7 +93,7 @@ export default function SignalDetail() {
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 404) {
         toast.error("Signal not found.");
-        navigate("/", { replace: true });
+        navigate("/board", { replace: true });
       }
     } finally {
       setLoading(false);

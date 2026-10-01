@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routers import (
@@ -23,11 +23,13 @@ from api.routers import (
     reviewers,
     signals,
     subsidiaries,
-    swot,
     watchlist,
 )
 from db.base import get_db_session
 from db.seed import seed
+from radar import api as radar_api
+from radar import bridge as radar_bridge
+from radar.access import radar_access
 from services import scheduler
 from observability.tracing import init_tracing, instrument_fastapi
 from shared.config import get_settings
@@ -49,6 +51,8 @@ async def lifespan(app: FastAPI):
     # tables Alembic already created, and is a no-op once seeded once.
     async with get_db_session() as db:
         await seed(db)
+    # The radar screens: agent SWOTs from swot_briefs, live signals of approved companies.
+    await radar_bridge.startup()
     # Daily live ingestion + weekly watchlist discovery (SCHEDULER_ENABLED).
     scheduler.start()
     log.info("api.startup", env=settings.app_env, version=APP_VERSION)
@@ -105,5 +109,7 @@ app.include_router(ingest.router, prefix="/api/v1/ingest", tags=["Ingest"])
 app.include_router(reviewers.router, prefix="/api/v1/reviewers", tags=["Reviewers"])
 app.include_router(audit.router, prefix="/api/v1/audit-log", tags=["Audit"])
 app.include_router(watchlist.router, prefix="/api/v1/watchlist", tags=["Watchlist"])
-app.include_router(swot.router, prefix="/api/v1/swot", tags=["SWOT"])
 app.include_router(jobs.router, prefix="/api/v1/jobs", tags=["Jobs"])
+# The radar screens (SWOT home, deep-dive book, follow-up, explore, radar settings): every
+# request needs a reviewer login, is scope- and gate-checked, and is audit-logged.
+app.include_router(radar_api.router, prefix="/api/v1/radar", tags=["Radar"], dependencies=[Depends(radar_access)])

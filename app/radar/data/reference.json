@@ -1,0 +1,219 @@
+{
+ "W": {
+  "leadership_churn": 20,
+  "delayed_filing": 25,
+  "credit_downgrade": 30,
+  "patent_shift": 15,
+  "hiring_scaledown": 15,
+  "hiring_scaleup": 10,
+  "press_distress": 20,
+  "press_opportunity": 15,
+  "insolvency_filed": 35,
+  "auditor_resigned": 25,
+  "pledge_rising": 20,
+  "succession_risk": 15,
+  "divestment_signal": 20,
+  "pe_exit_window": 15
+ },
+ "TYPE_LABEL": {
+  "leadership_churn": "Leadership churn",
+  "delayed_filing": "Delayed filing",
+  "credit_downgrade": "Credit downgrade",
+  "patent_shift": "Patent shift",
+  "hiring_scaledown": "Hiring scale-down",
+  "hiring_scaleup": "Hiring scale-up",
+  "press_distress": "Press: distress",
+  "press_opportunity": "Press: opportunity",
+  "insolvency_filed": "Insolvency filed",
+  "auditor_resigned": "Auditor resigned",
+  "pledge_rising": "Promoter pledge rising",
+  "succession_risk": "Succession risk",
+  "divestment_signal": "Divestment signal",
+  "pe_exit_window": "PE exit window"
+ },
+ "SECTOR_LABEL": {
+  "tyres": "Tyres",
+  "epc": "EPC",
+  "it": "IT / AI",
+  "pharma": "Pharma",
+  "electrical": "Electrical",
+  "plantations": "Plantations",
+  "sensors": "Sensors"
+ },
+ "TOWS": {
+  "SO": [
+   "Strength × Opportunity",
+   "Use a strength to seize an opportunity"
+  ],
+  "WO": [
+   "Weakness × Opportunity",
+   "Fix a weakness with an opportunity"
+  ],
+  "ST": [
+   "Strength × Threat",
+   "Use a strength to counter a threat"
+  ],
+  "WT": [
+   "Weakness × Threat",
+   "Close a weakness before a threat hits"
+  ]
+ },
+ "DD_DEAL": [
+  [
+   "Pulling five years of filed financials",
+   "Financial Analyst · MCA via Probe42 / Tofler (paid)"
+  ],
+  [
+   "Mapping owners and director links",
+   "Relationship Mapper · MCA director data"
+  ],
+  [
+   "Scanning rival deals and bidders",
+   "M&A Scout · SAST, CCI, deal databases"
+  ],
+  [
+   "Running what-if scenarios",
+   "War Room agent (LLM)"
+  ],
+  [
+   "Checking risks and red flags",
+   "Risk Checker · IBBI, NCLT, rating rationales"
+  ],
+  [
+   "Verifying every claim",
+   "Fact-Checker · 2+ sources"
+  ],
+  [
+   "Writing the page",
+   "Briefing writer (LLM)"
+  ]
+ ],
+ "DD_THREAT": [
+  [
+   "Collecting 12 months of moves",
+   "Watcher, Patent Scout, Talent Tracker"
+  ],
+  [
+   "Comparing market performance",
+   "Market & Financials Tracker"
+  ],
+  [
+   "Reading what customers say",
+   "Voice of Customer"
+  ],
+  [
+   "Simulating the rival's playbook",
+   "War Room agent (LLM)"
+  ],
+  [
+   "Drafting response options",
+   "Strategy Analyst (LLM)"
+  ],
+  [
+   "Verifying every claim",
+   "Fact-Checker · 2+ sources"
+  ],
+  [
+   "Writing the page",
+   "Briefing writer (LLM)"
+  ]
+ ],
+ "PERIODS": {
+  "1M": {
+   "n": 22,
+   "lab": [
+    "4 wks ago",
+    "3 wks",
+    "2 wks",
+    "1 wk",
+    "Today"
+   ]
+  },
+  "6M": {
+   "n": 26,
+   "lab": [
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep"
+   ]
+  },
+  "1Y": {
+   "n": 52,
+   "lab": [
+    "Oct '25",
+    "Jan '26",
+    "Apr '26",
+    "Jul '26",
+    "Sep '26"
+   ]
+  },
+  "3Y": {
+   "n": 36,
+   "lab": [
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+   ]
+  }
+ },
+ "FROWS": [
+  "P/E",
+  "EV / EBITDA",
+  "Revenue growth (YoY)",
+  "EBITDA margin",
+  "Net debt / EBITDA",
+  "Analysts: buy · hold · sell"
+ ],
+ "RATING_ORDER": [
+  "D",
+  "C",
+  "CC",
+  "CCC",
+  "B-",
+  "B",
+  "B+",
+  "BB-",
+  "BB",
+  "BB+",
+  "BBB-",
+  "BBB",
+  "BBB+",
+  "A-",
+  "A",
+  "A+",
+  "AA-",
+  "AA",
+  "AA+",
+  "AAA"
+ ],
+ "METRIC_LABEL": {
+  "score": "Opportunity score",
+  "pledge": "Promoter pledge %",
+  "rating": "Credit rating",
+  "insolvency": "Insolvency",
+  "rivalstake": "New stake by a rival"
+ },
+ "NEW_TYPES": [
+  "insolvency_filed",
+  "auditor_resigned",
+  "pledge_rising",
+  "succession_risk",
+  "divestment_signal",
+  "pe_exit_window"
+ ],
+ "NEXT_UPD": {
+  "d_meridian": [
+   "Rival A raised its stake in Meridian from 6% to 9% (SAST disclosure).",
+   "Meridian filed its FY26 accounts, five weeks late.",
+   "The Kapoor family appointed an investment bank (news)."
+  ],
+  "t_CEAT": [
+   "Rival A's EV tyre range appeared in a dealer price list.",
+   "Rival A cut 2-wheeler tyre prices another 3% in Gujarat."
+  ]
+ }
+}

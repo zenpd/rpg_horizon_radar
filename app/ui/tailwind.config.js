@@ -6,7 +6,11 @@
 // mark — a visual cue that this is the UPSI-adjacent, access-restricted app,
 // not a generic product surface.
 export default {
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  // The radar screens (src/radar) use their own plain CSS; keep Tailwind out of them.
+  content: ['./index.html', './src/**/*.{ts,tsx}', '!./src/radar/**'],
+  // Preflight is applied scoped to .tw instead (src/tw-preflight.css), so it does not
+  // reset the radar screens' styles.
+  corePlugins: { preflight: false },
   theme: {
     extend: {
       fontFamily: {

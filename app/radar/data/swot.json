@@ -1,0 +1,553 @@
+{
+ "swot": {
+  "CEAT": {
+   "S": [
+    "Strong 2-wheeler and commuter tyre brand",
+    "Wide dealer network across India",
+    "Growing off-highway export business"
+   ],
+   "W": [
+    "Behind rivals on EV-specific tyres",
+    "Relies on a few suppliers for bead wire and bladders",
+    "Little sensor or smart-tyre technology"
+   ],
+   "O": [
+    [
+     "Meridian, a key supplier, is distressed and may be open to a deal",
+     "d_meridian"
+    ],
+    [
+     "Sensa Labs' sensors could fill the smart-tyre gap",
+     "d_sensa"
+    ],
+    [
+     "EV 2-wheeler makers are choosing tyre partners now",
+     null
+    ],
+    [
+     "Rovan Tyres may be sold by its PE owner",
+     "d_rovan"
+    ]
+   ],
+   "T": [
+    [
+     "Rival A is preparing an EV tyre range",
+     "t_CEAT"
+    ],
+    [
+     "Rival A has bought 6% of Meridian",
+     "d_meridian"
+    ],
+    [
+     "Cheaper imported tyres up 12% this quarter",
+     null
+    ]
+   ],
+   "rec": [
+    [
+     "WT",
+     "Secure Meridian before Rival A does",
+     [
+      "W2",
+      "T2",
+      "O1"
+     ],
+     "d_meridian",
+     "CEAT depends on Meridian for bead wire. If Rival A takes control, that supply is at risk. Meridian's distress gives CEAT an opening first."
+    ],
+    [
+     "WO",
+     "Partner with or invest in Sensa Labs",
+     [
+      "W3",
+      "O2"
+     ],
+     "d_sensa",
+     "Sensa's sensors close CEAT's smart-tyre gap and are also useful to KEC and Raychem RPG."
+    ],
+    [
+     "ST",
+     "Use the dealer network to launch EV tyres first",
+     [
+      "S1",
+      "S2",
+      "O3",
+      "T1"
+     ],
+     "t_CEAT",
+     "CEAT's brand and dealers can reach EV riders before Rival A's range arrives."
+    ]
+   ],
+   "skip": [
+    [
+     "d_rovan",
+     "Fits the off-highway export strength, but the auditor's exit and 40% promoter pledge outweigh the fit. Keep watching."
+    ]
+   ]
+  },
+  "KEC": {
+   "S": [
+    "Large order book and on-time delivery record",
+    "Strong presence in the Middle East",
+    "In-house tower fabrication"
+   ],
+   "W": [
+    "Thinner margins than peers",
+    "Fabrication capacity nearly full at peak",
+    "Small substation EPC scale in the Gulf"
+   ],
+   "O": [
+    [
+     "Strata's Gulf substation book is available through insolvency",
+     "d_strata"
+    ],
+    [
+     "Competitor B's delivery delays open delivery-critical tenders",
+     "t_KEC"
+    ],
+    [
+     "Ashford's tower plant could add capacity",
+     "d_ashford"
+    ]
+   ],
+   "T": [
+    [
+     "Competitor B is bidding about 8% lower in state tenders",
+     "t_KEC"
+    ],
+    [
+     "Global EPC H is expanding in the Gulf",
+     "d_strata"
+    ],
+    [
+     "Steel prices are volatile",
+     null
+    ]
+   ],
+   "rec": [
+    [
+     "ST",
+     "Win delivery-critical tenders where Competitor B is late",
+     [
+      "S1",
+      "O2",
+      "T1"
+     ],
+     "t_KEC",
+     "KEC's delivery record is the answer to Competitor B's low bids, since Competitor B's plants are nearly full."
+    ],
+    [
+     "WO",
+     "Bid for Strata's Gulf substation book",
+     [
+      "W3",
+      "S2",
+      "O1",
+      "T2"
+     ],
+     "d_strata",
+     "Strata adds substation scale in the Gulf, where KEC is already strong, before Global EPC H takes it."
+    ]
+   ],
+   "skip": [
+    [
+     "d_ashford",
+     "The capacity gap is real, but Ashford's overdue receivables make it a poor fix. Contracting extra fabrication is cheaper."
+    ]
+   ]
+  },
+  "Zensar": {
+   "S": [
+    "Deep relationships with US insurers",
+    "Strong digital engineering delivery",
+    "Healthy cash position"
+   ],
+   "W": [
+    "Smaller GenAI practice than rivals",
+    "Thin presence in UK financial services",
+    "Few AI products of its own"
+   ],
+   "O": [
+    [
+     "Northfield, an AI firm serving US insurers, may be sold by its PE owner",
+     "d_northfield"
+    ],
+    [
+     "Solstice, a UK BFSI analytics firm, has a succession gap",
+     "d_solstice"
+    ]
+   ],
+   "T": [
+    [
+     "Competitor D is moving into AI deals with insurers",
+     "t_Zensar"
+    ],
+    [
+     "Pricing pressure on large renewals",
+     null
+    ]
+   ],
+   "rec": [
+    [
+     "WO",
+     "Add AI scale in insurance through Northfield",
+     [
+      "W1",
+      "S3",
+      "O1",
+      "T1"
+     ],
+     "d_northfield",
+     "Northfield brings the GenAI depth Zensar lacks, in the industry Competitor D is attacking."
+    ],
+    [
+     "ST",
+     "Protect top insurer accounts with AI pilots",
+     [
+      "S1",
+      "T1"
+     ],
+     "t_Zensar",
+     "Zensar's insurer relationships are the asset Competitor D is going after. Pilots keep them close."
+    ]
+   ],
+   "skip": [
+    [
+     "d_solstice",
+     "Fits the UK gap, but the founder is not selling now. Build a relationship and revisit next year."
+    ]
+   ]
+  },
+  "RPG Life Sciences": {
+   "S": [
+    "Strong domestic cardiac and chronic brands",
+    "Good doctor reach in western India",
+    "Low debt"
+   ],
+   "W": [
+    "No USFDA-approved plant for exports",
+    "Small API capacity"
+   ],
+   "O": [
+    [
+     "Veltrix owns a USFDA-approved plant and shows distress",
+     "d_veltrix"
+    ],
+    [
+     "Rival C's USFDA trouble weakens its exports",
+     null
+    ]
+   ],
+   "T": [
+    [
+     "Rival C is cutting prices to win domestic share",
+     "t_RPG Life Sciences"
+    ],
+    [
+     "New price controls on some medicines",
+     null
+    ]
+   ],
+   "rec": [
+    [
+     "WO",
+     "Look at Veltrix's USFDA plant as an asset buy",
+     [
+      "W1",
+      "S3",
+      "O1"
+     ],
+     "d_veltrix",
+     "A USFDA plant opens exports. Low debt means RPG Life Sciences can move if the governance issues check out."
+    ],
+    [
+     "ST",
+     "Defend cardiac brands with stronger doctor outreach",
+     [
+      "S1",
+      "S2",
+      "T1"
+     ],
+     "t_RPG Life Sciences",
+     "Doctor reach in the west is where Rival C is cutting prices. Loyalty there matters more than matching price."
+    ]
+   ],
+   "skip": []
+  },
+  "Raychem RPG": {
+   "S": [
+    "Trusted brand in cable joints and heat-shrink",
+    "The new import duty favours domestic makers",
+    "Utility and railway customers"
+   ],
+   "W": [
+    "Depends on bought-in polymers",
+    "Capacity may not meet demand after the duty"
+   ],
+   "O": [
+    [
+     "Corvane, a polymer maker, may be sold by its parent",
+     "d_corvane"
+    ],
+    [
+     "Demand shifts to domestic makers from 1 November",
+     null
+    ],
+    [
+     "Sensa's sensors for substation monitoring",
+     "d_sensa"
+    ]
+   ],
+   "T": [
+    [
+     "Competitor E is adding capacity for the duty-driven demand",
+     "t_Raychem RPG"
+    ],
+    [
+     "Copper costs are rising",
+     null
+    ]
+   ],
+   "rec": [
+    [
+     "WO",
+     "Secure polymer supply by approaching Corvane",
+     [
+      "W1",
+      "O1"
+     ],
+     "d_corvane",
+     "Owning Corvane's heat-shrink polymers removes Raychem RPG's biggest supply risk."
+    ],
+    [
+     "ST",
+     "Add capacity before 1 November to beat Competitor E",
+     [
+      "S2",
+      "W2",
+      "O2",
+      "T1"
+     ],
+     "t_Raychem RPG",
+     "The duty helps whoever can supply first. Competitor E is already preparing."
+    ]
+   ],
+   "skip": [
+    [
+     "d_strata",
+     "Substation EPC is not Raychem RPG's business. KEC is the better owner."
+    ],
+    [
+     "d_sensa",
+     "Useful later. CEAT is taking the lead on Sensa."
+    ]
+   ]
+  },
+  "Harrisons": {
+   "S": [
+    "Well-run estates in Kerala and Tamil Nadu",
+    "Quality tea with premium buyers"
+   ],
+   "W": [
+    "Little branded, packaged tea",
+    "Exposed to rubber price swings"
+   ],
+   "O": [
+    [
+     "Palmgrove's estates next to ours may be sold",
+     "d_palmgrove"
+    ],
+    [
+     "Packaged tea demand is rising",
+     null
+    ]
+   ],
+   "T": [
+    [
+     "Estate Co. F is moving into branded tea",
+     "t_Harrisons"
+    ],
+    [
+     "Wage costs are rising",
+     null
+    ]
+   ],
+   "rec": [
+    [
+     "SO",
+     "Add Palmgrove's estates next to ours",
+     [
+      "S1",
+      "O1"
+     ],
+     "d_palmgrove",
+     "Harrisons already runs estates well in the same area. The family split may make a sale possible."
+    ]
+   ],
+   "skip": [
+    [
+     "t_Harrisons",
+     "Estate Co. F's brand launch has had a mixed response. Watch it before spending on a response."
+    ]
+   ]
+  }
+ },
+ "positions": {
+  "CEAT": {
+   "O": [
+    [
+     85,
+     90
+    ],
+    [
+     70,
+     55
+    ],
+    [
+     75,
+     68
+    ],
+    [
+     45,
+     35
+    ]
+   ],
+   "T": [
+    [
+     90,
+     75
+    ],
+    [
+     80,
+     93
+    ],
+    [
+     50,
+     40
+    ]
+   ]
+  },
+  "KEC": {
+   "O": [
+    [
+     80,
+     70
+    ],
+    [
+     70,
+     82
+    ],
+    [
+     50,
+     40
+    ]
+   ],
+   "T": [
+    [
+     82,
+     86
+    ],
+    [
+     65,
+     60
+    ],
+    [
+     40,
+     50
+    ]
+   ]
+  },
+  "Zensar": {
+   "O": [
+    [
+     86,
+     74
+    ],
+    [
+     55,
+     25
+    ]
+   ],
+   "T": [
+    [
+     85,
+     82
+    ],
+    [
+     42,
+     56
+    ]
+   ]
+  },
+  "RPG Life Sciences": {
+   "O": [
+    [
+     80,
+     60
+    ],
+    [
+     55,
+     45
+    ]
+   ],
+   "T": [
+    [
+     72,
+     80
+    ],
+    [
+     48,
+     35
+    ]
+   ]
+  },
+  "Raychem RPG": {
+   "O": [
+    [
+     75,
+     64
+    ],
+    [
+     82,
+     92
+    ],
+    [
+     40,
+     30
+    ]
+   ],
+   "T": [
+    [
+     76,
+     86
+    ],
+    [
+     44,
+     62
+    ]
+   ]
+  },
+  "Harrisons": {
+   "O": [
+    [
+     72,
+     55
+    ],
+    [
+     60,
+     40
+    ]
+   ],
+   "T": [
+    [
+     45,
+     35
+    ],
+    [
+     44,
+     52
+    ]
+   ]
+  }
+ }
+}
