@@ -4,9 +4,10 @@ HARD RULE: every string this module produces is templated from data already in
 the system (signal types, sector overlap, entity metadata). It never computes
 or displays a valuation, price, multiple, or synergy dollar figure, and it
 never calls an external LLM. That is a deliberate boundary, not an
-implementation shortcut — the system has no real financial data on any watched
-entity, and fabricating numbers here would be actively misleading to whoever
-reads it. Pure function — no DB I/O, so it needs no async variant."""
+implementation shortcut — public-signal data (even the quarterly figures the
+Fincrux connector reads) is no basis for a valuation, and fabricating numbers
+here would be actively misleading to whoever reads it. Pure function — no DB
+I/O, so it needs no async variant."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -19,8 +20,11 @@ DISCLAIMER = (
     "proceed — a set of directional prompts for the formal M&A process."
 )
 
-DISTRESS_TYPES = {"leadership_churn", "delayed_filing", "credit_downgrade", "press_distress", "hiring_scaledown"}
-OPPORTUNITY_TYPES = {"press_opportunity", "hiring_scaleup"}
+DISTRESS_TYPES = {
+    "leadership_churn", "delayed_filing", "credit_downgrade", "press_distress", "hiring_scaledown",
+    "promoter_pledge", "auditor_change", "legal_action", "earnings_decline", "stake_selldown", "share_price_slump",
+}
+OPPORTUNITY_TYPES = {"press_opportunity", "hiring_scaleup", "deal_activity", "fund_raise"}
 PATENT_TYPES = {"patent_shift"}
 
 

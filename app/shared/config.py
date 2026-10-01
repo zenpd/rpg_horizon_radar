@@ -87,6 +87,38 @@ class Settings(BaseSettings):
     # compiled weekly digest. See services/scoring.py and services/digest.py.
     digest_threshold: float = 65.0
 
+    # ── Live signal connectors (ingestion/connectors/live/) ────────────────────
+    # A connector runs only when its key is set. Each one's quota and pacing is
+    # described in its module docstring.
+    live_connectors_enabled: bool = True
+    gnews_api_key: str = ""
+    newsdata_api_key: str = ""
+    tavily_api_key: str = ""
+    adzuna_app_id: str = ""
+    adzuna_app_key: str = ""
+    fetchlayer_api_key: str = ""          # Glassdoor employee ratings
+    youtube_api_key: str = ""
+    alpha_vantage_api_key: str = ""       # ticker lookup only, 25 calls a day
+    epo_ops_consumer_key: str = ""
+    epo_ops_consumer_secret: str = ""
+    fincrux_api_key: str = ""             # 5 calls a day
+    nse_enabled: bool = True              # no key; NSE's site API, used sparingly
+
+    # ── Reasoning LLM routes (shared/llm_chat.py) ──────────────────────────────
+    # Used for watchlist discovery and SWOT briefs — never for scoring.
+    groq_api_key: str = ""
+    nvidia_api_key: str = ""
+    llm_routes: str = "groq:openai/gpt-oss-120b,nvidia:nvidia/nemotron-3-super-120b-a12b"
+    llm_reasoning_effort: str = "low"
+
+    # ── Watchlist discovery + scheduler (services/discovery.py, scheduler.py) ──
+    # Discovered companies are always proposed, never watched, until a
+    # compliance_admin approves them; there is deliberately no auto-approve.
+    scheduler_enabled: bool = True
+    ingest_daily_at: str = "17:00"        # local time
+    discovery_every_days: int = 7
+    auto_swot: bool = True                # rebuild a subsidiary's SWOT after its signals change
+
     # ── Security validators ────────────────────────────────────────────────────
     @model_validator(mode="after")
     def _enforce_secret_key(self) -> "Settings":

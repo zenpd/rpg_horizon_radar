@@ -263,6 +263,8 @@ requires the network/access scoping above, which is outside what the pipeline it
 | Signal reaching the wrong subsidiary | Routing is explicit table-driven (`routing_rule`), not inferred per-request — auditable and correctable without touching scoring logic. |
 | Tool drifting into a decisioning role | "Mark Under Active Evaluation" is one-way and removes the item from the live system — there is no path back to "just a flag" once escalated, by design. |
 | Real connectors introducing unvetted data before sign-off | Sector gate blocks ingestion, not just display — no data for a closed sector is ever fetched or stored. |
+| A real company watched without anyone deciding to | Discovery only *proposes*; a `compliance_admin` approves each real company (audit-logged), and there is no auto-approve setting (§15). |
+| A model inventing a company or a fact | Discovery keeps only names found in the search results the model cites; SWOT briefs are rule-checked against their numbered evidence and never feed scores (§15). |
 
 ## 13. Success Metrics (for the pilot)
 
@@ -309,3 +311,65 @@ audit action `view_escalation_brief`). No update/regenerate endpoint — it's wr
 **UI addition:** once a signal's status is `under_evaluation`, `SignalDetail` shows an "Escalation
 Brief" section (pros / cons / directional considerations / disclaimer, visually distinct as a
 hand-off document) with a plain-text export for pasting into the formal process's own paperwork.
+
+## 15. Addendum — Live signals on real companies
+
+**Governance change.** The original build allowed only fictional watched entities (a DB CHECK,
+`is_fictional = true`). With Company Secretary / Compliance sign-off on watching real, publicly
+listed companies (the §4 precondition — record the sign-off reference here before any pilot), migration
+`0003_live_signals` lifts that CHECK and replaces it with an **approval workflow**:
+
+| Control | Implementation |
+|---|---|
+| Nothing real is watched by default | `Entity.status`: `proposed` → `watching` / `dismissed`. Only `watching` entities are ingested (`services/ingest.py`). |
+| A named person approves every real company | Only a `compliance_admin` can approve (Admin → Watchlist), recorded as `approved_by`/`approved_at` and an `admin_change` audit row. There is deliberately **no auto-approve** setting. A manual addition is approved by the admin who adds it. |
+| Dismissed stays dismissed | Weekly discovery never re-proposes a dismissed company. |
+| Sector gate still blocks fetching | Discovery and ingestion run only for subsidiaries whose `compliance_gate` is open; a closed sector's companies are never searched or fetched. |
+| Scoring stays rule-based | New signal types get fixed weights in `services/scoring.py`; no model is involved. |
+| Public data only | Every live connector reads public APIs or exchange disclosures; nothing non-public is ingested. The UPSI banner and audit logging apply unchanged. |
+
+Fictional seed entities stay, served by the mock connectors, so the demo cascade (§9) still works; the UI
+labels their signals "demo data".
+
+**Live connectors** (`ingestion/connectors/live/`, keys in `app/.env`; a connector without a key is
+skipped). Each emits a signal only past a stated threshold — routine notices, flat readings and
+unrelated headlines are dropped, not stored:
+
+| Connector | Reads | Signal types emitted | Pace / quota |
+|---|---|---|---|
+| NSE (no key) | corporate announcements (21 days), promoter pledges | leadership_churn (resignation/cessation only), auditor_change, credit_downgrade (downgrades only), delayed_filing, legal_action, deal_activity, fund_raise, promoter_pledge (≥ 5%) | 2 calls/company/run, 1 s apart; `NSE_ENABLED=false` turns it off — NSE's terms restrict automated access |
+| Fincrux | quarterly results, shareholding | earnings_decline (net profit ≤ −15% or sales ≤ −10% YoY), stake_selldown (promoters −0.5 pt or FIIs −1.5 pt) | weekly per company; hard stop at 5 calls/day |
+| Alpha Vantage | BSE daily prices; ticker search | share_price_slump (≤ −20% over 30 trading days) | daily; hard stop at 25 calls/day |
+| GNews, NewsData.io, Tavily, YouTube | headlines / video titles naming the company | headline classifier → credit_downgrade, delayed_filing, legal_action, leadership_churn, hiring_scaledown, promoter_pledge, deal_activity, press_distress, press_opportunity | every run; GNews spaced 1.5 s |
+| Adzuna | job postings (30 days) | hiring_scaleup / hiring_scaledown (×1.5 / ×0.5 vs. last reading, ≥ 20 postings) | weekly |
+| EPO OPS | patent publications (last 6 months vs. the 6 before) | patent_shift (×2 or ×0.5, ≥ 5) | weekly |
+
+NSE symbols are resolved automatically (Alpha Vantage ticker search confirmed by NSE, else a Fincrux
+name search; a miss is retried weekly) or set by the admin on the watchlist. Pacing, budgets and
+snapshots persist in the `connector_state` table. Glassdoor (via Fetchlayer) is not wired: it scrapes
+Glassdoor, which needs a licence check first.
+
+**Watchlist discovery** (`services/discovery.py`): per gate-open subsidiary, two Tavily searches, then a
+reasoning model picks up to 5 competitors / adjacent players, and a grounding check keeps only names that
+appear in the results it cites. The model picks names; it never scores. Proposals carry the model's
+one-line reason and the source links the admin reviews before approving.
+
+**SWOT briefs** (`services/swot.py`, page *SWOT Briefs*): per subsidiary, an LLM drafts a SWOT from
+numbered evidence — the routed companies' signals (E1…) and the strategy team's own notes (N1…). Rules
+then check it: strengths/weaknesses may rest only on team notes; each opportunity/threat must cite a
+signal about the company it names; citations must exist; no ids in prose. Failures go back to the model
+for revision (up to 3 drafts); a draft that never passes is not saved. The brief stores the evidence
+exactly as the model saw it, shows each item's reasoning and sources, and a "How this brief was built"
+section. It carries no valuation or deal recommendation and never changes a score. Reads follow the
+signal visibility rule and are audited (`view_swot`).
+
+**LLM routes** (`shared/llm_chat.py`): Groq `openai/gpt-oss-120b` at low reasoning effort, then NVIDIA
+Nemotron 3 Super, then the Azure OpenAI deployment — used only for discovery and SWOT briefs.
+
+**Scheduling** (`services/scheduler.py`): an in-process task runs live ingestion daily at
+`INGEST_DAILY_AT` (default 17:00) and discovery every `DISCOVERY_EVERY_DAYS` (default 7), then rebuilds
+SWOT briefs whose signals changed. Ingestion still goes through `IngestionWorkflow` on Temporal when
+reachable (activity timeout raised to 30 minutes for paced connectors), inline otherwise. `POST
+/ingest/run`, `/watchlist/discover` and `/swot/{code}/rebuild` return 202 with a job polled at
+`GET /jobs/{id}`. With several API replicas, run the scheduler in one only, or replace it with a
+Temporal Schedule.

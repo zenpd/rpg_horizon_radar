@@ -40,6 +40,7 @@ cryptography
 # ── HTTP / Integrations ───────────────────────────────────────────────────────
 httpx
 aiohttp
+truststore  # verify TLS against the OS certificate store (corporate proxies); shared/http.py
 
 # ── Observability ─────────────────────────────────────────────────────────────
 opentelemetry-sdk

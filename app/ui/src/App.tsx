@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import SignalDetail from "./pages/SignalDetail";
 import DigestArchive, { DigestDetail } from "./pages/DigestArchive";
 import Admin from "./pages/Admin";
+import Swot from "./pages/Swot";
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="signals/:id" element={<SignalDetail />} />
           <Route path="digests" element={<DigestArchive />} />
           <Route path="digests/:id" element={<DigestDetail />} />
+          <Route path="swot" element={<Swot />} />
           <Route
             path="admin"
             element={

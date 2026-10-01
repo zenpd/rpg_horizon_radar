@@ -1,11 +1,12 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Newspaper, Radar, ShieldCheck } from "lucide-react";
+import { Grid2x2, LayoutDashboard, Newspaper, Radar, ShieldCheck } from "lucide-react";
 import clsx from "clsx";
 
 import { useAuth } from "../../context/AuthContext";
 
 const NAV = [
   { label: "Signal Board", icon: LayoutDashboard, path: "/" },
+  { label: "SWOT Briefs", icon: Grid2x2, path: "/swot" },
   { label: "Digest Archive", icon: Newspaper, path: "/digests" },
 ];
 

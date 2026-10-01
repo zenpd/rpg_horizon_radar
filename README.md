@@ -49,6 +49,24 @@ if this isn't running):
 cd app && docker compose up --build     # full stack: API, worker, Temporal, Phoenix
 ```
 
+Without Docker, use SQLite: set `DATABASE_URL=sqlite+aiosqlite:///./horizon_radar.db` in `app/.env`,
+then `alembic upgrade head` and start the API as above. Redis and Temporal are optional for the
+Horizon Radar pipeline.
+
+## Live signals on real companies
+
+See [DESIGN.md §15](DESIGN.md#15-addendum--live-signals-on-real-companies). In short:
+
+- Add API keys to `app/.env` (listed in `.env.example`); each connector runs only when its key is set.
+- **Admin → Watchlist:** discovery proposes competitors and adjacent players for gate-open
+  subsidiaries, with its sources. Nothing about a company is fetched until a `compliance_admin`
+  approves it. Companies can also be added by hand.
+- **Admin → Live Sources:** which connectors are configured, their pace and daily budgets, the
+  schedule (daily ingestion at 17:00, weekly discovery) and the last run's errors.
+- **SWOT Briefs:** a cited SWOT per subsidiary, rebuilt after each run that brings new signals. Add the
+  strategy team's strengths and weaknesses there; the brief takes those only from the team's notes.
+- Tests: `cd app && pytest` (no network; connectors and the model are faked).
+
 ## Deploy to Azure Container Apps
 ```bash
 bash infra/aca-setup.sh          # one-time provisioning (edit VARIABLES first)

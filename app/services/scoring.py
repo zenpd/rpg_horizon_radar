@@ -21,6 +21,16 @@ BASE_WEIGHTS: dict[str, int] = {
     "hiring_scaleup": 10,
     "press_distress": 20,
     "press_opportunity": 15,
+    # Added with the live connectors (ingestion/connectors/live/); each is
+    # emitted only past the threshold its connector documents.
+    "promoter_pledge": 25,     # NSE: >= 5% of promoter shares pledged
+    "auditor_change": 25,      # NSE: auditor resignation/change
+    "legal_action": 20,        # NSE/news: insolvency, default, litigation, regulator orders
+    "earnings_decline": 20,    # Fincrux: net profit <= -15% or sales <= -10% YoY
+    "stake_selldown": 15,      # Fincrux: promoters -0.5pt or FIIs -1.5pt in a quarter
+    "share_price_slump": 15,   # Alpha Vantage: -20% over 30 trading days
+    "deal_activity": 15,       # NSE/news: acquisition, merger, divestment
+    "fund_raise": 10,          # NSE: allotment, QIP, NCDs, rights issue
 }
 
 # Co-occurrence multiplier keyed by count of DISTINCT signal types present.

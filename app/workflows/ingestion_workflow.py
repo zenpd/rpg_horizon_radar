@@ -26,6 +26,8 @@ class IngestionWorkflow:
     async def run(self) -> dict:
         return await workflow.execute_activity(
             run_ingestion_activity,
-            start_to_close_timeout=timedelta(minutes=5),
+            # Live connectors are paced (one call a second for NSE, GNews,
+            # Alpha Vantage), so a full run takes minutes, not seconds.
+            start_to_close_timeout=timedelta(minutes=30),
             retry_policy=_RETRY,
         )

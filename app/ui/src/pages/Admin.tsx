@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { Plus, ScrollText, Trash2, Users } from "lucide-react";
+import { Building2, Plus, Radio, ScrollText, Trash2, Users } from "lucide-react";
 
 import { usePageMeta } from "../context/PageMetaContext";
 import {
@@ -14,11 +14,15 @@ import {
   patchSubsidiaryGate,
 } from "../services/api";
 import ConfirmModal from "../components/ConfirmModal";
+import SourcesTab from "../components/admin/SourcesTab";
+import WatchlistTab from "../components/admin/WatchlistTab";
 import type { AuditLogEntry, Reviewer, ReviewerCreate, Subsidiary } from "../types";
 
 const TABS = [
   { key: "reviewers", label: "Reviewers", icon: Users },
   { key: "gates", label: "Sector Gates", icon: ScrollText },
+  { key: "watchlist", label: "Watchlist", icon: Building2 },
+  { key: "sources", label: "Live Sources", icon: Radio },
   { key: "audit", label: "Audit Log", icon: ScrollText },
 ] as const;
 
@@ -44,7 +48,7 @@ function formatDateTime(value?: string | null) {
 // defined in index.css.
 function actionBadgeClass(action: string): string {
   if (action === "mark_under_evaluation") return "action-escalate";
-  if (action === "gate_change" || action === "ingest_run") return "action-write";
+  if (["gate_change", "ingest_run", "watchlist_discovery", "swot_generated"].includes(action)) return "action-write";
   if (action === "admin_change") return "action-admin";
   return "action-view";
 }
@@ -449,7 +453,7 @@ function AuditTab() {
 }
 
 export default function Admin() {
-  usePageMeta("Compliance Admin", "Reviewer list, sector gates, and the immutable audit trail.");
+  usePageMeta("Compliance Admin", "Reviewer list, sector gates, watched companies, live sources, and the immutable audit trail.");
 
   const [tab, setTab] = useState<TabKey>("reviewers");
 
@@ -476,6 +480,8 @@ export default function Admin() {
 
       {tab === "reviewers" && <ReviewersTab />}
       {tab === "gates" && <GatesTab />}
+      {tab === "watchlist" && <WatchlistTab />}
+      {tab === "sources" && <SourcesTab />}
       {tab === "audit" && <AuditTab />}
     </div>
   );

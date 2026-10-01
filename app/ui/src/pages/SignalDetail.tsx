@@ -219,6 +219,7 @@ export default function SignalDetail() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
                       {rs.signal_type?.replace(/_/g, " ")} · {rs.source_type?.replace(/_/g, " ")}
+                      {rs.provider && rs.provider !== "mock" ? ` · ${rs.provider}` : " · demo data"}
                     </span>
                     <span className="text-[10px] font-mono text-gray-400">{formatDate(rs.observed_at)}</span>
                   </div>

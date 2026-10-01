@@ -11,10 +11,13 @@ structural:
 - The six RPG subsidiaries (``Subsidiary``) are ONLY the internal routing
   targets / audience of this tool — never watched or "distressed" entities
   themselves.
-- Every ``Entity`` (a watched company) MUST be fully fictional/synthetic —
-  enforced both by a server-side default and a DB CHECK constraint. This
-  table must never hold a real, identifiable company name as the subject of
-  a distress/acquisition-target signal.
+- A watched ``Entity`` is either a fictional demo company (``origin="seed"``,
+  ``is_fictional=True``) or a real, publicly listed company that live
+  connectors track (``origin="discovered"`` or ``"manual"``). The original
+  fictional-only CHECK constraint was lifted in migration 0003 so real public
+  signals can be scored; a real company is only ingested once a
+  compliance_admin has approved it (``status="watching"``) and its sector's
+  compliance gate is open. Every approval is audit-logged. See DESIGN.md §15.
 """
 from __future__ import annotations
 
@@ -65,20 +68,39 @@ class Subsidiary(Base):
     sectors: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     compliance_gate: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     signal_focus: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # Corporate Strategy's own view of the subsidiary, the only evidence a SWOT
+    # brief's strengths and weaknesses may rest on: {strengths: [...], weaknesses: [...]}
+    team_notes: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
 
 
 class Entity(Base):
-    """A WATCHED company — always fully fictional/synthetic. See module
-    docstring and ``db/seed.py`` for the synthetic-data policy."""
+    """A WATCHED company: a fictional demo company or a real listed one. See
+    the module docstring.
+
+    origin: seed | discovered | manual
+    status: watching | proposed | dismissed — only ``watching`` entities are
+        ingested; discovery proposes, a compliance_admin approves.
+    """
 
     __tablename__ = "entities"
-    __table_args__ = (CheckConstraint("is_fictional = true", name="ck_entity_must_be_fictional"),)
+    __table_args__ = (
+        CheckConstraint("status in ('watching', 'proposed', 'dismissed')", name="ck_entity_status"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     sectors: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)  # used for routing
     category: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     is_fictional: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    origin: Mapped[str] = mapped_column(String(16), nullable=False, default="seed", server_default="seed")
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="watching", server_default="watching")
+    # How headlines and APIs name the company ("Apollo Tyres" for "Apollo Tyres Ltd"); blank = derived from name.
+    query_name: Mapped[str] = mapped_column(String(255), nullable=False, default="", server_default="")
+    nse_symbol: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # Discovery evidence: {for: subsidiary code, kind, why, sources: [{title, url}], found_at, last_seen_at, model}
+    discovery: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    approved_by_id: Mapped[int | None] = mapped_column(ForeignKey("reviewers.id"), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # raw_signals is queried directly (never traversed via this attribute), so
     # it's left at the default lazy strategy. clusters IS traversed as an
@@ -96,7 +118,9 @@ class RawSignal(Base):
     signal_type: leadership_churn | delayed_filing | credit_downgrade |
         patent_shift | hiring_scaledown | hiring_scaleup | press_distress |
         press_opportunity
-    source_type: news | filing | patent | hiring
+    source_type: news | filing | patent | hiring | employee
+    provider: the live connector that fetched it ("NSE", "GNews" ...), or
+        "mock" for the fictional demo connectors.
     """
 
     __tablename__ = "raw_signals"
@@ -108,6 +132,7 @@ class RawSignal(Base):
     headline: Mapped[str] = mapped_column(String(512), nullable=False)
     source_excerpt: Mapped[str] = mapped_column(Text, nullable=False, default="")
     source_url: Mapped[str] = mapped_column(String(512), nullable=False, default="")
+    provider: Mapped[str] = mapped_column(String(64), nullable=False, default="mock", server_default="mock")
     observed_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
@@ -278,3 +303,37 @@ class AuditLog(Base):
     resource_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class ConnectorState(Base):
+    """Small key/value store for the live connectors and the scheduler: last
+    pull per source and entity, daily call budgets, rating/posting snapshots
+    that later readings are compared against, resolved stock symbols."""
+
+    __tablename__ = "connector_state"
+
+    key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    value: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class SwotBrief(Base):
+    """An LLM-drafted SWOT for one subsidiary, built only from the signals
+    routed to it and Corporate Strategy's team notes, every item citing the
+    evidence it rests on. Kept as history: the newest row is the current brief.
+    Never feeds scoring (services/scoring.py stays rule-based)."""
+
+    __tablename__ = "swot_briefs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    subsidiary_code: Mapped[str] = mapped_column(ForeignKey("subsidiaries.code"), nullable=False, index=True)
+    generated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    generated_by_id: Mapped[int | None] = mapped_column(ForeignKey("reviewers.id"), nullable=True)  # None = scheduler
+    model: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    rounds: Mapped[int] = mapped_column(nullable=False, default=1)
+    # {summary, strengths, weaknesses, opportunities, threats}; each item {text, evidence: [ids], reasoning, impact?, urgency?, entity?}
+    content: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    # The numbered evidence exactly as the model saw it: [{id, kind, entity, signal_type, provider, headline, url, observed_at}]
+    evidence: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
+
+    generated_by: Mapped["Reviewer | None"] = relationship(lazy="selectin")

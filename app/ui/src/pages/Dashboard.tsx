@@ -5,7 +5,7 @@ import { Activity, AlertTriangle, RefreshCw, ShieldCheck, Sparkles } from "lucid
 
 import { useAuth } from "../context/AuthContext";
 import { usePageMeta } from "../context/PageMetaContext";
-import { generateDigest, getSignals, getSubsidiaries, runIngest } from "../services/api";
+import { generateDigest, getSignals, getSubsidiaries, runIngest, waitForJob } from "../services/api";
 import SubsidiaryFilterChip from "../components/SubsidiaryFilterChip";
 import SignalCard from "../components/SignalCard";
 import type { Subsidiary, SignalClusterSummary } from "../types";
@@ -69,10 +69,17 @@ export default function Dashboard() {
   const handleRunIngestion = async () => {
     setIngesting(true);
     try {
-      const result = await runIngest();
-      toast.success(
-        `Ingestion complete — ${result.new_raw_signals} new raw signals, ${result.clusters_updated} clusters updated.`
-      );
+      // Live connectors make a run take minutes: it runs as a background job.
+      const job = await waitForJob(await runIngest());
+      const result = job.result;
+      if (job.status === "failed" || !result) {
+        toast.error(`Ingestion failed: ${job.error || "unknown error"}`);
+      } else {
+        toast.success(
+          `Ingestion complete — ${result.new_raw_signals} new raw signals, ${result.clusters_updated} clusters updated` +
+            (result.errors.length ? ` (${result.errors.length} source errors — see Admin → Live Sources).` : ".")
+        );
+      }
       await loadSignals(activeCode, status);
     } catch {
       // handled globally

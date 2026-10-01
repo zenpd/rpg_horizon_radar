@@ -19,12 +19,16 @@ from api.routers import (
     example,
     health,
     ingest,
+    jobs,
     reviewers,
     signals,
     subsidiaries,
+    swot,
+    watchlist,
 )
 from db.base import get_db_session
 from db.seed import seed
+from services import scheduler
 from observability.tracing import init_tracing, instrument_fastapi
 from shared.config import get_settings
 from shared.logger import get_logger, setup_logging
@@ -45,8 +49,11 @@ async def lifespan(app: FastAPI):
     # tables Alembic already created, and is a no-op once seeded once.
     async with get_db_session() as db:
         await seed(db)
+    # Daily live ingestion + weekly watchlist discovery (SCHEDULER_ENABLED).
+    scheduler.start()
     log.info("api.startup", env=settings.app_env, version=APP_VERSION)
     yield
+    await scheduler.stop()
     log.info("api.shutdown")
 
 
@@ -97,3 +104,6 @@ app.include_router(digests.router, prefix="/api/v1/digests", tags=["Digests"])
 app.include_router(ingest.router, prefix="/api/v1/ingest", tags=["Ingest"])
 app.include_router(reviewers.router, prefix="/api/v1/reviewers", tags=["Reviewers"])
 app.include_router(audit.router, prefix="/api/v1/audit-log", tags=["Audit"])
+app.include_router(watchlist.router, prefix="/api/v1/watchlist", tags=["Watchlist"])
+app.include_router(swot.router, prefix="/api/v1/swot", tags=["SWOT"])
+app.include_router(jobs.router, prefix="/api/v1/jobs", tags=["Jobs"])

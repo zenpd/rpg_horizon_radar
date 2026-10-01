@@ -8,13 +8,18 @@ import type {
   EntityOut,
   EscalationBrief,
   IngestRunResult,
+  Job,
   Reviewer,
   ReviewerCreate,
   SignalClusterDetail,
   SignalClusterSummary,
+  SourcesStatus,
   Subsidiary,
+  SwotBrief,
+  TeamNotes,
   TokenResponse,
   User,
+  WatchlistEntity,
 } from "../types";
 
 export const TOKEN_KEY = "hr_token";
@@ -100,8 +105,52 @@ export const getDigest = (id: number | string) =>
   api.get<DigestDetail>(`/digests/${id}`).then((r) => r.data);
 export const generateDigest = () => api.post<DigestDetail>("/digests/generate").then((r) => r.data);
 
+// ---- Background jobs ----
+export const getJob = <R,>(id: string) => api.get<Job<R>>(`/jobs/${id}`).then((r) => r.data);
+
+// Poll a job every `everyMs` until it finishes. Resolves with the finished job
+// (completed or failed); rejects only if polling itself fails.
+export async function waitForJob<R>(job: Job<R>, everyMs = 2000): Promise<Job<R>> {
+  let current = job;
+  while (current.status === "running") {
+    await new Promise((resolve) => setTimeout(resolve, everyMs));
+    current = await getJob<R>(current.id);
+  }
+  return current;
+}
+
 // ---- Ingest ----
-export const runIngest = () => api.post<IngestRunResult>("/ingest/run").then((r) => r.data);
+// Starts a run in the background (202); poll it with waitForJob.
+export const runIngest = () => api.post<Job<IngestRunResult>>("/ingest/run").then((r) => r.data);
+
+// ---- Watchlist (compliance_admin) ----
+export const getWatchlist = () => api.get<WatchlistEntity[]>("/watchlist").then((r) => r.data);
+export const updateWatchlistEntity = (
+  id: number,
+  payload: { status?: "watching" | "dismissed"; nse_symbol?: string; query_name?: string }
+) => api.patch<WatchlistEntity>(`/watchlist/${id}`, payload).then((r) => r.data);
+export const addWatchlistEntity = (payload: {
+  name: string;
+  sectors: string[];
+  category?: string;
+  nse_symbol?: string;
+  query_name?: string;
+}) => api.post<WatchlistEntity>("/watchlist", payload).then((r) => r.data);
+export interface DiscoveryResult {
+  subsidiaries: string[];
+  proposed: string[];
+  refreshed: string[];
+  errors: string[];
+}
+export const runDiscovery = () => api.post<Job<DiscoveryResult>>("/watchlist/discover").then((r) => r.data);
+export const getSourcesStatus = () => api.get<SourcesStatus>("/watchlist/sources").then((r) => r.data);
+
+// ---- SWOT briefs ----
+export const getSwot = (code: string) => api.get<SwotBrief>(`/swot/${code}`).then((r) => r.data);
+export const rebuildSwot = (code: string) => api.post<Job>(`/swot/${code}/rebuild`).then((r) => r.data);
+export const getTeamNotes = (code: string) => api.get<TeamNotes>(`/swot/${code}/team-notes`).then((r) => r.data);
+export const putTeamNotes = (code: string, notes: TeamNotes) =>
+  api.put<TeamNotes>(`/swot/${code}/team-notes`, notes).then((r) => r.data);
 
 // ---- Reviewers ----
 export const getReviewers = () => api.get<Reviewer[]>("/reviewers").then((r) => r.data);

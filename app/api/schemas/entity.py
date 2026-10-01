@@ -7,3 +7,5 @@ class EntityOut(BaseModel):
     name: str
     sectors: list[str]
     category: str
+    is_fictional: bool = True
+    origin: str = "seed"

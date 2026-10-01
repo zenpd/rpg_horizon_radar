@@ -4,9 +4,11 @@
 # this prototype — none corresponds to a real business, and none should ever
 # be replaced with a real company name without a compliance/legal review of
 # the resulting product, since this table drives "distress"/"acquisition
-# target" framing. The six RPG subsidiaries are seeded separately and are used
-# ONLY as internal routing targets (the audience) — they are never watched
-# entities themselves.
+# target" framing. Real companies never come from this file: they enter only
+# through the watchlist (discovery proposal or manual add) and a
+# compliance_admin's approval — see DESIGN.md §15. The six RPG subsidiaries are
+# seeded separately and are used ONLY as internal routing targets (the
+# audience) — they are never watched entities themselves.
 #
 # This module is idempotent: calling seed() against an already-seeded
 # database is a no-op.

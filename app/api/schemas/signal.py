@@ -11,6 +11,7 @@ class RawSignalOut(BaseModel):
     headline: str
     source_excerpt: str
     source_url: str
+    provider: str = "mock"
     observed_at: datetime
 
 
