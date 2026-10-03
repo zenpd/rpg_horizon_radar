@@ -452,10 +452,16 @@ body.guide-on .shell .am{padding-bottom:230px}
 .ptip span{font-size:11.5px;opacity:.85}
 .ptable summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--accent)}
 
-/* App build: on wide screens the guide sits over the empty lower part of the side menu,
-   so it never covers buttons in the main column. */
+/* App build: on wide screens the guide docks bottom-left of the MAIN column (left:220px —
+   just past the 210px sidebar, see .shell's grid-template-columns), so it never covers a
+   button there. It used to sit inside the sidebar itself (left:10px) on the assumption that
+   the nav list leaves empty space below it — that's false for compliance_admin, whose extra
+   "Restricted desk" section (Signal board / Digest archive / Admin) fills the sidebar enough
+   that the guide ends up sitting directly on top of real nav items, silently swallowing
+   clicks on them (confirmed: it fully covered "Admin"). Docking past the sidebar column
+   entirely is correct regardless of how long any role's nav list is. */
 @media (min-width:821px){
-  .guide{left:10px;right:auto;width:190px;bottom:calc(52px + env(safe-area-inset-bottom,0px));padding:12px;gap:6px}
+  .guide{left:220px;right:auto;width:190px;bottom:calc(52px + env(safe-area-inset-bottom,0px));padding:12px;gap:6px}
   .guide b{font-size:14px}
   .guide p{font-size:12px;line-height:1.4}
   .guide .gb button{padding:4px 8px;font-size:11.5px}

@@ -1,0 +1,300 @@
+<title>Demo Day Playbook</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Deliberately single-theme: a stage-manager's cue sheet, not a web page that
+     adapts to the viewer's OS theme. Dark, high-contrast, built to be read fast
+     under time pressure (backstage lighting, a phone propped on a podium). */
+  :root{
+    --bg:#14171B; --surface:#1C2025; --surface-2:#20262C; --rule:#2E353C;
+    --ink:#ECE9E2; --muted:#9AA0A6; --faint:#656D75;
+    --cue:#E0A526; --cue-soft:#3A2F15;
+    --say:#6FC3E0; --say-soft:#162B33;
+    --watch:#E0574A; --watch-soft:#331918;
+    --good:#4FC39F; --good-soft:#15302A;
+    --mono:'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+    --sans:'IBM Plex Sans', 'Segoe UI', Roboto, sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+    font-size:15px; line-height:1.6; padding-bottom:80px;
+  }
+  ::selection{background:var(--cue-soft); color:var(--ink)}
+  .wrap{max-width:820px; margin:0 auto; padding:0 20px}
+
+  header.top{
+    position:sticky; top:0; z-index:10; background:var(--bg);
+    border-bottom:1px solid var(--rule); padding:18px 0 14px;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--cue); margin:0 0 6px;
+  }
+  h1{
+    font-family:var(--mono); font-weight:700; font-size:26px; margin:0 0 4px;
+    letter-spacing:-.01em; text-wrap:balance;
+  }
+  .sub{margin:0; color:var(--muted); font-size:14px}
+
+  nav.jump{
+    display:flex; flex-wrap:wrap; gap:6px 8px; margin-top:14px;
+  }
+  nav.jump a{
+    font-family:var(--mono); font-size:11.5px; color:var(--muted); text-decoration:none;
+    background:var(--surface); border:1px solid var(--rule); border-radius:999px;
+    padding:4px 10px; white-space:nowrap;
+  }
+  nav.jump a:hover{color:var(--ink); border-color:var(--faint)}
+
+  main{padding-top:28px; display:flex; flex-direction:column; gap:34px}
+
+  section{display:flex; flex-direction:column; gap:14px}
+  .section-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+  .section-head h2{
+    font-family:var(--mono); font-size:13px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--faint); margin:0; padding-bottom:6px; border-bottom:1px solid var(--rule);
+    flex:1 1 auto;
+  }
+
+  /* ── Pre-flight checklist ─────────────────────────────────────────────── */
+  .checklist{display:flex; flex-direction:column; gap:8px}
+  .check-row{
+    display:flex; gap:10px; align-items:flex-start; background:var(--surface);
+    border:1px solid var(--rule); border-radius:8px; padding:10px 12px;
+  }
+  .check-row .box{
+    flex:none; width:16px; height:16px; margin-top:2px; border-radius:4px;
+    border:1.5px solid var(--faint); background:transparent;
+  }
+  .check-row code{font-family:var(--mono); font-size:12.5px; background:var(--surface-2); padding:1px 5px; border-radius:4px; color:var(--say)}
+  .check-row p{margin:0; font-size:13.5px; color:var(--muted)}
+  .check-row b{color:var(--ink); font-weight:600}
+
+  /* ── Arc-at-a-glance strip ────────────────────────────────────────────── */
+  .arc{display:flex; flex-wrap:wrap; gap:8px}
+  .arc-chip{
+    font-family:var(--mono); font-size:11.5px; background:var(--surface);
+    border:1px solid var(--rule); border-radius:6px; padding:6px 10px;
+    display:flex; align-items:center; gap:7px; color:var(--muted);
+  }
+  .arc-chip b{color:var(--ink); font-weight:600; font-family:var(--sans)}
+  .arc-chip .t{color:var(--cue)}
+  .arc-total{
+    font-family:var(--mono); font-size:12px; color:var(--cue); margin-top:2px;
+  }
+
+  /* ── Beat cards ───────────────────────────────────────────────────────── */
+  .beat{
+    background:var(--surface); border:1px solid var(--rule); border-radius:10px;
+    overflow:hidden; scroll-margin-top:90px;
+  }
+  .beat-head{
+    display:flex; align-items:center; gap:12px; padding:14px 16px;
+    border-bottom:1px solid var(--rule); background:var(--surface-2);
+  }
+  .beat-time{
+    font-family:var(--mono); font-weight:700; font-size:13px; color:var(--bg);
+    background:var(--cue); border-radius:5px; padding:3px 8px; flex:none;
+  }
+  .beat-head h3{margin:0; font-size:16px; font-weight:700; flex:1 1 auto}
+  .beat-body{padding:14px 16px 16px; display:flex; flex-direction:column; gap:12px}
+
+  .say, .do, .watch{
+    display:flex; gap:10px; align-items:flex-start; border-radius:8px; padding:10px 12px;
+  }
+  .say{background:var(--say-soft)}
+  .do{background:var(--surface-2); border:1px solid var(--rule)}
+  .watch{background:var(--watch-soft)}
+  .tag{
+    flex:none; font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:.06em;
+    text-transform:uppercase; padding:2px 7px; border-radius:4px; margin-top:1px;
+  }
+  .say .tag{color:var(--say); background:rgba(111,195,224,.12)}
+  .do .tag{color:var(--muted); background:rgba(154,160,166,.12)}
+  .watch .tag{color:var(--watch); background:rgba(224,87,74,.12)}
+  .say p, .do p, .watch p{margin:0; font-size:13.5px; line-height:1.55}
+  .say p{font-style:normal}
+  .do p{font-family:var(--mono); font-size:12.5px; color:var(--ink); line-height:1.6}
+  .do p .click{color:var(--good)}
+  .watch p{color:#F0B2AB}
+
+  /* ── Q&A ──────────────────────────────────────────────────────────────── */
+  .qa{display:flex; flex-direction:column; gap:10px}
+  .qa-item{background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:12px 14px}
+  .qa-q{
+    margin:0 0 6px; font-weight:600; font-size:14px; display:flex; gap:8px;
+  }
+  .qa-q::before{content:'Q'; font-family:var(--mono); color:var(--cue); flex:none}
+  .qa-a{margin:0; font-size:13.5px; color:var(--muted); display:flex; gap:8px; line-height:1.55}
+  .qa-a::before{content:'A'; font-family:var(--mono); color:var(--good); flex:none}
+
+  /* ── Risks / rough edges ──────────────────────────────────────────────── */
+  .risk-list{display:flex; flex-direction:column; gap:8px}
+  .risk{
+    background:var(--watch-soft); border:1px solid rgba(224,87,74,.35); border-radius:8px;
+    padding:10px 12px; font-size:13.5px; color:#F0B2AB; display:flex; gap:10px;
+  }
+  .risk b{color:var(--ink)}
+  .fixed{
+    font-family:var(--mono); font-size:10px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--good); background:rgba(79,195,159,.12);
+    border-radius:4px; padding:2px 6px; flex:none; margin-top:2px;
+  }
+
+  .closing{
+    background:linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+    border:1px solid var(--rule); border-radius:10px; padding:20px;
+    text-align:center;
+  }
+  .closing p{margin:0; font-size:16px; font-weight:600; line-height:1.5; text-wrap:balance}
+  .closing .cite{margin-top:8px; font-family:var(--mono); font-size:11px; color:var(--faint)}
+
+  footer{
+    max-width:820px; margin:40px auto 0; padding:16px 20px; border-top:1px solid var(--rule);
+    font-family:var(--mono); font-size:11px; color:var(--faint); text-align:center;
+  }
+
+  @media (max-width:600px){
+    h1{font-size:21px}
+    .beat-head{flex-wrap:wrap}
+  }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">RPG Innovation Festival 2026 · Live demo + Q&A</p>
+    <h1>Horizon Radar — Demo Day Playbook</h1>
+    <p class="sub">A run-sheet, not a script to read verbatim. Know the beats, hit the timings, let the product do the talking.</p>
+    <nav class="jump">
+      <a href="#preflight">Pre-flight</a>
+      <a href="#arc">The arc</a>
+      <a href="#beat-0">Hook</a>
+      <a href="#beat-1">1 · Evidence</a>
+      <a href="#beat-2">2 · Gates</a>
+      <a href="#beat-3">3 · Agent + rules</a>
+      <a href="#beat-4">4 · Exit ramp</a>
+      <a href="#beat-5">5 · It's real</a>
+      <a href="#closing">Closing</a>
+      <a href="#risks">Rough edges</a>
+      <a href="#qa">Q&A</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="preflight">
+    <div class="section-head"><h2>Pre-flight — 10 minutes before you're on</h2></div>
+    <div class="checklist">
+      <div class="check-row"><div class="box"></div><p><b>Fresh demo database.</b> Don't reuse a DB you've been clicking through in rehearsal — stale escalations/decisions make the SWOT board boring (nothing left to shortlist). Spin up a clean one: <code>DROP DATABASE</code> → <code>CREATE DATABASE</code> → <code>alembic upgrade head</code>.</p></div>
+      <div class="check-row"><div class="box"></div><p><b>Run fully offline-safe.</b> Leave every connector/LLM key unset (<code>SCHEDULER_ENABLED=false</code>, <code>TRACING_ENABLED=false</code>). The app degrades gracefully with zero external keys — that's not a compromise, it's the whole point of Beat 3's "rules, not vibes" story. Don't rely on venue wifi or a live NSE/GNews call going well on stage.</p></div>
+      <div class="check-row"><div class="box"></div><p><b>Log in once before you're on</b> as <code>compliance.admin@rpg-demo.local</code> and leave the tab open at <b>This week → CEAT</b>. Starting from a blank login screen wastes 20 seconds you don't have.</p></div>
+      <div class="check-row"><div class="box"></div><p><b>Click "Hide guide" immediately</b> after login, before anything else. The guided-demo tour is good for a solo walkthrough later, not for a presenter who already knows the beats.</p></div>
+      <div class="check-row"><div class="box"></div><p><b>Zoom the browser to ~110–125%</b> if presenting on a big screen. The density is a feature (judges should see real evidence citations, not big empty cards) but small text from the back of a room reads as "can't tell what this does."</p></div>
+      <div class="check-row"><div class="box"></div><p><b>Know your fallback.</b> If the live app breaks mid-demo, the screenshots in this playbook ARE your backup — narrate from them rather than fighting a frozen laptop on stage.</p></div>
+    </div>
+  </section>
+
+  <section id="arc">
+    <div class="section-head"><h2>The arc, at a glance</h2></div>
+    <div class="arc">
+      <span class="arc-chip"><span class="t">0:30</span> Hook</span>
+      <span class="arc-chip"><span class="t">0:45</span> <b>1</b> Evidence, not vibes</span>
+      <span class="arc-chip"><span class="t">0:40</span> <b>2</b> Gates before data</span>
+      <span class="arc-chip"><span class="t">1:45</span> <b>3</b> Agent + rules loop</span>
+      <span class="arc-chip"><span class="t">0:45</span> <b>4</b> The exit ramp</span>
+      <span class="arc-chip"><span class="t">0:40</span> <b>5</b> It's real, not a mockup</span>
+      <span class="arc-chip"><span class="t">0:20</span> Closing line</span>
+    </div>
+    <p class="arc-total">≈ 5:25 demo. Pad to your actual slot by slowing Beat 3 (the richest material) — never by rushing the hook or the closing line.</p>
+  </section>
+
+  <section id="beat-0" class="beat">
+    <div class="beat-head"><span class="beat-time">0:30</span><h3>Opening hook</h3></div>
+    <div class="beat-body">
+      <div class="say"><span class="tag">Say</span><p>"Every quarter, RPG's Corporate Strategy team finds out about acquisition opportunities and competitor distress the same way everyone else does — a banker calls, after it's already public knowledge. Horizon Radar watches the public trail continuously, scores patterns no single headline would reveal, and flags the right subsidiary's desk before anyone's heard of it. And because this touches SEBI's insider-trading and UPSI rules, we built the access control first — not as a feature, as the precondition for the whole thing existing."</p></div>
+      <div class="do"><span class="tag">Do</span><p>Nothing yet — land this over a static login screen or the RPG logo. Don't open the app until the hook lands.</p></div>
+    </div>
+  </section>
+
+  <section id="beat-1" class="beat">
+    <div class="beat-head"><span class="beat-time">0:45</span><h3>1 · Evidence, not vibes</h3></div>
+    <div class="beat-body">
+      <div class="do"><span class="tag">Do</span><p>Log in → land on <span class="click">This week → CEAT</span>. Point at Opportunity <b>O1</b>: "Meridian, a key supplier, is distressed and may be open to a deal." Click <span class="click">signals</span> next to it.</p></div>
+      <div class="say"><span class="tag">Say</span><p>"Every item on this board cites its evidence — here, three independent signals on the same supplier in the same window: leadership churn, a delayed filing, a credit downgrade. One of those is a headline. Three together, in the same window, is a pattern — and that's the whole scoring idea: co-occurrence is weighted, not just counted."</p></div>
+      <div class="watch"><span class="tag">Watch for</span><p>The citation line under each SWOT item ("Company profile, Rating agency, MCA via vendor...") — judges clock "demo data" labels fast. Lean into the honesty, don't dodge it: "labelled demo data because it is — the pipeline underneath is real, we'll get to that."</p></div>
+    </div>
+  </section>
+
+  <section id="beat-2" class="beat">
+    <div class="beat-head"><span class="beat-time">0:40</span><h3>2 · Gates before data, not after</h3></div>
+    <div class="beat-body">
+      <div class="do"><span class="tag">Do</span><p>Sidebar → <span class="click">Admin</span> → <span class="click">Sector Gates</span> tab. Point at CEAT's toggle (green, "Open") vs. the other five ("Awaiting sign-off").</p></div>
+      <div class="say"><span class="tag">Say</span><p>"This isn't a setting we added after the fact. If a sector's gate is closed, the connectors for it never run — nothing is fetched, nothing is stored, nothing is scored. Compliance sign-off is a precondition in the code, not a policy document sitting next to the code."</p></div>
+      <div class="do"><span class="tag">Do</span><p>Flip to <span class="click">Reviewers</span> tab: "Named allow-list. No self-signup exists anywhere in this app — not hidden, not disabled, never built."</p></div>
+    </div>
+  </section>
+
+  <section id="beat-3" class="beat">
+    <div class="beat-head"><span class="beat-time">1:45</span><h3>3 · The agent does real work, with a hard boundary</h3></div>
+    <div class="beat-body">
+      <div class="say"><span class="tag">Say</span><p>"The SWOT you just saw can be rebuilt by an LLM — but here's the part that matters: scoring never touches the model. It's fixed weights per signal type, a co-occurrence multiplier, capped at 100. You could compute it by hand from the raw signals. The model only drafts narrative, and a rules engine checks its work before it's allowed to save: every citation has to actually exist, every move has to link a real strength or weakness to a real opportunity or threat, scores can't be gamed. Fails three rounds of revision, the old SWOT stays — the model never gets to force a bad draft through."</p></div>
+      <div class="do"><span class="tag">Do</span><p>Back on <span class="click">This week</span>: tick <span class="click">Shortlist</span> on the Meridian move → bottom bar → <span class="click">Escalate for deep dive</span> → watch the agent-progress list run (Financial Analyst → Relationship Mapper → M&A Scout → War Room → Risk Checker → Fact-Checker → Writer) → auto-lands on the <span class="click">book page</span>.</p></div>
+      <div class="say"><span class="tag">Say</span><p>(Over the book page) "One page, numbered sections, a real financial-health chart, an ownership graph, risks, a decision box — and at the top, the exact SWOT items that put it here. Nothing in this book is free-floating; every page traces back to a flagged signal."</p></div>
+      <div class="watch"><span class="tag">Watch for</span><p>The deep-dive animation takes a few seconds — don't fill dead air apologetically. Narrate the agent names as they tick by; it reads as "look how much real structure is under this," not "look how slow this is."</p></div>
+    </div>
+  </section>
+
+  <section id="beat-4" class="beat">
+    <div class="beat-head"><span class="beat-time">0:45</span><h3>4 · The exit ramp — the real differentiator</h3></div>
+    <div class="beat-body">
+      <div class="do"><span class="tag">Do</span><p>On the book page's decision box: pick an owner → <span class="click">Approve</span>. Point at the Escalation Brief that appears.</p></div>
+      <div class="say"><span class="tag">Say</span><p>"The moment Corporate Strategy decides to act, Horizon Radar's job is done. This brief is deliberately qualitative — pros, cons, a disclaimer. No price, no multiple, no valuation, because we have no real financial data and fabricating one would be actively misleading. It hands off to RPG's existing formal M&A process from here. This is also exactly why this is a separate submission from BrandPulse, not a bolted-on feature: BrandPulse's audience is wide and subsidiary-local; this audience is small, named, and centrally controlled. Sharing infrastructure between the two would mean a marketing reviewer could see an acquisition signal before Corporate Strategy has acted on it. That's not a shared feature, that's a leak vector."</p></div>
+    </div>
+  </section>
+
+  <section id="beat-5" class="beat">
+    <div class="beat-head"><span class="beat-time">0:40</span><h3>5 · It's real, not a mockup</h3></div>
+    <div class="beat-body">
+      <div class="do"><span class="tag">Do</span><p>Admin → <span class="click">Live Sources</span> tab. Point at the connector table (GNews, NSE, Alpha Vantage, EPO patents, Adzuna...) and the per-connector pace/quota columns.</p></div>
+      <div class="say"><span class="tag">Say</span><p>"This table isn't aspirational — these are real, working connectors into public sources, each with its own documented pace and daily quota so nothing runs away. NSE needs no key and is live right now; the rest activate the moment their key is rotated into Key Vault. The watchlist works the same way as the sector gates — a company is <i>proposed</i> by discovery or added by hand, and nothing is fetched about it until a named compliance admin approves it."</p></div>
+      <div class="watch"><span class="tag">Watch for</span><p>Don't click "Run ingestion now" live unless you've verified a key is actually configured — with everything blank (by design, see pre-flight) it'll correctly report zero new signals, which reads as "it didn't do anything" to someone who doesn't know that's the honest, correct behavior. Narrate the table; don't trigger a live run.</p></div>
+    </div>
+  </section>
+
+  <section id="closing">
+    <div class="closing">
+      <p>"The bet here isn't that AI can spot a deal. It's that at a company where M&amp;A signals are legally sensitive, the hard problem is building something Compliance will actually trust to run. That's what we built first."</p>
+      <p class="cite">— close here. Stop talking. Let the Q&A start.</p>
+    </div>
+  </section>
+
+  <section id="risks">
+    <div class="section-head"><h2>Rough edges — know these before you're asked</h2></div>
+    <div class="risk-list">
+      <div class="risk"><span class="fixed">Fixed</span><p><b>Guided-demo tour overlay could silently block sidebar clicks</b> for the compliance_admin role specifically (its longer nav list left no "empty space" for the tour card to sit in without overlapping). Found by dry-running this exact playbook, fixed before this doc was finalized — the tour now docks past the sidebar column entirely regardless of nav length. Still: click "Hide guide" first as a habit, not a crutch.</p></div>
+      <div class="risk"><p><b>Multi-replica scheduling isn't solved yet.</b> If asked "does this scale to multiple servers," the honest answer is: the in-process scheduler would double-run in a multi-replica deployment today; the fix (a Temporal Schedule) is scoped and documented, not yet built. Say this plainly if asked — it's a known, bounded gap, not a surprise.</p></div>
+      <div class="risk"><p><b>Only one real company is approved anywhere</b>, and only in a local dev database, specifically to prove the governed pipeline works end to end. If pressed on "so is this actually watching real companies," don't overclaim — the pipeline is real, the pilot scope isn't live yet, and that's by design (Compliance sign-off is a precondition, not a formality).</p></div>
+    </div>
+  </section>
+
+  <section id="qa">
+    <div class="section-head"><h2>Q&A rapid-reference</h2></div>
+    <div class="qa">
+      <div class="qa-item"><p class="qa-q">Isn't this scraping data you're not allowed to use?</p><p class="qa-a">Every source is public — news, exchange filings, job postings, patents. NSE access is an explicitly documented open item pending a terms review, with a one-line kill switch (<code>NSE_ENABLED=false</code>) already wired. Glassdoor isn't even built yet — it's blocked until its licence is cleared. We built the off-switch before we built the feature.</p></div>
+      <div class="qa-item"><p class="qa-q">What stops the AI from hallucinating a bad recommendation?</p><p class="qa-a">Scoring is 100% deterministic and rule-based — the model never touches a number. The model only drafts narrative, and a separate rules engine rejects anything with a missing citation, an ungrounded move, or a gamed score, with up to three revision rounds before it gives up and leaves the prior SWOT in place.</p></div>
+      <div class="qa-item"><p class="qa-q">What does this cost to run / what if an API gets hit too hard?</p><p class="qa-a">Every connector has a documented, enforced daily cap (Alpha Vantage: 25 calls/day, Fincrux: 5/day, others paced per-run) — this was designed for bounded, predictable cost from day one, not a wide-open always-on crawler.</p></div>
+      <div class="qa-item"><p class="qa-q">Why isn't this just a feature inside BrandPulse or NeuralMesh?</p><p class="qa-a">Different audience, different failure mode. A bad BrandPulse draft is an editorial correction; a mishandled M&amp;A signal is a regulatory event. They don't share a data store, an access model, or a review workflow — on purpose.</p></div>
+      <div class="qa-item"><p class="qa-q">Is it actually watching real companies right now?</p><p class="qa-a">The pipeline is real and already wired to real public APIs. Today, only a pilot test company is approved, in a local dev database, specifically to prove the end-to-end flow — a real pilot still needs Compliance sign-off first, which the system enforces as a literal switch, not a promise.</p></div>
+      <div class="qa-item"><p class="qa-q">What's left before this could run for real?</p><p class="qa-a">Three things, all scoped: Compliance sign-off + key rotation into Key Vault (the plumbing for this is already built), replacing the in-process scheduler with something multi-replica-safe, and widening real data past the one pilot company. We'd rather name the gaps precisely than claim it's finished.</p></div>
+      <div class="qa-item"><p class="qa-q">How is this different from a strategy analyst just doing this manually?</p><p class="qa-a">Speed and breadth at the same time — one system continuously watching across all six subsidiaries' sectors instead of one person manually tracking dozens of sources per sector. The Meridian example you just saw surfaces a pattern weeks before it would hit anyone's desk the old way.</p></div>
+      <div class="qa-item"><p class="qa-q">What about the security of the login / access model?</p><p class="qa-a">Named-reviewer auth only, no self-registration endpoint exists anywhere in the codebase, every signal/digest/radar view writes an audit row, and closed sector gates block ingestion itself — not just what's shown on screen.</p></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>Rehearse once end-to-end before the real thing. Know the beats, not the words.</footer>
