@@ -347,6 +347,7 @@ def follow(body: FollowIn):
         STORE.audit(user_of(body.company), "follow_rival", body.rival)
     else:
         STORE.followed.discard(k)
+        STORE.persist()
     return {"company": body.company, "rivals": views.roster(body.company)}
 
 

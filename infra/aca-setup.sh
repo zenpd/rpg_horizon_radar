@@ -42,6 +42,32 @@ AZURE_OPENAI_ENDPOINT="${AZURE_OPENAI_ENDPOINT:-https://<your-openai>.openai.azu
 AZURE_OPENAI_API_KEY="${AZURE_OPENAI_API_KEY:-<key>}"
 AZURE_OPENAI_DEPLOYMENT="${AZURE_OPENAI_DEPLOYMENT:-gpt-4.1-mini}"
 KV_URL="${KV_URL:-https://zaf-kv-01.vault.azure.net/}"
+
+# Radar scheduler + reasoning routes (DESIGN.md §15) — not secrets, safe to set directly.
+SCHEDULER_ENABLED="${SCHEDULER_ENABLED:-true}"
+INGEST_DAILY_AT="${INGEST_DAILY_AT:-17:00}"
+DISCOVERY_EVERY_DAYS="${DISCOVERY_EVERY_DAYS:-7}"
+AUTO_SWOT="${AUTO_SWOT:-true}"
+LLM_ROUTES="${LLM_ROUTES:-groq:openai/gpt-oss-120b,nvidia:nvidia/nemotron-3-super-120b-a12b}"
+
+# Live connector + LLM-route keys (TODO.md "Rotate every API key"): every one of these was pasted
+# into chat during the build. Rotate first, store the rotated value as a Key Vault secret, then
+# set its *_KV_URI below — never put the raw key in this script or in --env-vars. A blank
+# *_KV_URI leaves that connector disabled (ingestion/connectors/live/*.py: "a connector without a
+# key is skipped"), so it's safe to deploy with some or all of these still blank.
+GNEWS_API_KEY_KV_URI="${GNEWS_API_KEY_KV_URI:-}"
+NEWSDATA_API_KEY_KV_URI="${NEWSDATA_API_KEY_KV_URI:-}"
+TAVILY_API_KEY_KV_URI="${TAVILY_API_KEY_KV_URI:-}"
+ADZUNA_APP_ID_KV_URI="${ADZUNA_APP_ID_KV_URI:-}"
+ADZUNA_APP_KEY_KV_URI="${ADZUNA_APP_KEY_KV_URI:-}"
+FETCHLAYER_API_KEY_KV_URI="${FETCHLAYER_API_KEY_KV_URI:-}"  # not wired until Glassdoor's licence is cleared (TODO.md §1)
+YOUTUBE_API_KEY_KV_URI="${YOUTUBE_API_KEY_KV_URI:-}"
+ALPHA_VANTAGE_API_KEY_KV_URI="${ALPHA_VANTAGE_API_KEY_KV_URI:-}"
+EPO_OPS_CONSUMER_KEY_KV_URI="${EPO_OPS_CONSUMER_KEY_KV_URI:-}"
+EPO_OPS_CONSUMER_SECRET_KV_URI="${EPO_OPS_CONSUMER_SECRET_KV_URI:-}"
+FINCRUX_API_KEY_KV_URI="${FINCRUX_API_KEY_KV_URI:-}"
+GROQ_API_KEY_KV_URI="${GROQ_API_KEY_KV_URI:-}"
+NVIDIA_API_KEY_KV_URI="${NVIDIA_API_KEY_KV_URI:-}"
 # ── END VARIABLES ─────────────────────────────────────────────────────────────
 
 echo "=== Subscription ==="
@@ -63,6 +89,24 @@ COMMON_ENV=(
   "AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY"
   "AZURE_OPENAI_DEPLOYMENT=$AZURE_OPENAI_DEPLOYMENT"
   "AZURE_KEYVAULT_URL=$KV_URL"
+  "SCHEDULER_ENABLED=$SCHEDULER_ENABLED"
+  "INGEST_DAILY_AT=$INGEST_DAILY_AT"
+  "DISCOVERY_EVERY_DAYS=$DISCOVERY_EVERY_DAYS"
+  "AUTO_SWOT=$AUTO_SWOT"
+  "LLM_ROUTES=$LLM_ROUTES"
+  "GNEWS_API_KEY_KV_URI=$GNEWS_API_KEY_KV_URI"
+  "NEWSDATA_API_KEY_KV_URI=$NEWSDATA_API_KEY_KV_URI"
+  "TAVILY_API_KEY_KV_URI=$TAVILY_API_KEY_KV_URI"
+  "ADZUNA_APP_ID_KV_URI=$ADZUNA_APP_ID_KV_URI"
+  "ADZUNA_APP_KEY_KV_URI=$ADZUNA_APP_KEY_KV_URI"
+  "FETCHLAYER_API_KEY_KV_URI=$FETCHLAYER_API_KEY_KV_URI"
+  "YOUTUBE_API_KEY_KV_URI=$YOUTUBE_API_KEY_KV_URI"
+  "ALPHA_VANTAGE_API_KEY_KV_URI=$ALPHA_VANTAGE_API_KEY_KV_URI"
+  "EPO_OPS_CONSUMER_KEY_KV_URI=$EPO_OPS_CONSUMER_KEY_KV_URI"
+  "EPO_OPS_CONSUMER_SECRET_KV_URI=$EPO_OPS_CONSUMER_SECRET_KV_URI"
+  "FINCRUX_API_KEY_KV_URI=$FINCRUX_API_KEY_KV_URI"
+  "GROQ_API_KEY_KV_URI=$GROQ_API_KEY_KV_URI"
+  "NVIDIA_API_KEY_KV_URI=$NVIDIA_API_KEY_KV_URI"
 )
 
 echo "=== Backend API ($BE_APP) — internal + allow-insecure ==="

@@ -9,11 +9,18 @@ import json
 import time
 from datetime import datetime
 
-from . import rules
+from . import persistence, rules
 from .reference import DATA_DIR, REF, load
 
 TODAY = "29 Sep"
 COMPANIES_ORDER = ["CEAT", "KEC", "Zensar", "RPG Life Sciences", "Raychem RPG", "Harrisons"]
+
+# Per-case fields a user can actually change (escalation, decision, plan, updates, outcome).
+# Everything else on a case (kind/co/cos/title/date/target/ws) is rebuilt fresh from the current
+# reference data on every boot, so only this subset is worth persisting — snapshotting the whole
+# case would also freeze a stale copy of `target`/`ws` into the saved state.
+_CASE_MUTABLE_FIELDS = ("stage", "in_book", "owner", "approved", "plan", "updates", "up_next", "outcome", "ov_date")
+_MAX_ACTIVITY = 500  # unbounded growth guard; the UI only ever shows the newest 40 anyway
 
 
 class Store:
@@ -23,12 +30,21 @@ class Store:
         self.agent_saved: dict = {}
         # Called after the agent saves a SWOT, to persist it (bridge.persist_swot).
         self.on_agent_swot = None
-        self.reset()
+        # Just the demo defaults for now, unpersisted: radar/bridge.py's startup() rebuilds this
+        # again (to reload agent SWOTs, also unpersisted — see load_agent_swots()) and only then
+        # calls _apply_persisted() once, as the last step of boot. Doing it here too would just
+        # get overwritten by that later reset() and waste a DB round trip for nothing.
+        self.reset(persist=False)
 
     # ---------- setup ----------
-    def reset(self, keep_agent_swots: bool = True) -> None:
+    def reset(self, keep_agent_swots: bool = True, persist: bool = True) -> None:
         """Back to the demo data. Live signals and SWOTs the agent built always stay: they are
-        records of real data, not demo state (keep_agent_swots=False drops them from memory only)."""
+        records of real data, not demo state (keep_agent_swots=False drops them from memory only).
+
+        persist=True (the default, used by the explicit /demo/reset endpoint and every other
+        caller) makes this the new durable state too. The one exception is the very first call
+        from __init__: it must NOT persist yet, or it would overwrite a real saved session with
+        fresh demo defaults before _apply_persisted() below gets a chance to load it back."""
         self.companies: dict = load("companies")
         swot = load("swot")
         self.swot: dict = swot["swot"]
@@ -76,6 +92,44 @@ class Store:
         e["plan"] = [{**p, "done": i == 0} for i, p in enumerate(rules.plan_for(e))]
         e["updates"] = [{"date": "26 Sep", "text": "CEAT opened talks with two EV 2-wheeler makers (plan step 1).", "fresh": False},
                         {"date": "24 Sep", "text": "Rival A posted 9 more EV battery roles.", "fresh": False}]
+        if persist:
+            self.persist()
+
+    def _apply_persisted(self) -> None:
+        """Overlay a previously-saved snapshot (persist.py) on top of the fresh demo defaults
+        reset() just built — restores what a reviewer actually did (escalations, decisions,
+        plans, theses, watch rules, universe additions, activity) across a restart."""
+        saved = persistence.load()
+        if not saved:
+            return
+        for cid, fields in (saved.get("cases") or {}).items():
+            if cid in self.cases:
+                self.cases[cid].update({k: v for k, v in fields.items() if k in _CASE_MUTABLE_FIELDS})
+        self.book_order = [cid for cid in saved.get("book_order", []) if cid in self.cases]
+        self.followed = set(saved.get("followed", []))
+        if saved.get("activity"):
+            self.activity = saved["activity"]
+        if saved.get("theses"):
+            self.theses = saved["theses"]
+        if saved.get("triggers"):
+            self.triggers = saved["triggers"]
+        if saved.get("universe"):
+            self.universe = saved["universe"]
+
+    def persist(self) -> None:
+        """Save everything a reviewer can actually change, so it survives a restart. Called after
+        every mutation (from audit(), since every external mutation already calls it — see
+        radar/api.py — plus the one place that doesn't: unfollowing a rival)."""
+        snapshot = {
+            "cases": {cid: {k: c[k] for k in _CASE_MUTABLE_FIELDS} for cid, c in self.cases.items()},
+            "book_order": self.book_order,
+            "followed": sorted(self.followed),
+            "activity": self.activity[:_MAX_ACTIVITY],
+            "theses": self.theses,
+            "triggers": self.triggers,
+            "universe": self.universe,
+        }
+        persistence.save(snapshot)
 
     @staticmethod
     def _new_case(cid, kind, co, cos, title, date, target=None, ws=None) -> dict:
@@ -93,6 +147,8 @@ class Store:
     def audit(self, user: str, action: str, detail: str) -> None:
         now = datetime.now()
         self.activity.insert(0, [now.strftime("%d %b %H:%M"), user, action, detail])
+        del self.activity[_MAX_ACTIVITY:]  # unbounded growth guard; the UI only shows the newest 40
+        self.persist()
 
     def target(self, tid: str) -> dict | None:
         return next((t for t in self.targets if t["id"] == tid), None)

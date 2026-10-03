@@ -395,8 +395,11 @@ companies; every request writes an audit row (`view_radar` / `radar_change`). Th
 
 **What is live and what is demo.** Live: the approved watchlist companies' signals (via
 `radar/bridge.py`) and the SWOTs built from them. Demo: the rival placeholders ("Rival A") where no rival
-is approved yet, the deal targets (fictional, like the seed entities), market series, and the
-in-memory book, follow-up, theses and rules — those reset on restart, as in the prototype. Moving them
-to tables is the next step before a pilot. The two UIs' styles are kept apart: the radar uses its own
-CSS; the ZenLabs screens render inside `.tw`, which carries Tailwind's preflight scoped by
-`app/ui/scripts/scope-preflight.mjs`.
+is approved yet, the deal targets (fictional, like the seed entities), and market series. The book,
+follow-up, theses, watch rules, universe and activity feed are editable demo state (not yet real
+data), but no longer in-memory-only: every mutation is snapshotted into the existing
+`connector_state` table (`radar/persistence.py`) and restored at boot, so a restart keeps what a
+reviewer actually did. Retiring the fictional deal targets / rival placeholders for real sourced
+data is the next step before a pilot (TODO.md §2), not the restart-safety of what's already there.
+The two UIs' styles are kept apart: the radar uses its own CSS; the ZenLabs screens render inside
+`.tw`, which carries Tailwind's preflight scoped by `app/ui/scripts/scope-preflight.mjs`.

@@ -17,6 +17,7 @@ os.environ.update({
     "DATABASE_URL": f"sqlite+aiosqlite:///{_DB.as_posix()}",
     "APP_ENV": "development",
     "SCHEDULER_ENABLED": "false",
+    "TRACING_ENABLED": "false",
     "TEMPORAL_HOST": "127.0.0.1:1",  # unreachable: ingestion takes the inline path at once
 })
 for _key in ("GNEWS_API_KEY", "NEWSDATA_API_KEY", "TAVILY_API_KEY", "ADZUNA_APP_ID", "ADZUNA_APP_KEY", "FETCHLAYER_API_KEY",

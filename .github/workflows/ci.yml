@@ -1,0 +1,42 @@
+name: CI
+
+# Backend tests + frontend typecheck/build on every PR and on push to main/dev_sow — the two
+# checks TODO.md asked for before a pilot. Nothing here talks to a real database or an external
+# API: tests/conftest.py already points the app at a throwaway SQLite file and blanks every
+# connector/LLM key, so this needs no secrets and no services block.
+on:
+  pull_request:
+  push:
+    branches: [main, dev_sow]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: app/requirements.txt
+      - run: pip install -r requirements.txt
+      - run: pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: app/ui/package-lock.json
+      - run: npm ci
+      # tsc --noEmit then vite build, in one go (package.json's own "build" script).
+      - run: npm run build

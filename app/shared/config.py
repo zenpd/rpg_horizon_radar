@@ -66,6 +66,9 @@ class Settings(BaseSettings):
     temporal_task_queue_agents: str = "rpg-horizon-radar-agents"
 
     # ── Arize Phoenix Observability ────────────────────────────────────────────
+    # Set false for local dev / CI without a Phoenix collector running: skips exporter setup
+    # entirely, rather than configuring one that retries forever in the background (noisy logs).
+    tracing_enabled: bool = True
     phoenix_host: str = "localhost"
     phoenix_port: int = 6006
     # e.g. https://zaf-phoenix.bravesky-d9f9eeb7.eastus2.azurecontainerapps.io/v1/traces
@@ -104,10 +107,27 @@ class Settings(BaseSettings):
     fincrux_api_key: str = ""             # 5 calls a day
     nse_enabled: bool = True              # no key; NSE's site API, used sparingly
 
+    # KV URI overrides for every connector key above — every one of these was pasted into chat
+    # during the build and needs rotating; set the corresponding *_KV_URI once rotated and the
+    # plain field is populated from Key Vault at startup, same as azure_openai_api_key below.
+    gnews_api_key_kv_uri: str = ""
+    newsdata_api_key_kv_uri: str = ""
+    tavily_api_key_kv_uri: str = ""
+    adzuna_app_id_kv_uri: str = ""
+    adzuna_app_key_kv_uri: str = ""
+    fetchlayer_api_key_kv_uri: str = ""
+    youtube_api_key_kv_uri: str = ""
+    alpha_vantage_api_key_kv_uri: str = ""
+    epo_ops_consumer_key_kv_uri: str = ""
+    epo_ops_consumer_secret_kv_uri: str = ""
+    fincrux_api_key_kv_uri: str = ""
+
     # ── Reasoning LLM routes (shared/llm_chat.py) ──────────────────────────────
     # Used for watchlist discovery and SWOT briefs — never for scoring.
     groq_api_key: str = ""
     nvidia_api_key: str = ""
+    groq_api_key_kv_uri: str = ""
+    nvidia_api_key_kv_uri: str = ""
     llm_routes: str = "groq:openai/gpt-oss-120b,nvidia:nvidia/nemotron-3-super-120b-a12b"
     llm_reasoning_effort: str = "low"
 
@@ -147,6 +167,19 @@ class Settings(BaseSettings):
             ("database_url_kv_uri", "database_url"),
             ("redis_url_kv_uri", "redis_url"),
             ("arize_phoenix_api_key_kv_uri", "arize_phoenix_api_key"),
+            ("gnews_api_key_kv_uri", "gnews_api_key"),
+            ("newsdata_api_key_kv_uri", "newsdata_api_key"),
+            ("tavily_api_key_kv_uri", "tavily_api_key"),
+            ("adzuna_app_id_kv_uri", "adzuna_app_id"),
+            ("adzuna_app_key_kv_uri", "adzuna_app_key"),
+            ("fetchlayer_api_key_kv_uri", "fetchlayer_api_key"),
+            ("youtube_api_key_kv_uri", "youtube_api_key"),
+            ("alpha_vantage_api_key_kv_uri", "alpha_vantage_api_key"),
+            ("epo_ops_consumer_key_kv_uri", "epo_ops_consumer_key"),
+            ("epo_ops_consumer_secret_kv_uri", "epo_ops_consumer_secret"),
+            ("fincrux_api_key_kv_uri", "fincrux_api_key"),
+            ("groq_api_key_kv_uri", "groq_api_key"),
+            ("nvidia_api_key_kv_uri", "nvidia_api_key"),
         ]
         for uri_field, target_field in kv_map:
             uri: str = getattr(self, uri_field, "")

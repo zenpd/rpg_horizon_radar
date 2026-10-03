@@ -19,6 +19,24 @@ variables:
   backendRepo: 'rpg-horizon-radar-be'
   backendPort: '8040'
   tag: 'latest'
+  # Only used the first time this pipeline creates the app/worker (az containerapp update never
+  # changes env vars — see BOOTSTRAP_GUIDE.md). The connector/LLM *_KV_URI values are secrets:
+  # define them in an Azure DevOps variable group (e.g. "rpg-horizon-radar-secrets") linked below,
+  # never inline here. A blank *_KV_URI just leaves that connector disabled.
+  commonEnv: >-
+    APP_ENV=production LOG_LEVEL=INFO
+    SCHEDULER_ENABLED=true INGEST_DAILY_AT=17:00 DISCOVERY_EVERY_DAYS=7 AUTO_SWOT=true
+    LLM_ROUTES=groq:openai/gpt-oss-120b,nvidia:nvidia/nemotron-3-super-120b-a12b
+    GNEWS_API_KEY_KV_URI=$(gnewsApiKeyKvUri) NEWSDATA_API_KEY_KV_URI=$(newsdataApiKeyKvUri)
+    TAVILY_API_KEY_KV_URI=$(tavilyApiKeyKvUri) ADZUNA_APP_ID_KV_URI=$(adzunaAppIdKvUri)
+    ADZUNA_APP_KEY_KV_URI=$(adzunaAppKeyKvUri) FETCHLAYER_API_KEY_KV_URI=$(fetchlayerApiKeyKvUri)
+    YOUTUBE_API_KEY_KV_URI=$(youtubeApiKeyKvUri) ALPHA_VANTAGE_API_KEY_KV_URI=$(alphaVantageApiKeyKvUri)
+    EPO_OPS_CONSUMER_KEY_KV_URI=$(epoOpsConsumerKeyKvUri) EPO_OPS_CONSUMER_SECRET_KV_URI=$(epoOpsConsumerSecretKvUri)
+    FINCRUX_API_KEY_KV_URI=$(fincruxApiKeyKvUri) GROQ_API_KEY_KV_URI=$(groqApiKeyKvUri) NVIDIA_API_KEY_KV_URI=$(nvidiaApiKeyKvUri)
+
+# Define the KV_URI values referenced above in this group (Pipelines → Library) rather than here.
+# variables:
+#   - group: rpg-horizon-radar-secrets
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -52,7 +70,7 @@ stages:
                     --target-port $(backendPort) --ingress internal --allow-insecure \
                     --min-replicas 0 --max-replicas 3 --cpu 1 --memory 2Gi \
                     --registry-server $(acrLoginServer) \
-                    --env-vars APP_ENV=production LOG_LEVEL=INFO
+                    --env-vars $(commonEnv)
                 fi
 
                 echo "== Deploy worker (same image) =="
@@ -64,5 +82,5 @@ stages:
                     --min-replicas 1 --max-replicas 3 --cpu 0.5 --memory 1Gi \
                     --registry-server $(acrLoginServer) \
                     --command python -- -m workers.worker \
-                    --env-vars APP_ENV=production LOG_LEVEL=INFO
+                    --env-vars $(commonEnv)
                 fi

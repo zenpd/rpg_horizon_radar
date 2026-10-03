@@ -14,12 +14,31 @@ lazy so a missing observability package never blocks app startup.
 from __future__ import annotations
 
 import logging
+import socket
+from urllib.parse import urlparse
 
 from shared.config import get_settings
 
 log = logging.getLogger("tracing")
 
 _INITIALISED = False
+_PROBE_TIMEOUT = 0.3  # seconds — local/LAN only; a real ACA collector is checked over TLS anyway
+
+
+def _collector_reachable(endpoint: str) -> bool:
+    """A quick TCP probe so a missing local Phoenix (common in dev and every test run) skips
+    exporter setup entirely, instead of configuring a BatchSpanProcessor that retries forever in
+    the background and logs a connection failure on every export interval."""
+    try:
+        parsed = urlparse(endpoint)
+        host = parsed.hostname
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        if not host:
+            return False
+        with socket.create_connection((host, port), timeout=_PROBE_TIMEOUT):
+            return True
+    except OSError:
+        return False
 
 
 def init_tracing(service_name: str = "rpg-horizon-radar-backend") -> None:
@@ -33,6 +52,11 @@ def init_tracing(service_name: str = "rpg-horizon-radar-backend") -> None:
     if _INITIALISED:
         return
 
+    settings = get_settings()
+    if not settings.tracing_enabled:
+        log.info("tracing disabled (TRACING_ENABLED=false)")
+        return
+
     try:
         from opentelemetry import trace
         from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
@@ -40,14 +64,16 @@ def init_tracing(service_name: str = "rpg-horizon-radar-backend") -> None:
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-        settings = get_settings()
-
         if settings.phoenix_collector_endpoint:
             endpoint = settings.phoenix_collector_endpoint.rstrip("/")
             if not endpoint.endswith("/v1/traces"):
                 endpoint = f"{endpoint}/v1/traces"
         else:
             endpoint = f"http://{settings.phoenix_host}:{settings.phoenix_port}/v1/traces"
+
+        if not _collector_reachable(endpoint):
+            log.info("tracing collector unreachable at %s — skipping (no retries, no noisy export errors)", endpoint)
+            return
 
         headers = {}
         if settings.arize_phoenix_api_key:

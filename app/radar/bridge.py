@@ -119,7 +119,9 @@ async def load_agent_swots() -> None:
         co = CODE_TO_CO.get(r.subsidiary_code)
         if co and isinstance(r.content, dict) and "swot" in r.content:
             STORE.agent_saved[co] = r.content
-    STORE.reset(keep_agent_swots=True)
+    # Not persisted: this runs on every boot just to fold in agent SWOTs, before
+    # startup() applies the one real persisted snapshot (see below).
+    STORE.reset(keep_agent_swots=True, persist=False)
 
 
 async def _save_swot(co: str, payload: dict) -> None:
@@ -144,4 +146,8 @@ async def startup() -> None:
     LOOP = asyncio.get_running_loop()
     STORE.on_agent_swot = persist_swot
     await load_agent_swots()
+    # The one real restore: whatever a reviewer actually did (escalations, decisions, plans,
+    # theses, watch rules, universe additions, activity) survives a restart from here on
+    # (radar/persistence.py). Last, so load_agent_swots()'s own reset() above can't undo it.
+    STORE._apply_persisted()
     await sync()

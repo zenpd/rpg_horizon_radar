@@ -43,19 +43,34 @@ Everything else on the screens is still the prototype's demo data. See DESIGN.md
 
 ## 3. Persistence and platform
 
-- [ ] **Move the radar's in-memory state to the database.** Today the book, decisions, plans,
-  follow-ups, theses, watch rules, universe and activity feed live in `app/radar/store.py` and are
-  lost on restart. Only agent SWOTs (`swot_briefs`) and live data persist.
-- [ ] **Run migration `0003_live_signals` on PostgreSQL** (upgrade and downgrade). It has only been
-  tested on SQLite.
+- [x] **Move the radar's in-memory state to the database.** `app/radar/store.py`'s cases (stage,
+  decision, plan, updates, outcome), book order, followed rivals, activity feed, theses, triggers
+  and universe now round-trip through the existing `connector_state` table
+  (`radar/persistence.py`, keyed `radar_mutable_state`) — one snapshot, saved after every mutation
+  (`Store.audit()`/`Store.persist()`), restored once at boot after `radar/bridge.py`'s own
+  (unpersisted) startup reset. Verified end-to-end: escalated a case through deep-dive to the
+  book, added a thesis/trigger/universe entry, toggled a trigger off, killed and restarted the
+  process against real Postgres — all of it was still there. Deliberately NOT persisted: agent
+  SWOTs (already in `swot_briefs`), and the deep-dive progress-animation jobs themselves (their
+  only lasting effect — stage/in_book — is covered by the cases snapshot).
+- [x] **Run migration `0003_live_signals` on PostgreSQL** (upgrade and downgrade). Tested directly:
+  both directions apply cleanly.
 - [ ] **Background work across replicas.** Replace the in-process scheduler with a Temporal
   Schedule on `IngestionWorkflow`, or run it in one replica only. Background jobs are in memory too.
-- [ ] **Deployment settings.** Add the new settings to the ACA environment and the pipelines:
-  connector keys, `LLM_ROUTES`, `SCHEDULER_ENABLED`, `INGEST_DAILY_AT`, `DISCOVERY_EVERY_DAYS`,
-  `AUTO_SWOT`.
-- [ ] **Quiet tracing locally.** Phoenix tracing is noisy when no collector is running (local and
-  tests). Skip the exporter when the collector is unreachable or a flag is off.
-- [ ] **CI.** Run `pytest` (app) and `npx tsc --noEmit` / `vite build` (app/ui) on every PR.
+  Not attempted this pass — a real architecture change, not a quick fix.
+- [x] **Deployment settings.** Added to `infra/aca-setup.sh` and `azure-pipelines-be.yml`:
+  `SCHEDULER_ENABLED`, `INGEST_DAILY_AT`, `DISCOVERY_EVERY_DAYS`, `AUTO_SWOT`, `LLM_ROUTES` as
+  plain values; every connector/LLM key as a `*_KV_URI` setting (new fields + `kv_map` entries in
+  `shared/config.py`, matching the existing Azure OpenAI pattern) — wired to Azure Pipelines
+  variable-group placeholders rather than inline secrets, since real Key Vault URIs still need
+  creating as part of the key-rotation item above.
+- [x] **Quiet tracing locally.** `observability/tracing.py` now probes the collector (0.3s TCP
+  connect) before configuring the exporter, and skips entirely on a miss — no more background
+  retry noise. A new `TRACING_ENABLED` flag (`tests/conftest.py` sets it false) covers the rest.
+- [x] **CI.** `.github/workflows/ci.yml` runs `pytest` (app) and `npm run build` (`tsc --noEmit` +
+  `vite build`, app/ui) on every PR and on push to `main`/`dev_sow`. No secrets needed —
+  `tests/conftest.py` already points everything at a throwaway SQLite file with every external key
+  blank.
 
 ## 4. Code and tests
 
