@@ -1,20 +1,186 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import { api, type SchedulerStatus, type SignalJob, type SignalsStatus } from "../api";
+import {
+  api,
+  type AcquisitionThesisAssessment,
+  type AcquisitionThesisDraft,
+  type AcquisitionThesisOptions,
+  type AcquisitionTargetRefreshJob,
+  type SchedulerStatus,
+  type SignalJob,
+  type SignalsStatus,
+  type SwotJob,
+  type SwotQuadrant,
+  type ThesisSwotInput,
+} from "../api";
 import { sCls } from "../components/ui";
 import { useApp } from "../state";
 
 /* ---------------- Acquisition theses ---------------- */
+const SWOT_FIELDS: [SwotQuadrant, string][] = [["S", "Strengths"], ["W", "Weaknesses"], ["O", "Opportunities"], ["T", "Threats"]];
+
+function SwotList({ title, swot, rationale = false }: {
+  title: string;
+  swot: Record<SwotQuadrant, { text: string; source?: string; source_url?: string | null; basis?: string; rationale?: string }[]>;
+  rationale?: boolean;
+}) {
+  return <div className="panel">
+    <h5>{title}</h5>
+    {SWOT_FIELDS.map(([key, label]) => <div key={key} style={{ marginBottom: 10 }}>
+      <b>{label}</b>
+      <ul style={{ margin: "3px 0", paddingLeft: 18 }}>
+        {swot[key].map((item, index) => <li key={`${key}-${index}`}>
+          {item.text}
+          {item.basis && <span className="mini"> · {item.basis === "assumption" ? "Assumption" : item.basis === "baseline" ? "Acquirer baseline" : "Target today"}</span>}
+          {item.source && <div className="sub">Source: {item.source_url
+            ? <a href={item.source_url} target="_blank" rel="noreferrer">{item.source}</a>
+            : item.source}</div>}
+          {rationale && item.rationale && <div className="sub">Why: {item.rationale}</div>}
+        </li>)}
+      </ul>
+      {!swot[key].length && <p className="sub">No supported findings in the available evidence.</p>}
+    </div>)}
+  </div>;
+}
+
 export function Theses() {
   const app = useApp();
   const [list, setList] = useState<any[] | null>(null);
   const [sel, setSel] = useState<string | null>(null);
   const [text, setText] = useState("Cable joint or heat-shrink makers in India, revenue ₹100–500 crore, family owned");
-  const [desk, setDesk] = useState(app.companies[0]);
+  const [desk, setDesk] = useState(app.cur === "All" ? app.companies[0] : app.cur);
   const [parsed, setParsed] = useState<any>(null);
+  const [acqOptions, setAcqOptions] = useState<AcquisitionThesisOptions | null>(null);
+  const [targetId, setTargetId] = useState("");
+  const [targetText, setTargetText] = useState("");
+  const [currentSwot, setCurrentSwot] = useState<ThesisSwotInput | null>(null);
+  const [draft, setDraft] = useState<AcquisitionThesisDraft | null>(null);
+  const [assessments, setAssessments] = useState<AcquisitionThesisAssessment[]>([]);
+  const [drafting, setDrafting] = useState(false);
+  const [savingAssessment, setSavingAssessment] = useState(false);
+  const [baselineJob, setBaselineJob] = useState<SwotJob | null>(null);
+  const [baselineError, setBaselineError] = useState("");
+  const [generatingCurrentSwot, setGeneratingCurrentSwot] = useState(false);
+  const [refreshingTarget, setRefreshingTarget] = useState<AcquisitionTargetRefreshJob | null>(null);
   useEffect(() => { api.theses().then((l) => { setList(l); setSel((s) => s ?? (l.find((t) => t.desk === app.cur) || l[0]).id); }); }, [app.version]);
+  useEffect(() => {
+    if (!desk) return;
+    api.acquisitionThesisOptions(desk).then((options) => {
+      setAcqOptions(options);
+      setTargetId((current) => options.targets.some((target) => target.id === current) ? current : options.targets[0]?.id || "");
+      setAssessments(options.existing);
+      if (options.baseline_source.by !== "agent") {
+        setBaselineError("");
+        api.buildAcquisitionBaseline(desk).then(setBaselineJob).catch((error) => {
+          setBaselineError((error as Error).message);
+        });
+      }
+    }).catch((error) => app.toast((error as Error).message));
+  }, [desk, app.version]);
+  useEffect(() => {
+    if (!baselineJob) return;
+    if (baselineJob.status === "completed") {
+      setBaselineJob(null);
+      app.bump();
+      return;
+    }
+    if (baselineJob.status === "failed") {
+      setBaselineError(baselineJob.error || "The SWOT Analyst could not build the baseline.");
+      setBaselineJob(null);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      api.swotJob(baselineJob.id).then(setBaselineJob).catch((error) => {
+        setBaselineError((error as Error).message);
+        setBaselineJob(null);
+      });
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [baselineJob]);
+  useEffect(() => {
+    if (!refreshingTarget || refreshingTarget.status !== "running") return;
+    const timer = window.setTimeout(() => {
+      api.acquisitionTargetJob(refreshingTarget.id).then((job) => {
+        setRefreshingTarget(job);
+        if (job.status === "completed") {
+          if (job.result?.errors.length) {
+            app.toast(`Fetched ${job.result.new_signals} new signals; some sources failed: ${job.result.errors.join("; ")}`);
+          } else {
+            app.toast(`Fetched ${job.result?.new_signals || 0} new signals for ${job.result?.target_name}.`);
+          }
+          api.acquisitionThesisOptions(desk).then(setAcqOptions).catch((error) => app.toast((error as Error).message));
+        } else if (job.status === "failed") {
+          app.toast(job.error || "Live signal refresh failed.");
+        }
+      }).catch((error) => {
+        app.toast((error as Error).message);
+        setRefreshingTarget(null);
+      });
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [refreshingTarget, desk]);
+  useEffect(() => {
+    setDraft(null);
+    setCurrentSwot(null);
+  }, [targetId]);
   if (!list) return <p className="sub">Loading theses…</p>;
   const th = list.find((t) => t.id === sel) || list[0];
+  const selectedTarget = acqOptions?.targets.find((target) => target.id === targetId);
+  const baselineReady = acqOptions?.baseline_source.by === "agent";
+  const generateCurrentSwot = async () => {
+    if (!targetId) return;
+    try {
+      setGeneratingCurrentSwot(true);
+      setDraft(null);
+      const result = await api.generateTargetCurrentSwot(desk, targetId);
+      setCurrentSwot(result.current_swot);
+      app.toast(`Current SWOT generated from ${result.evidence_count} live-source signals (${result.generated_by}).`);
+    } catch (error) {
+      setCurrentSwot(null);
+      app.toast((error as Error).message);
+    } finally {
+      setGeneratingCurrentSwot(false);
+    }
+  };
+  const refreshTargetSignals = async () => {
+    if (!targetId) return;
+    setCurrentSwot(null);
+    setDraft(null);
+    try {
+      setRefreshingTarget(await api.refreshAcquisitionTarget(desk, targetId));
+    } catch (error) {
+      app.toast((error as Error).message);
+    }
+  };
+  const draftSwot = async () => {
+    try {
+      if (!currentSwot) throw new Error("Generate the target's current SWOT from live evidence first.");
+      setDrafting(true);
+      const result = await api.draftAcquisitionSwot(desk, targetId, targetText, currentSwot);
+      setDraft(result);
+      app.toast("Post-acquisition SWOT draft is ready. Review it before saving.");
+    } catch (error) {
+      app.toast((error as Error).message);
+    } finally {
+      setDrafting(false);
+    }
+  };
+  const saveAssessment = async () => {
+    if (!draft || !targetId || !currentSwot) return;
+    try {
+      setSavingAssessment(true);
+      const saved = await api.saveAcquisitionThesis(desk, targetId, targetText, currentSwot, draft.post_acquisition_swot);
+      setAssessments((items) => [saved, ...items.filter((item) => item.id !== saved.id)]);
+      setDraft(null);
+      setTargetText("");
+      app.toast(`Confirmed acquisition thesis saved for ${saved.target_name}.`);
+      app.bump();
+    } catch (error) {
+      app.toast((error as Error).message);
+    } finally {
+      setSavingAssessment(false);
+    }
+  };
   const save = async () => {
     const t = await api.saveThesis(desk, text, parsed.criteria);
     app.toast("Thesis saved. Matches refresh in the next weekly run; shown now for the demo.");
@@ -23,9 +189,87 @@ export function Theses() {
   return (
     <>
       <div className="top"><div>
-        <span className="crumb"><b>Radar settings</b> / Acquisition theses</span><h4>Acquisition thesis screener</h4>
-        <p className="sub">Each RPG company writes what it wants to buy. Every company in the watched universe is checked against it each week.</p>
+        <span className="crumb"><b>Radar settings</b> / Acquisition theses</span><h4>Acquisition theses</h4>
+        <p className="sub">Create a thesis for a specific target. Compare the acquirer’s baseline SWOT, the target’s current SWOT, and a reviewer-confirmed post-acquisition SWOT.</p>
       </div></div>
+      <div className="panel">
+        <h5>Target-specific acquisition thesis</h5>
+        <p className="sub">Select a real target already approved in Admin → Watchlist. The target’s current SWOT is generated from collected live-source signals, with citations. The AI then drafts the combined post-acquisition SWOT; a reviewer confirms it before saving.</p>
+        <div className="filters">
+          <label>Acquiring RPG company<select value={desk} onChange={(e) => setDesk(e.target.value)}>{app.companies.map((company) => <option key={company}>{company}</option>)}</select></label>
+          <label>Acquisition target<select value={targetId} disabled={!acqOptions?.targets.length} onChange={(e) => setTargetId(e.target.value)}>
+            {!acqOptions?.targets.length && <option value="">{acqOptions ? "No approved live targets available" : "Loading approved targets…"}</option>}
+            {acqOptions?.targets.map((target) => <option key={target.id} value={target.id}>{target.name} · approved live target</option>)}
+          </select></label>
+        </div>
+        {selectedTarget ? <>
+          <div className="callout" style={{ marginTop: 10 }}>
+            <b>{selectedTarget.name} · {selectedTarget.sector || selectedTarget.business}</b>
+            <p>Approved watchlist company · {selectedTarget.live_signal_count} collected live signals in the last 120 days.</p>
+          </div>
+          {acqOptions && <>
+            <SwotList title={`Baseline SWOT · ${desk} before the deal`} swot={acqOptions.baseline_swot} />
+            <p className="sub">
+              {acqOptions.baseline_source.by === "agent"
+                ? `Automatically generated by the SWOT Analyst (${acqOptions.baseline_source.model}) from ${acqOptions.baseline_source.evidence?.live || 0} live, ${acqOptions.baseline_source.evidence?.demo || 0} demo, and ${acqOptions.baseline_source.evidence?.team || 0} team evidence items.`
+                : "The SWOT Analyst is automatically creating the baseline from the available company evidence. Until it finishes, the list above is demo data."}
+            </p>
+            {baselineJob && <p className="sub" role="status">Creating baseline SWOT… review round {baselineJob.round} of {baselineJob.max_rounds}.</p>}
+            {baselineError && <div className="box" role="alert">Automatic baseline generation failed: {baselineError}. The visible baseline is still demo data.</div>}
+          </>}
+          <h5>Current SWOT · {selectedTarget.name} today</h5>
+          <p className="sub">First fetch this approved target’s latest live signals. Then generate a current SWOT with citations; unsupported quadrants stay empty.</p>
+          <button className="btnx" disabled={refreshingTarget?.status === "running"} onClick={refreshTargetSignals}>
+            {refreshingTarget?.status === "running" ? "Fetching live signals…" : "Fetch live signals for this target"}
+          </button>
+          {refreshingTarget?.status === "completed" && refreshingTarget.result && <p className="sub" role="status">
+            Refresh complete: {refreshingTarget.result.new_signals} new signals; {refreshingTarget.result.live_signal_count} live signals available.
+            {refreshingTarget.result.errors.length > 0 && ` Provider errors: ${refreshingTarget.result.errors.join("; ")}`}
+          </p>}
+          {refreshingTarget?.status === "failed" && <div className="box" role="alert">Could not fetch target signals: {refreshingTarget.error}</div>}
+          <button className="btnx" disabled={generatingCurrentSwot || selectedTarget.live_signal_count === 0}
+            onClick={generateCurrentSwot}>
+            {generatingCurrentSwot ? "Generating from live evidence…" : "Generate current SWOT from live sources"}
+          </button>
+          {selectedTarget.live_signal_count === 0 && <p className="sub">No live signals are collected for this target yet. Fetch live signals above before generating a current SWOT.</p>}
+          {currentSwot && <SwotList title={`Live-evidence current SWOT · ${selectedTarget.name}`} swot={currentSwot} />}
+          <label className="panel" style={{ display: "block" }}>
+            <b>Acquisition thesis for this target</b>
+            <textarea className="th" rows={2} value={targetText} onChange={(event) => setTargetText(event.target.value)}
+              placeholder={`Why should ${desk} consider acquiring ${selectedTarget.name}?`} />
+          </label>
+          <p className="sub">After generation, the combined future SWOT appears below under “Post-acquisition SWOT”.</p>
+          <button className="btnx pri" disabled={drafting || !baselineReady || !currentSwot || !targetId || !targetText.trim()} onClick={draftSwot}>
+            {drafting ? "Drafting SWOT…" : "Generate post-acquisition SWOT draft"}
+          </button>
+          {draft && <>
+            <div className="box"><b>AI-generated scenario · reviewer confirmation required.</b> Forward-looking items labeled “Assumption” are possibilities, not verified facts. Review the items and rationales before saving.</div>
+            <div className="cols even">
+              <SwotList title={`Baseline SWOT · ${desk}`} swot={draft.baseline_swot} />
+              <SwotList title={`Current SWOT · ${draft.target_name}`} swot={draft.current_swot} />
+            </div>
+            <SwotList title={`Post-acquisition SWOT · what ${desk} + ${draft.target_name} may look like after the deal`} swot={draft.post_acquisition_swot} rationale />
+            <p className="sub">Drafted by {draft.drafted_by}. Saving confirms a reviewer has reviewed this scenario.</p>
+            <button className="btnx pri" disabled={savingAssessment} onClick={saveAssessment}>
+              {savingAssessment ? "Saving…" : "I reviewed this SWOT — save thesis"}
+            </button>
+          </>}
+          <div className="panel" style={{ marginTop: 14 }}>
+            <h5>Saved target theses · {assessments.length}</h5>
+            {assessments.length ? assessments.map((assessment) => <details key={assessment.id} style={{ marginBottom: 8 }}>
+              <summary><b>{assessment.target_name}</b> · {assessment.status} · {assessment.created_at.slice(0, 10)}</summary>
+              <p>{assessment.text}</p>
+              <div className="cols even">
+                <SwotList title={`Baseline · ${assessment.company}`} swot={assessment.baseline_swot} />
+                <SwotList title={`Current · ${assessment.target_name}`} swot={assessment.current_swot} />
+              </div>
+              <SwotList title={`Post-acquisition · ${assessment.company} + ${assessment.target_name}`} swot={assessment.post_acquisition_swot} rationale />
+            </details>) : <p className="sub">No target-specific thesis saved yet.</p>}
+          </div>
+        </> : <div className="box">No approved live targets are currently routed to {desk}. Add or approve a real company in Admin → Watchlist, ensure its sectors match this RPG company, and confirm the compliance gate is open. Then return here to fetch signals for that target.</div>}
+      </div>
+      <details className="panel">
+        <summary><b>Target search criteria</b> · screen companies against a general acquisition thesis</summary>
       <div className="filters"><label>Thesis <select value={th.id} onChange={(e) => setSel(e.target.value)}>{list.map((x) => <option key={x.id} value={x.id}>{x.desk}: {x.text.slice(0, 60)}…</option>)}</select></label></div>
       <div className="panel"><h5>{th.desk} thesis</h5><p style={{ marginBottom: 8 }}>"{th.text}"</p><div className="crit">{th.criteria.map((c: string) => <span key={c}>{c}</span>)}</div></div>
       <div className="panel">
@@ -65,6 +309,7 @@ export function Theses() {
           </div>
         )}
       </div>
+      </details>
     </>
   );
 }
@@ -208,37 +453,24 @@ export function WatchRules() {
   );
 }
 
-/* ---------------- Watched companies and activity ---------------- */
+/* ---------------- Demo universe and activity ---------------- */
 export function Watched() {
   const app = useApp();
   const [u, setU] = useState<any[] | null>(null);
   const [act, setAct] = useState<any[]>([]);
-  const [name, setName] = useState("");
-  const [desk, setDesk] = useState(app.cur);
   useEffect(() => { api.universe().then(setU); if (app.groupView) api.activity().then(setAct).catch(() => setAct([])); }, [app.version]);
   if (!u) return <p className="sub">Loading…</p>;
-  const add = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await api.addUniverse(name, desk);
-    app.toast("Company added. It will be scanned from the next daily run.");
-    setName(""); app.bump();
-  };
   return (
     <>
       <div className="top"><div>
-        <span className="crumb"><b>Radar settings</b> / Watched companies</span><h4>Watched companies and activity</h4>
-        <p className="sub">The sector universe the radar scans every day, and a log of changes made in this demo.</p>
+        <span className="crumb"><b>Radar settings</b> / Demo universe</span><h4>Prototype sector universe</h4>
+        <p className="sub">This read-only demo list is separate from the real-company watchlist. Compliance admins manage company proposals and approvals in Admin → Watchlist.</p>
       </div></div>
       <div className="cols even">
         <div className="panel">
-          <h5>Sector universe · {u.length} companies watched</h5>
+          <h5>Demo universe · {u.length} companies</h5>
           <table className="tbl"><thead><tr><th>Company</th><th>RPG company</th><th>Sector</th><th>How added</th></tr></thead>
             <tbody>{u.map((x, i) => <tr key={i}><td>{x.company}</td><td>{x.desk}</td><td>{x.sector}</td><td className="mono">{x.added}</td></tr>)}</tbody></table>
-          <form className="frm" style={{ marginTop: 10 }} onSubmit={add}>
-            <label>Company<input id="uName" placeholder="Company name" required minLength={2} value={name} onChange={(e) => setName(e.target.value)} /></label>
-            <label>RPG company<select id="uDesk" value={desk} onChange={(e) => setDesk(e.target.value)}>{app.companies.map((d) => <option key={d}>{d}</option>)}</select></label>
-            <button className="btnx pri" type="submit">Add to universe</button>
-          </form>
         </div>
         {app.groupView && <div className="panel">
           <h5>Activity · {act.length} changes</h5>

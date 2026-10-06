@@ -99,6 +99,9 @@ class Drafter:
                 return text
         raise LLMError("No model could take the request (" + "; ".join(tried) + ").")
 
+    def close(self) -> None:
+        self.http.close()
+
     def _route(self, route: Route, system: str, messages: list[dict], schema: dict, name: str, tried: list[str]) -> str | None:
         strict = {"type": "json_schema", "json_schema": {"name": name, "schema": schema, "strict": True}}
         loose_system = system + "\n\nReturn only one JSON object that matches this JSON Schema:\n" + json.dumps(schema)

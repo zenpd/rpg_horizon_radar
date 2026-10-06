@@ -144,8 +144,84 @@ export interface Overview {
 export interface FollowUp extends CaseSummary {
   approved: string;
   plan: PlanStep[];
-  updates: { date: string; text: string; fresh: boolean }[];
+  updates: { date: string; text: string; fresh: boolean; source?: "live" | "demo"; provider?: string; url?: string | null }[];
   watching: string[];
+}
+
+export interface FollowUpCheck extends FollowUp {
+  new_signal_count: number;
+  used_demo_fallback: boolean;
+}
+
+export type SwotQuadrant = "S" | "W" | "O" | "T";
+export interface ThesisSwotInputItem { text: string; source: string; source_url?: string | null }
+export type ThesisSwotInput = Record<SwotQuadrant, ThesisSwotInputItem[]>;
+export interface ThesisSwotDraftItem { text: string; basis: "baseline" | "target" | "assumption"; rationale: string }
+export type ThesisSwotDraft = Record<SwotQuadrant, ThesisSwotDraftItem[]>;
+export interface AcquisitionThesisTarget {
+  id: string;
+  name: string;
+  sector: string;
+  business: string;
+  live_signal_count: number;
+  is_demo: boolean;
+}
+export interface AcquisitionCurrentSwot {
+  company: string;
+  target_id: string;
+  target_name: string;
+  current_swot: ThesisSwotInput;
+  generated_by: string;
+  evidence_count: number;
+  is_demo_target: boolean;
+}
+export interface AcquisitionTargetRefreshJob {
+  id: string;
+  status: "running" | "completed" | "failed";
+  result: {
+    company: string;
+    target_id: string;
+    target_name: string;
+    new_signals: number;
+    live_signal_count: number;
+    providers: string[];
+    errors: string[];
+  } | null;
+  error: string | null;
+}
+export interface AcquisitionThesisAssessment {
+  id: string;
+  company: string;
+  target_id: string;
+  target_name: string;
+  text: string;
+  baseline_swot: ThesisSwotInput;
+  current_swot: ThesisSwotInput;
+  post_acquisition_swot: ThesisSwotDraft;
+  status: "reviewer_confirmed";
+  created_at: string;
+  is_demo_target: boolean;
+}
+export interface AcquisitionThesisOptions {
+  company: string;
+  baseline_swot: ThesisSwotInput;
+  baseline_source: {
+    by: string;
+    model?: string;
+    evidence?: { live?: number; demo?: number; team?: number };
+  };
+  targets: AcquisitionThesisTarget[];
+  existing: AcquisitionThesisAssessment[];
+}
+export interface AcquisitionThesisDraft {
+  company: string;
+  target_id: string;
+  target_name: string;
+  baseline_swot: ThesisSwotInput;
+  current_swot: ThesisSwotInput;
+  post_acquisition_swot: ThesisSwotDraft;
+  drafted_by: string;
+  is_demo_target: boolean;
 }
 
 export class ApiError extends Error {
@@ -195,23 +271,35 @@ export const api = {
     call<CaseSummary>("POST", `/cases/${encodeURIComponent(id)}/decision`, { action, owner, company }),
   followUps: (company: string) => call<FollowUp[]>("GET", "/follow-ups" + q({ company })),
   planStep: (id: string, i: number, done: boolean, company: string) => call<FollowUp>("PATCH", `/cases/${encodeURIComponent(id)}/plan/${i}`, { done, company }),
-  simulateWeek: (id: string, company: string) => call<FollowUp>("POST", `/cases/${encodeURIComponent(id)}/simulate-week`, { company }),
+  simulateWeek: (id: string, company: string) => call<FollowUpCheck>("POST", `/cases/${encodeURIComponent(id)}/simulate-week`, { company }),
   outcome: (id: string, outcome: "acted" | "dropped", company: string) => call<FollowUp>("POST", `/cases/${encodeURIComponent(id)}/outcome`, { outcome, company }),
   competitors: (company: string) => call<{ company: string; rivals: any[] }>("GET", "/competitors" + q({ company })),
-  follow: (company: string, rival: string, follow: boolean) => call<{ company: string; rivals: any[] }>("POST", "/competitors/follow", { company, rival, follow }),
   market: (company: string, rival: string | undefined, period: string) => call<any>("GET", "/market" + q({ company, rival, period })),
   deals: (company: string) => call<any>("GET", "/deals" + q({ company })),
   askStart: (company: string) => call<any>("GET", "/ask" + q({ company })),
   ask: (company: string, question: string) => call<any>("POST", "/ask", { company, question }),
   theses: () => call<any[]>("GET", "/theses"),
+  generateTargetCurrentSwot: (company: string, target_id: string) =>
+    call<AcquisitionCurrentSwot>("POST", "/acquisition-theses/current-swot", { company, target_id }),
+  refreshAcquisitionTarget: (company: string, target_id: string) =>
+    call<AcquisitionTargetRefreshJob>("POST", "/acquisition-theses/targets/refresh", { company, target_id }),
+  acquisitionTargetJob: (jobId: string) =>
+    call<AcquisitionTargetRefreshJob>("GET", `/acquisition-theses/target-jobs/${jobId}`),
+  buildAcquisitionBaseline: (company: string) =>
+    call<SwotJob>("POST", `/acquisition-theses/baseline/${encodeURIComponent(company)}`),
   parseThesis: (text: string) => call<any>("POST", "/theses/parse", { text }),
   saveThesis: (desk: string, text: string, c: unknown) => call<any>("POST", "/theses", { desk, text, c }),
+  acquisitionThesisOptions: (company: string) => call<AcquisitionThesisOptions>("GET", "/acquisition-theses/options" + q({ company })),
+  acquisitionTheses: (company: string) => call<AcquisitionThesisAssessment[]>("GET", "/acquisition-theses" + q({ company })),
+  draftAcquisitionSwot: (company: string, target_id: string, text: string, current_swot: ThesisSwotInput) =>
+    call<AcquisitionThesisDraft>("POST", "/acquisition-theses/draft", { company, target_id, text, current_swot }),
+  saveAcquisitionThesis: (company: string, target_id: string, text: string, current_swot: ThesisSwotInput, post_acquisition_swot: ThesisSwotDraft) =>
+    call<AcquisitionThesisAssessment>("POST", "/acquisition-theses", { company, target_id, text, current_swot, post_acquisition_swot }),
   triggers: () => call<any[]>("GET", "/triggers"),
   addTrigger: (t: Record<string, string>) => call<any>("POST", "/triggers", t),
   toggleTrigger: (id: string, on: boolean) => call<any>("PATCH", `/triggers/${id}`, { on }),
   deleteTrigger: (id: string) => call<void>("DELETE", `/triggers/${id}`),
   universe: () => call<any[]>("GET", "/universe"),
-  addUniverse: (company: string, desk: string) => call<any>("POST", "/universe", { company, desk }),
   activity: () => call<any[]>("GET", "/activity"),
   reset: () => call<{ ok: boolean }>("POST", "/demo/reset"),
 };
