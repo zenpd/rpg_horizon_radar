@@ -176,7 +176,7 @@ export function MarketChart({ a, b, labels, event, listed }: { a: number[]; b: n
 /** Owners, directors (and their other boards) and subsidiaries around a target. */
 export function OwnershipGraph({ g }: { g: { name: string; score: number; owners: [string, number, string][]; directors: [string, string, string[]][]; subs: string[] } }) {
   const W0 = 1000, H0 = 470, cx = 430, cy = 250;
-  const col: Record<string, string> = { family: "#1E7F55", pe: "#6A4C9C", public: "#8A968F", person: "#2C64A8", link: "#B7372B", sub: "#A5661A" };
+  const col: Record<string, string> = { family: "#047857", pe: "#7C3AED", public: "#64748B", person: "#2563EB", link: "#BE123C", sub: "#EA580C" };
   const spread = (n: number, gap: number, c: number) => Array.from({ length: n }, (_, i) => c + (i - (n - 1) / 2) * gap);
   type N = { x: number; y: number; label: string; sub: string; kind: string; from?: number };
   const nodes: N[] = [], edges: [number, string][] = [];
@@ -197,23 +197,23 @@ export function OwnershipGraph({ g }: { g: { name: string; score: number; owners
             const n = nodes[i], mx = cx + (n.x - cx) * 0.62, my = cy + (n.y - cy) * 0.62;
             return (
               <g key={k}>
-                <line x1={cx} y1={cy} x2={n.x} y2={n.y} stroke="#8A968F" strokeWidth="1.4" />
-                <rect x={mx - 30} y={my - 9} width="60" height="16" rx="3" fill="#FFFFFF" />
-                <text x={mx} y={my + 3} textAnchor="middle" fontSize="10.5" fill="#56635C" fontFamily={F}>{l}</text>
+                <line x1={cx} y1={cy} x2={n.x} y2={n.y} stroke="#64748B" strokeWidth="1.4" />
+                <rect x={mx - 30} y={my - 9} width="60" height="16" rx="6" fill="#FFFFFF" />
+                <text x={mx} y={my + 3} textAnchor="middle" fontSize="10.5" fill="#475569" fontFamily={F}>{l}</text>
               </g>
             );
           })}
           {nodes.map((n, k) => n.kind === "link" && n.from !== undefined
-            ? <line key={"l" + k} x1={nodes[n.from].x} y1={nodes[n.from].y} x2={n.x} y2={n.y} stroke="#B7372B" strokeWidth="1.5" strokeDasharray="5 4" /> : null)}
-          <rect x={cx - 115} y={cy - 27} width="230" height="54" rx="8" fill="#FBE3EA" stroke="#B4234F" strokeWidth="2" />
-          <text x={cx} y={cy - 4} textAnchor="middle" fontSize="13" fontWeight="700" fill="#15201B" fontFamily={F}>{g.name.length > 32 ? g.name.slice(0, 30) + "…" : g.name}</text>
-          <text x={cx} y={cy + 14} textAnchor="middle" fontSize="11" fill="#56635C" fontFamily={F}>Target · score {g.score}</text>
+            ? <line key={"l" + k} x1={nodes[n.from].x} y1={nodes[n.from].y} x2={n.x} y2={n.y} stroke="#BE123C" strokeWidth="1.5" strokeDasharray="5 4" /> : null)}
+          <rect x={cx - 115} y={cy - 27} width="230" height="54" rx="12" fill="#FFE4E6" stroke="#BE123C" strokeWidth="2" />
+          <text x={cx} y={cy - 4} textAnchor="middle" fontSize="13" fontWeight="700" fill="#0F172A" fontFamily={F}>{g.name.length > 32 ? g.name.slice(0, 30) + "…" : g.name}</text>
+          <text x={cx} y={cy + 14} textAnchor="middle" fontSize="11" fill="#475569" fontFamily={F}>Target · score {g.score}</text>
           {nodes.map((n, k) => {
             const w = n.kind === "link" ? 180 : 200, c = col[n.kind], lab = n.label.length > 28 ? n.label.slice(0, 26) + "…" : n.label;
             return (
               <g key={"n" + k}>
-                <rect x={n.x - w / 2} y={n.y - 20} width={w} height="40" rx={n.kind === "person" ? 20 : 6} fill="#FFFFFF" stroke={c} strokeWidth="1.8" />
-                <text x={n.x} y={n.y - 3} textAnchor="middle" fontSize="11.5" fontWeight="600" fill="#15201B" fontFamily={F}>{lab}</text>
+                <rect x={n.x - w / 2} y={n.y - 20} width={w} height="40" rx={n.kind === "person" ? 20 : 10} fill="#FFFFFF" stroke={c} strokeWidth="1.8" />
+                <text x={n.x} y={n.y - 3} textAnchor="middle" fontSize="11.5" fontWeight="600" fill="#0F172A" fontFamily={F}>{lab}</text>
                 <text x={n.x} y={n.y + 12} textAnchor="middle" fontSize="10.5" fill={c} fontFamily={F}>{n.sub}</text>
               </g>
             );
@@ -222,9 +222,9 @@ export function OwnershipGraph({ g }: { g: { name: string; score: number; owners
       </div>
       {links.length > 0 && <div className="callout"><b>Links found</b><p>{links.map((d) => `${d[0]} (${d[1]}) also sits on: ${d[2].join(", ")}.`).join(" ")}</p></div>}
       <div className="gl">
-        <span><i style={{ background: "#1E7F55" }} />Family / promoter</span><span><i style={{ background: "#6A4C9C" }} />PE / investor</span>
-        <span><i style={{ background: "#8A968F" }} />Public / others</span><span><i style={{ background: "#2C64A8" }} />Director</span>
-        <span><i style={{ background: "#B7372B" }} />Other board (possible link)</span><span><i style={{ background: "#A5661A" }} />Subsidiary</span>
+        <span><i style={{ background: "#047857" }} />Family / promoter</span><span><i style={{ background: "#7C3AED" }} />PE / investor</span>
+        <span><i style={{ background: "#64748B" }} />Public / others</span><span><i style={{ background: "#2563EB" }} />Director</span>
+        <span><i style={{ background: "#BE123C" }} />Other board (possible link)</span><span><i style={{ background: "#EA580C" }} />Subsidiary</span>
       </div>
       <p className="sub" style={{ fontSize: 12 }}>Built from MCA data, filings and annual reports. Links extracted by an LLM are confirmed by an analyst before use.</p>
     </>
