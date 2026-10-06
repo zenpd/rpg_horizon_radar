@@ -20,7 +20,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth import hash_password
-from db.models import Entity, Reviewer, Subsidiary
+from db.models import Entity, Reviewer, Subsidiary, SubsidiaryDependency
 from services.ingest import fetch_and_store_raw_signals, recompute_cluster_for_entity
 from shared.logger import get_logger
 
@@ -91,6 +91,68 @@ ENTITIES = [
     ),
 ]
 
+# Hand-curated, same spirit as SUBSIDIARIES/ENTITIES above: each row is a
+# known raw-material supplier, byproduct consumer, or shared service/vendor
+# (including a sibling RPG subsidiary) for one subsidiary's own operations.
+# Never discovered or inferred — powers services/ripple.py's "ripple effect"
+# section of the Escalation Brief via pure keyword matching against a
+# candidate entity's name/category/sectors, so every ripple claim traces
+# back to one of these literal, reviewable rows.
+DEPENDENCIES = [
+    dict(subsidiary_code="CEAT", dependency_type="raw_material", counterparty_name="Malabar Rubber",
+         counterparty_kind="external_vendor", counterparty_subsidiary_code=None,
+         description="Natural rubber supply for tyre compounding",
+         keywords=["rubber", "latex", "plantation", "tyre"]),
+    dict(subsidiary_code="CEAT", dependency_type="shared_service", counterparty_name="Zensar",
+         counterparty_kind="rpg_subsidiary", counterparty_subsidiary_code="ZENSAR",
+         description="IT/software systems integration, analytics and support for connected/smart-tyre programs",
+         keywords=["software", "sensor", "iot", "digital", "data", "analytics", "tech", "ai", "cognitive"]),
+    dict(subsidiary_code="CEAT", dependency_type="shared_vendor", counterparty_name="Raychem RPG",
+         counterparty_kind="rpg_subsidiary", counterparty_subsidiary_code="RAYCHEM",
+         description="Specialty materials and electrical components used in tyre-adjacent manufacturing",
+         keywords=["materials", "electrical", "components"]),
+    dict(subsidiary_code="CEAT", dependency_type="byproduct", counterparty_name="Regional retreading & reclaimed-rubber processors",
+         counterparty_kind="external_vendor", counterparty_subsidiary_code=None,
+         description="Processors of tyre byproducts and end-of-life rubber",
+         keywords=["recycl", "retread", "reclaimed", "byproduct"]),
+    dict(subsidiary_code="KEC", dependency_type="shared_vendor", counterparty_name="Raychem RPG",
+         counterparty_kind="rpg_subsidiary", counterparty_subsidiary_code="RAYCHEM",
+         description="Cable accessories and power-product components for EPC projects",
+         keywords=["cable", "electrical", "power", "grid"]),
+    dict(subsidiary_code="KEC", dependency_type="shared_service", counterparty_name="Zensar",
+         counterparty_kind="rpg_subsidiary", counterparty_subsidiary_code="ZENSAR",
+         description="Project-management and ERP systems support for EPC execution",
+         keywords=["software", "digital", "erp", "data", "analytics"]),
+    dict(subsidiary_code="ZENSAR", dependency_type="shared_vendor", counterparty_name="Hyperscale cloud providers",
+         counterparty_kind="external_vendor", counterparty_subsidiary_code=None,
+         description="Cloud infrastructure underlying client delivery and GenAI workloads",
+         keywords=["cloud", "genai", "ai", "compute", "infrastructure"]),
+    dict(subsidiary_code="RPGLS", dependency_type="raw_material", counterparty_name="API & bulk-drug intermediate suppliers",
+         counterparty_kind="external_vendor", counterparty_subsidiary_code=None,
+         description="Active pharmaceutical ingredient and intermediate supply for formulation manufacturing",
+         keywords=["api", "pharma", "intermediate", "bulk drug"]),
+    dict(subsidiary_code="RPGLS", dependency_type="shared_service", counterparty_name="Zensar",
+         counterparty_kind="rpg_subsidiary", counterparty_subsidiary_code="ZENSAR",
+         description="Regulatory/quality IT systems and data analytics support",
+         keywords=["software", "digital", "data", "analytics", "compliance"]),
+    dict(subsidiary_code="RAYCHEM", dependency_type="raw_material", counterparty_name="Specialty polymer & resin suppliers",
+         counterparty_kind="external_vendor", counterparty_subsidiary_code=None,
+         description="Specialty polymers and resins for electrical/materials-engineering products",
+         keywords=["polymer", "resin", "materials", "chemical"]),
+    dict(subsidiary_code="RAYCHEM", dependency_type="shared_vendor", counterparty_name="CEAT",
+         counterparty_kind="rpg_subsidiary", counterparty_subsidiary_code="CEAT",
+         description="Shared elastomer/rubber-compounding expertise and sourcing",
+         keywords=["rubber", "elastomer", "compounding"]),
+    dict(subsidiary_code="HARRISONS", dependency_type="raw_material", counterparty_name="Plantation agri-input suppliers",
+         counterparty_kind="external_vendor", counterparty_subsidiary_code=None,
+         description="Agricultural inputs (saplings, fertilizer) for plantation operations",
+         keywords=["plantation", "agri", "fertilizer", "rubber", "tea"]),
+    dict(subsidiary_code="HARRISONS", dependency_type="shared_vendor", counterparty_name="Raychem RPG",
+         counterparty_kind="rpg_subsidiary", counterparty_subsidiary_code="RAYCHEM",
+         description="Shared materials-testing/quality-lab resources for rubber byproducts",
+         keywords=["rubber", "materials", "byproduct"]),
+]
+
 REVIEWERS = [
     dict(
         name="Compliance Admin",
@@ -113,7 +175,21 @@ REVIEWERS = [
 ]
 
 
+async def _seed_dependencies(db: AsyncSession) -> None:
+    # Its own idempotency check, separate from seed()'s early return below, so
+    # this backfills onto a database that was seeded before this table existed.
+    existing = (await db.execute(select(func.count()).select_from(SubsidiaryDependency))).scalar_one()
+    if existing > 0:
+        return
+    for row in DEPENDENCIES:
+        db.add(SubsidiaryDependency(**row))
+    await db.commit()
+    log.info("db_seeded_dependencies", count=len(DEPENDENCIES))
+
+
 async def seed(db: AsyncSession) -> None:
+    await _seed_dependencies(db)
+
     existing = (await db.execute(select(func.count()).select_from(Subsidiary))).scalar_one()
     if existing > 0:
         return  # already seeded

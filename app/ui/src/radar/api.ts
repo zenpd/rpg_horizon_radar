@@ -64,6 +64,20 @@ export interface SwotMethod { built_by: "demo" | "agent"; summary: string; steps
 export interface SwotView { company: string; S: SwotItem[]; W: SwotItem[]; O: SwotItem[]; T: SwotItem[]; moves: number; set_aside: number; source: { by: "mock" | "agent"; model?: string; at?: string }; method: SwotMethod }
 export interface Position { id: string; q: "O" | "T"; text: string; case_id: string | null; impact: number; urgency: number; used: boolean; move: string | null }
 
+// Qualitative, evidence-grounded delta over the baseline SWOT for one deal case — never a new
+// score or a valuation. secured/resolved/addressed items are the exact same shape as a baseline
+// SwotItem, so SwotBox/SwotDetails-style rendering works with no new component.
+export interface PostAcquisitionDelta {
+  secured_o: number; resolved_t: number; addressed_w: number;
+  baseline: { S: number; W: number; O: number; T: number };
+  projected: { S: number; W: number; O: number; T: number };
+}
+export interface PostAcquisitionSwot {
+  company: string; case_id: string;
+  secured: SwotItem[]; resolved: SwotItem[]; addressed: SwotItem[];
+  delta: PostAcquisitionDelta;
+}
+
 export interface Home {
   scope: string;
   week: string;
@@ -131,6 +145,8 @@ export interface Overview {
   risks?: string[];
   flags?: string[];
   questions?: string[];
+  post_acquisition?: PostAcquisitionSwot | null;
+  post_acquisition_hint?: string;
   // threat
   timeline?: Signal[];
   analyst?: string;

@@ -22,7 +22,7 @@ from services import pipeline, scheduler
 from services import state as state_store
 
 from . import ask as ask_mod
-from . import bridge, rules, swot_agent, views
+from . import bridge, persistence, post_acquisition, rules, swot_agent, views
 from .access import visible
 from .llm_azure import AZURE, AzureError
 from .market import market_view
@@ -262,6 +262,12 @@ def decide(case_id: str, body: DecisionIn):
         c.update(owner=body.owner, approved=TODAY, stage="act")
         c["plan"] = [{**p, "done": False} for p in rules.plan_for(c)]
         STORE.audit(u, "approve", f'{STORE.who(c)} · owner {body.owner}')
+        if c["kind"] == "deal":
+            for co in c["cos"]:
+                projection = post_acquisition.project(co, case_id)
+                if projection:
+                    STORE.post_acq_swot[(co, case_id)] = projection
+                    persistence.save_post_acquisition(bridge.CO_TO_CODE[co], case_id, projection)
     elif body.action == "park":
         c.update(stage="closed", outcome="Parked for 90 days")
         STORE.audit(u, "park", STORE.who(c))

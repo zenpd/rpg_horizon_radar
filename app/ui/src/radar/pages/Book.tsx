@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, type CaseSummary, type Overview } from "../api";
+import { api, type CaseSummary, type Overview, type PostAcquisitionSwot } from "../api";
 import { HBars, OwnershipGraph } from "../components/charts";
 import { Journey } from "../components/ui";
 import { useApp } from "../state";
@@ -144,6 +144,42 @@ function DocHead({ o, kind }: { o: Overview; kind: string }) {
   );
 }
 
+function PostAcquisitionPanel({ p }: { p: PostAcquisitionSwot }) {
+  const d = p.delta;
+  return (
+    <>
+      <div className="verdict">
+        <small className="crumb">Net shift · plain counts, not a score</small><br />
+        <b>+{d.secured_o} opportunit{d.secured_o === 1 ? "y" : "ies"} secured · −{d.resolved_t} threat{d.resolved_t === 1 ? "" : "s"} resolved · −{d.addressed_w} weakness{d.addressed_w === 1 ? "" : "es"} addressed</b>
+        <div className="kv" style={{ marginTop: 8 }}>
+          {(["S", "O", "W", "T"] as const).map((q) => (
+            <div key={q}><small>{{ S: "Strengths", O: "Opportunities", W: "Weaknesses", T: "Threats" }[q]}</small><b>{d.baseline[q]} → {d.projected[q]}</b></div>
+          ))}
+        </div>
+      </div>
+      {p.secured.length > 0 && (
+        <div className="stack" style={{ paddingTop: 10 }}>
+          <h6 style={{ margin: 0, fontFamily: "var(--mono)", fontSize: 11.5, textTransform: "uppercase", letterSpacing: ".04em", color: "var(--opp)" }}>Opportunities secured</h6>
+          <ul>{p.secured.map((x) => <li key={x.id}>{x.text}</li>)}</ul>
+        </div>
+      )}
+      {p.resolved.length > 0 && (
+        <div className="stack" style={{ paddingTop: 10 }}>
+          <h6 style={{ margin: 0, fontFamily: "var(--mono)", fontSize: 11.5, textTransform: "uppercase", letterSpacing: ".04em", color: "var(--watch)" }}>Threats resolved</h6>
+          <ul>{p.resolved.map((x) => <li key={x.id}>{x.text}</li>)}</ul>
+        </div>
+      )}
+      {p.addressed.length > 0 && (
+        <div className="stack" style={{ paddingTop: 10 }}>
+          <h6 style={{ margin: 0, fontFamily: "var(--mono)", fontSize: 11.5, textTransform: "uppercase", letterSpacing: ".04em", color: "var(--high)" }}>Weaknesses addressed</h6>
+          <ul>{p.addressed.map((x) => <li key={x.id}>{x.text}{x.reasoning && <span className="sub"> — {x.reasoning}</span>}</li>)}</ul>
+        </div>
+      )}
+      <p className="sub" style={{ fontSize: 12 }}>Directional only — a reclassification of {p.company}'s own evidence-grounded SWOT, not a new valuation or score.</p>
+    </>
+  );
+}
+
 function Plan({ o }: { o: Overview }) {
   return <div className="tl">{o.plan.map((p) => <div key={p.when}><time>{p.when.replace("Days ", "")}</time><p><b>{p.what}.</b> {p.how}</p></div>)}</div>;
 }
@@ -213,7 +249,13 @@ function DealPage({ o }: { o: Overview }) {
         <section><h5>5. Who's involved</h5><OwnershipGraph g={o.graph!} /></section>
         <section><h5>6. Risks and red flags</h5><ul>{o.risks!.map((x) => <li key={x}>{x}</li>)}</ul><div className="crit">{o.flags!.map((f) => <span key={f}>{f}</span>)}</div></section>
         <section><h5>7. Questions for diligence</h5><ol>{o.questions!.map((q) => <li key={q}>{q}</li>)}</ol></section>
-        <section><h5>8. 90-day plan</h5><Plan o={o} /></section>
+        {(o.post_acquisition || o.post_acquisition_hint) && (
+          <section>
+            <h5>8. If this acquisition closes</h5>
+            {o.post_acquisition ? <PostAcquisitionPanel p={o.post_acquisition} /> : <p className="sub">{o.post_acquisition_hint}</p>}
+          </section>
+        )}
+        <section><h5>{o.post_acquisition || o.post_acquisition_hint ? "9" : "8"}. 90-day plan</h5><Plan o={o} /></section>
         <footer>
           <span><b>Sources:</b> {o.sources.join(", ")}.</span>
           <span>Built from public information only. Contains no price or valuation and no non-public information. Not a recommendation to bid.</span>

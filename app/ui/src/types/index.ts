@@ -77,6 +77,16 @@ export interface DirectionalConsideration {
   value: string;
 }
 
+export interface RippleEffect {
+  subsidiary_code: string;
+  counterparty_name: string;
+  counterparty_kind: "rpg_subsidiary" | "external_vendor";
+  counterparty_subsidiary_code?: string | null;
+  dependency_type: "raw_material" | "byproduct" | "shared_service" | "shared_vendor";
+  relevance: "direct" | "routine";
+  rationale: string;
+}
+
 export interface EscalationBrief {
   id: number;
   cluster_id: number;
@@ -87,6 +97,7 @@ export interface EscalationBrief {
   directional_considerations: DirectionalConsideration[];
   deal_complexity: string;
   disclaimer: string;
+  ripple_effects: RippleEffect[];
 }
 
 // ---- Digests ----

@@ -180,6 +180,13 @@ def overview(c: dict) -> dict:
             graph={"name": t["name"], "score": t["score"], "owners": t["owners"], "directors": t["directors"], "subs": t["subs"]},
             risks=b["cons"] + sc["b"]["risk"], flags=b["flags"], questions=rules.diligence_questions(t),
             sources=list(dict.fromkeys(s[3] for s in t["signals"])) + ["MCA filings (paid)", "SAST disclosures", "CCI orders", "deal databases"])
+        if c["stage"] in ("act", "closed"):
+            base["post_acquisition"] = STORE.post_acq_swot.get((c["co"], c["id"]))
+            if base["post_acquisition"] is None:
+                base["post_acquisition_hint"] = (
+                    f"Rebuild {c['co']}'s SWOT to capture this acquisition — its current SWOT "
+                    f"does not yet cite {t['name']}."
+                )
     else:
         w, co = c["ws"], c["co"]
         rec = next((o for o in w["war"]["opts"] if o[0] == "rec"), w["war"]["opts"][0])

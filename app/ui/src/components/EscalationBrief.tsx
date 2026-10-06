@@ -1,7 +1,21 @@
 import toast from "react-hot-toast";
-import { AlertTriangle, Clipboard, ThumbsDown, ThumbsUp } from "lucide-react";
+import { AlertTriangle, Clipboard, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
 
 import type { EscalationBrief as EscalationBriefType } from "../types";
+
+const DEPENDENCY_LABEL: Record<string, string> = {
+  raw_material: "Raw material",
+  byproduct: "Byproduct",
+  shared_service: "Shared service",
+  shared_vendor: "Shared vendor",
+};
+
+const DEPENDENCY_CHIP: Record<string, string> = {
+  raw_material: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+  byproduct: "bg-teal-50 text-teal-700 ring-1 ring-teal-200",
+  shared_service: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+  shared_vendor: "bg-violet-50 text-violet-700 ring-1 ring-violet-200",
+};
 
 function asPlainText(brief: EscalationBriefType, entityName?: string) {
   const lines = [
@@ -17,6 +31,9 @@ function asPlainText(brief: EscalationBriefType, entityName?: string) {
     "",
     "DIRECTIONAL CONSIDERATIONS (illustrative, not a valuation)",
     ...brief.directional_considerations.map((d) => `  - ${d.label}: ${d.value}`),
+    brief.ripple_effects.length ? "" : null,
+    brief.ripple_effects.length ? "RIPPLE EFFECT ON RPG GROUP (directional, not a valuation)" : null,
+    ...brief.ripple_effects.map((r) => `  - [${DEPENDENCY_LABEL[r.dependency_type] ?? r.dependency_type}] ${r.rationale}`),
     "",
     brief.disclaimer,
   ].filter((l): l is string => l !== null);
@@ -96,6 +113,31 @@ export default function EscalationBrief({ brief, entityName }: EscalationBriefPr
           ))}
         </dl>
       </div>
+
+      {brief.ripple_effects.length > 0 && (
+        <div className="border-t border-gray-100 px-5 py-4">
+          <p className="section-title flex items-center gap-1.5">
+            <Share2 size={12} />
+            Ripple effect on RPG Group <span className="normal-case text-gray-300">(directional, not a valuation)</span>
+          </p>
+          <ul className="space-y-2">
+            {brief.ripple_effects.map((r, i) => (
+              <li key={i} className="rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 ${DEPENDENCY_CHIP[r.dependency_type] ?? "bg-gray-100 text-gray-600"}`}>
+                    {DEPENDENCY_LABEL[r.dependency_type] ?? r.dependency_type}
+                  </span>
+                  <span className="text-xs font-semibold text-gray-700">{r.counterparty_name}</span>
+                  {r.relevance === "direct" && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-600">Direct</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-600 leading-relaxed mt-1">{r.rationale}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="flex items-start gap-2 border-t border-amber-200 bg-amber-50 px-5 py-3">
         <AlertTriangle size={14} className="text-amber-700 shrink-0 mt-0.5" />

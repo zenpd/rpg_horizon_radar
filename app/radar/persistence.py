@@ -24,7 +24,7 @@ from typing import Any, Coroutine
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from db.models import ConnectorState
+from db.models import ConnectorState, SwotBrief
 from shared.config import get_settings
 from shared.logger import get_logger
 
@@ -59,6 +59,30 @@ async def _save_async(value: dict) -> None:
             await db.commit()
     finally:
         await engine.dispose()
+
+
+async def _save_post_acquisition_async(subsidiary_code: str, case_id: str, payload: dict) -> None:
+    engine = create_async_engine(get_settings().database_url)
+    try:
+        Session = async_sessionmaker(engine, expire_on_commit=False)
+        async with Session() as db:
+            db.add(SwotBrief(subsidiary_code=subsidiary_code, generated_at=datetime.utcnow(), model="", rounds=1,
+                             content=payload, evidence=[], kind="post_acquisition", case_id=case_id))
+            await db.commit()
+    finally:
+        await engine.dispose()
+
+
+def save_post_acquisition(subsidiary_code: str, case_id: str, payload: dict) -> None:
+    """Called from radar/api.py:decide() — a plain sync FastAPI handler, so (per the module
+    docstring) a short-lived engine + asyncio.run() is the correct, already-proven pattern here,
+    not bridge.py's thread-to-main-loop bridge (that one's built for the SWOT agent's own
+    background worker thread, a different case). Best-effort, same as save() above: a failed
+    write leaves the in-memory projection (still correct for this process) as the only copy."""
+    try:
+        _run(_save_post_acquisition_async(subsidiary_code, case_id, payload))
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar_post_acquisition_save_failed", subsidiary_code=subsidiary_code, case_id=case_id, error=str(e))
 
 
 def _run(coro: Coroutine[Any, Any, Any]) -> Any:

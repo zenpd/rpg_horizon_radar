@@ -7,6 +7,10 @@ started with the API (api/main.py) checks once a minute and runs what is due:
   ingest     A live ingestion run daily at INGEST_DAILY_AT (default 17:00 local),
              followed by SWOT rebuilds for subsidiaries whose signals changed.
              Each connector keeps its own pace and quota on top of this.
+  digest     A weekly M&A-signal digest (services/digest.py) every
+             DIGEST_EVERY_DAYS days (default 7), snapshotting live clusters
+             scoring at or above DIGEST_THRESHOLD per gate-open subsidiary.
+             Runs after ingest so the same tick's fresh clusters are included.
 
 SCHEDULER_ENABLED=false turns it off (tests do). Last runs are kept in the
 ``scheduler`` ConnectorState row, so a restart does not repeat work. In a
@@ -18,7 +22,7 @@ import asyncio
 from datetime import datetime, timedelta
 
 from db.base import get_db_session
-from services import discovery, pipeline
+from services import digest, discovery, pipeline
 from services import state as state_store
 from shared.config import get_settings
 from shared.logger import get_logger
@@ -45,6 +49,9 @@ def due(now: datetime, state: dict) -> list[str]:
     last_i = state.get("ingest")
     if now >= slot and (not last_i or datetime.fromisoformat(last_i) < slot):
         out.append("ingest")
+    last_g = state.get("digest")
+    if not last_g or now - datetime.fromisoformat(last_g) >= timedelta(days=s.digest_every_days):
+        out.append("digest")
     return out
 
 
@@ -55,7 +62,10 @@ def next_runs(now: datetime, state: dict) -> dict:
     ingest_next = slot if now < slot or not last_i or datetime.fromisoformat(last_i) < slot else slot + timedelta(days=1)
     last_d = state.get("discovery")
     disc_next = datetime.fromisoformat(last_d) + timedelta(days=s.discovery_every_days) if last_d else now
-    return {"ingest": ingest_next.isoformat(timespec="minutes"), "discovery": disc_next.isoformat(timespec="minutes")}
+    last_g = state.get("digest")
+    digest_next = datetime.fromisoformat(last_g) + timedelta(days=s.digest_every_days) if last_g else now
+    return {"ingest": ingest_next.isoformat(timespec="minutes"), "discovery": disc_next.isoformat(timespec="minutes"),
+            "digest": digest_next.isoformat(timespec="minutes")}
 
 
 async def run_due(now: datetime | None = None) -> list[str]:
@@ -69,6 +79,10 @@ async def run_due(now: datetime | None = None) -> list[str]:
             if job == "discovery":
                 async with get_db_session() as db:
                     res = await discovery.discover(db)
+            elif job == "digest":
+                async with get_db_session() as db:
+                    issue = await digest.generate_digest(db, created_by=None)
+                    res = {"digest_id": issue.id, "items": len(issue.items), "errors": []}
             else:
                 res = await pipeline.run_ingest()
             state[job] = now.isoformat(timespec="seconds")
@@ -90,8 +104,9 @@ async def status() -> dict:
     async with get_db_session() as db:
         state = await state_store.load(db, "scheduler")
     return {"enabled": s.scheduler_enabled, "ingest_daily_at": s.ingest_daily_at, "discovery_every_days": s.discovery_every_days,
-            "auto_swot": s.auto_swot, "last": {k: state.get(k) for k in ("ingest", "discovery")},
-            "last_results": {k: state.get(f"{k}_result") for k in ("ingest", "discovery")},
+            "digest_every_days": s.digest_every_days,
+            "auto_swot": s.auto_swot, "last": {k: state.get(k) for k in ("ingest", "discovery", "digest")},
+            "last_results": {k: state.get(f"{k}_result") for k in ("ingest", "discovery", "digest")},
             "next": next_runs(datetime.now(), state), **STATUS}
 
 

@@ -8,6 +8,16 @@ class DirectionalConsideration(BaseModel):
     value: str
 
 
+class RippleEffect(BaseModel):
+    subsidiary_code: str
+    counterparty_name: str
+    counterparty_kind: str
+    counterparty_subsidiary_code: str | None = None
+    dependency_type: str
+    relevance: str
+    rationale: str
+
+
 class EscalationBriefOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -20,3 +30,4 @@ class EscalationBriefOut(BaseModel):
     directional_considerations: list[DirectionalConsideration]
     deal_complexity: str
     disclaimer: str
+    ripple_effects: list[RippleEffect] = []

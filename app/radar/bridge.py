@@ -114,7 +114,9 @@ async def sync(force: bool = True) -> None:
 async def load_agent_swots() -> None:
     """The newest agent SWOT per company, back into the store."""
     async with get_db_session() as db:
-        rows = (await db.execute(select(SwotBrief).order_by(SwotBrief.generated_at))).scalars().all()
+        rows = (
+            await db.execute(select(SwotBrief).where(SwotBrief.kind == "baseline").order_by(SwotBrief.generated_at))
+        ).scalars().all()
     for r in rows:  # oldest first, so the newest wins
         co = CODE_TO_CO.get(r.subsidiary_code)
         if co and isinstance(r.content, dict) and "swot" in r.content:
@@ -122,6 +124,20 @@ async def load_agent_swots() -> None:
     # Not persisted: this runs on every boot just to fold in agent SWOTs, before
     # startup() applies the one real persisted snapshot (see below).
     STORE.reset(keep_agent_swots=True, persist=False)
+
+
+async def load_post_acquisitions() -> None:
+    """Every post-acquisition SWOT projection ever saved (radar/post_acquisition.py, written at
+    radar/api.py:decide()'s approve step), back into the store — so an approved deal's projection
+    survives a restart just like a baseline SWOT does."""
+    async with get_db_session() as db:
+        rows = (
+            await db.execute(select(SwotBrief).where(SwotBrief.kind == "post_acquisition").order_by(SwotBrief.generated_at))
+        ).scalars().all()
+    for r in rows:  # oldest first, so the newest wins per (company, case_id)
+        co = CODE_TO_CO.get(r.subsidiary_code)
+        if co and r.case_id and isinstance(r.content, dict):
+            STORE.post_acq_swot[(co, r.case_id)] = r.content
 
 
 async def _save_swot(co: str, payload: dict) -> None:
@@ -146,6 +162,7 @@ async def startup() -> None:
     LOOP = asyncio.get_running_loop()
     STORE.on_agent_swot = persist_swot
     await load_agent_swots()
+    await load_post_acquisitions()
     # The one real restore: whatever a reviewer actually did (escalations, decisions, plans,
     # theses, watch rules, universe additions, activity) survives a restart from here on
     # (radar/persistence.py). Last, so load_agent_swots()'s own reset() above can't undo it.

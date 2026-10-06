@@ -30,6 +30,11 @@ class Store:
         self.agent_saved: dict = {}
         # Called after the agent saves a SWOT, to persist it (bridge.persist_swot).
         self.on_agent_swot = None
+        # Post-acquisition SWOT projections, keyed (company, case_id) — built once when a deal
+        # case is approved (radar/api.py:decide(), radar/post_acquisition.py) and reloaded at
+        # boot (radar/bridge.py:load_post_acquisitions()). Like agent_saved, reset() never
+        # touches this: it is real data, not demo state.
+        self.post_acq_swot: dict[tuple[str, str], dict] = {}
         # Just the demo defaults for now, unpersisted: radar/bridge.py's startup() rebuilds this
         # again (to reload agent SWOTs, also unpersisted — see load_agent_swots()) and only then
         # calls _apply_persisted() once, as the last step of boot. Doing it here too would just
