@@ -15,6 +15,8 @@ import threading
 from datetime import datetime
 
 from . import evidence as ev
+from . import persistence, post_acquisition
+from .bridge import CO_TO_CODE
 from .reference import REF
 from .store import STORE
 
@@ -213,6 +215,19 @@ _ids = itertools.count(1)
 JOBS: dict[str, dict] = {}
 
 
+def _reproject_approved_cases(co: str) -> None:
+    """A fresh SWOT may newly cite a deal case that was already approved before this rebuild —
+    the one scenario views.overview()'s "rebuild to capture this" hint points at. Keep every
+    already-approved deal case on this company's desk in sync with the SWOT that now exists,
+    not just the one the hint was shown for."""
+    for c in list(STORE.cases.values()):
+        if c["kind"] == "deal" and co in c["cos"] and c["stage"] in ("act", "closed"):
+            projection = post_acquisition.project(co, c["id"])
+            if projection:
+                STORE.post_acq_swot[(co, c["id"])] = projection
+                persistence.save_post_acquisition(CO_TO_CODE[co], c["id"], projection)
+
+
 def start(co: str, user: str, drafter=None) -> dict:
     running = next((j for j in JOBS.values() if j["company"] == co and j["status"] == "running"), None)
     if running:
@@ -233,6 +248,7 @@ def start(co: str, user: str, drafter=None) -> dict:
                                      "rounds": out["rounds"], "live_data": ev.uses_live(co), "rival": ev.rival_name(co),
                                      "evidence": {o: origins.count(o) for o in ("live", "demo", "team")}}
             STORE.save_agent_swot(co)
+            _reproject_approved_cases(co)
             STORE.audit(user, "swot_rebuild", co)
             job["status"] = "completed"
         except AgentError as e:

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from radar import post_acquisition
+from radar import post_acquisition, swot_agent
 from radar.store import STORE
 
 
@@ -50,3 +50,28 @@ def test_projection_is_scoped_to_the_right_company():
     out = post_acquisition.project("CEAT", "d_sensa")
     assert out is not None
     assert all(i["case_id"] != "d_meridian" for i in out["secured"])
+
+
+def test_rebuild_recaptures_an_approved_case_the_old_swot_missed():
+    # KEC's demo baseline SWOT doesn't cite d_sensa (one of the two known demo
+    # gaps) — approving it now leaves the honest "rebuild to capture this" gap.
+    assert post_acquisition.project("KEC", "d_sensa") is None
+    STORE.cases["d_sensa"].update(stage="act", owner="Test Owner")
+    assert ("KEC", "d_sensa") not in STORE.post_acq_swot
+
+    # A rebuild (real or, here, simulated) now cites it — the fix must catch
+    # this up for the ALREADY-approved case, not just future approvals.
+    STORE.swot["KEC"]["O"].append(["Sensa partnership closes KEC's smart-component gap", "d_sensa"])
+    STORE.positions["KEC"]["O"].append([60, 60])
+    swot_agent._reproject_approved_cases("KEC")
+
+    out = STORE.post_acq_swot.get(("KEC", "d_sensa"))
+    assert out is not None
+    assert out["secured"][0]["case_id"] == "d_sensa"
+
+
+def test_rebuild_does_not_touch_cases_still_awaiting_a_decision():
+    # d_ashford is on KEC's desk but never approved — a rebuild must not
+    # invent a projection for a case nobody decided on yet.
+    swot_agent._reproject_approved_cases("KEC")
+    assert ("KEC", "d_ashford") not in STORE.post_acq_swot

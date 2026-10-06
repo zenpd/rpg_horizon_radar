@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, type CaseSummary, type Overview, type PostAcquisitionSwot } from "../api";
+import { api, type CaseSummary, type Overview, type PostAcquisitionSwot, type SwotJob } from "../api";
 import { HBars, OwnershipGraph } from "../components/charts";
 import { Journey } from "../components/ui";
 import { useApp } from "../state";
@@ -144,6 +144,33 @@ function DocHead({ o, kind }: { o: Overview; kind: string }) {
   );
 }
 
+function RebuildSwotHint({ company, hint }: { company: string; hint: string }) {
+  const app = useApp();
+  const [job, setJob] = useState<SwotJob | null>(null);
+
+  useEffect(() => {
+    if (!job || job.status !== "running") return;
+    const t = setTimeout(() => api.swotJob(job.id).then((j) => {
+      setJob(j);
+      if (j.status === "completed") { app.toast(`SWOT Analyst rebuilt ${company}'s SWOT.`); app.bump(); }
+      if (j.status === "failed") app.toast(j.error || "The SWOT Analyst failed");
+    }).catch((e) => app.toast(e.message)), 1500);
+    return () => clearTimeout(t);
+  }, [job]);
+
+  const running = job?.status === "running";
+  return (
+    <div className="empty2" style={{ textAlign: "left" }}>
+      <p className="sub" style={{ margin: "0 0 8px" }}>{hint}</p>
+      {app.groupView && (
+        <button className="btnx" disabled={running} onClick={() => api.rebuildSwot(company).then(setJob).catch((e) => app.toast(e.message))}>
+          {running ? `SWOT Analyst working… round ${Math.max(job!.round, 1)} of ${job!.max_rounds}` : "Rebuild with SWOT Analyst"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function PostAcquisitionPanel({ p }: { p: PostAcquisitionSwot }) {
   const d = p.delta;
   return (
@@ -249,13 +276,13 @@ function DealPage({ o }: { o: Overview }) {
         <section><h5>5. Who's involved</h5><OwnershipGraph g={o.graph!} /></section>
         <section><h5>6. Risks and red flags</h5><ul>{o.risks!.map((x) => <li key={x}>{x}</li>)}</ul><div className="crit">{o.flags!.map((f) => <span key={f}>{f}</span>)}</div></section>
         <section><h5>7. Questions for diligence</h5><ol>{o.questions!.map((q) => <li key={q}>{q}</li>)}</ol></section>
+        <section><h5>8. 90-day plan</h5><Plan o={o} /></section>
         {(o.post_acquisition || o.post_acquisition_hint) && (
           <section>
-            <h5>8. If this acquisition closes</h5>
-            {o.post_acquisition ? <PostAcquisitionPanel p={o.post_acquisition} /> : <p className="sub">{o.post_acquisition_hint}</p>}
+            <h5><span className="esc-badge">Directional</span> If this acquisition closes</h5>
+            {o.post_acquisition ? <PostAcquisitionPanel p={o.post_acquisition} /> : <RebuildSwotHint company={o.company} hint={o.post_acquisition_hint!} />}
           </section>
         )}
-        <section><h5>{o.post_acquisition || o.post_acquisition_hint ? "9" : "8"}. 90-day plan</h5><Plan o={o} /></section>
         <footer>
           <span><b>Sources:</b> {o.sources.join(", ")}.</span>
           <span>Built from public information only. Contains no price or valuation and no non-public information. Not a recommendation to bid.</span>
