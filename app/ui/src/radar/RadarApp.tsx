@@ -15,8 +15,13 @@ import "./styles.css";
 
 const NAV: [string, [View, string][]][] = [
   ["Radar", [["home", "This week"], ["book", "Deep-dive book"], ["follow", "Follow-up"]]],
-  ["Explore", [["comp", "Competitors"], ["fin", "Market performance"], ["deals", "Rival deals"], ["ask", "Ask Radar"]]],
-  ["Radar settings", [["thesis", "Acquisition theses"], ["trig", "Watch rules"], ["admin", "Watched companies"]]],
+];
+
+// Secondary screens — not part of the digest/post-acquisition-SWOT/ripple-effect story, so
+// collapsed into one foldable group rather than given equal nav weight to the screens that are.
+const MORE: [View, string][] = [
+  ["comp", "Competitors"], ["fin", "Market performance"], ["deals", "Rival deals"], ["ask", "Ask Radar"],
+  ["thesis", "Acquisition theses"], ["trig", "Watch rules"], ["admin", "Watched companies"],
 ];
 
 // The repo's restricted M&A screens (ZenLabs design, rendered inside a .tw wrapper).
@@ -61,6 +66,7 @@ export default function RadarApp() {
   const [version, setVersion] = useState(0);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [guideOn, setGuideOn] = useState(true);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [theme, setTheme] = useState(initialTheme);
   const [counts, setCounts] = useState({ home: 0, book: 0, follow: 0, pending: 0, openFollow: 0, jobRunning: false });
   const toastTimer = useRef<number>();
@@ -153,6 +159,8 @@ export default function RadarApp() {
   else g = { n: 1, title: "It starts with the weekly digest", text: "Live connectors scout M&A-potential signals into a weekly digest on the Restricted desk; each RPG company's SWOT below is rebuilt from that same evidence. Only moves that link a strength or weakness to an opportunity or threat are recommended — hover one to see its SWOT items, then tick Shortlist on 2 or 3.", go: view !== "home" ? ["Go to This week", () => go("home")] : undefined };
 
   const deskTip: { title: string; text: string } | null = !onDesk ? null
+    : location.pathname.startsWith("/overview")
+    ? { title: "The one-glance view", text: "The three things that matter: this week's digest, what an approved acquisition's SWOT becomes, and who else in the Group it touches. Click into any card for the full detail." }
     : location.pathname.startsWith("/digests")
     ? { title: "The weekly digest", text: "Every gate-open subsidiary's scored signals at or above threshold are snapshotted here automatically, once a week — the same evidence each company's SWOT is rebuilt from." }
     : location.pathname.startsWith("/admin")
@@ -209,6 +217,10 @@ export default function RadarApp() {
           </div>
           <div className="shell">
             <nav className="side" aria-label="Screens">
+              <div className="navgrp">Overview</div>
+              <button className="navbtn" aria-current={location.pathname.startsWith("/overview") ? "page" : undefined} onClick={() => navigate("/overview")}>
+                <span>Digest · SWOT · ripple</span>
+              </button>
               {renderNavGroup(NAV[0])}
               {/* Where the weekly digest and the escalation/ripple-effect story live — right after
                   the per-company SWOT story, since both feed it, not after the secondary screens. */}
@@ -219,7 +231,16 @@ export default function RadarApp() {
                   <span>{label}</span>
                 </button>
               ))}
-              {NAV.slice(1).map(renderNavGroup)}
+              {/* Secondary screens, folded — still one click away, not deleted. */}
+              <button className="navgrp" style={{ background: "none", border: 0, width: "100%", textAlign: "left", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>
+                More {moreOpen ? "−" : "+"}
+              </button>
+              {moreOpen && MORE.map(([k, l]) => (
+                <button key={k} className="navbtn" aria-current={k === active ? "page" : undefined} onClick={() => go(k)}>
+                  <span>{l}</span>
+                </button>
+              ))}
               <div className="sep">Signed in: {who}{isAdmin ? " · compliance admin" : ""}</div>
             </nav>
             <main className="am" id="main">
@@ -251,7 +272,7 @@ export default function RadarApp() {
           </div>
           {guideOn && me && (onDesk ? (
             <div className="guide" role="region" aria-label="Guided demo">
-              <small>Guided demo · Restricted desk</small>
+              <small>Guided demo · {location.pathname.startsWith("/overview") ? "Overview" : "Restricted desk"}</small>
               <b>{deskTip!.title}</b><p>{deskTip!.text}</p>
               <div className="gb">
                 <button className="pri" onClick={() => go("home")}>Back to This week</button>

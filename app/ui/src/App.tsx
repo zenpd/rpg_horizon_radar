@@ -6,6 +6,7 @@ import { AdminRoute, ProtectedRoute } from "./components/ProtectedRoute";
 import RadarApp from "./radar/RadarApp";
 
 import Login from "./pages/Login";
+import Overview from "./pages/Overview";
 import Dashboard from "./pages/Dashboard";
 import SignalDetail from "./pages/SignalDetail";
 import DigestArchive, { DigestDetail } from "./pages/DigestArchive";
@@ -28,6 +29,7 @@ export default function App() {
           }
         >
           <Route index element={null} />
+          <Route path="overview" element={<Overview />} />
           <Route path="board" element={<Dashboard />} />
           <Route path="signals/:id" element={<SignalDetail />} />
           <Route path="digests" element={<DigestArchive />} />
