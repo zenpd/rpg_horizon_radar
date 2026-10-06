@@ -10,8 +10,10 @@ import { useAuth } from "../context/AuthContext";
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // Pre-filled for local demo convenience only — still editable, so a
+  // presenter can switch to a scoped reviewer login when that's the point.
+  const [email, setEmail] = useState("compliance.admin@rpg-demo.local");
+  const [password, setPassword] = useState("ChangeMe123!");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
