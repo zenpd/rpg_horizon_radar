@@ -76,7 +76,7 @@ export default function RadarApp() {
   const companies = me?.companies ?? [];
   const groupView = !!me?.group_view;
 
-  useEffect(() => { document.body.classList.toggle("guide-on", guideOn && !onDesk); }, [guideOn, onDesk]);
+  useEffect(() => { document.body.classList.toggle("guide-on", guideOn); }, [guideOn, onDesk]);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try { localStorage.setItem("hr-theme", theme); } catch { /* storage blocked */ }
@@ -139,13 +139,25 @@ export default function RadarApp() {
   }), [view, scope, cur, version, jobId, bookPage, followSel, focus, shortlist, who, companies, groupView]);
 
   // ---------- guided demo ----------
+  // The spine: a weekly digest of scouted M&A-potential signals (Restricted desk) feeds each
+  // company's SWOT below; approving a move projects what that SWOT becomes post-acquisition, and
+  // escalating a signal on the desk surfaces its ripple effect on sibling RPG subsidiaries. Every
+  // step's copy below exists to keep a first-time viewer oriented to that one story, not a list of
+  // unrelated screens.
   let g: { n: number; title: string; text: string; go?: [string, () => void] };
   if (view === "deep" && jobId) g = { n: 3, title: "Deep dive", text: "Agents are writing one page per shortlisted company. Only these companies get the paid data and deeper research." };
   else if (shortlist.length) g = { n: 2, title: "Escalate", text: `${shortlist.length} shortlisted. Add up to 5, then press Escalate in the bar at the bottom.`, go: view !== "home" ? ["Back to This week", () => go("home")] : undefined };
-  else if (counts.pending) g = { n: 4, title: "Read the book", text: "One page per company, like a book. Turn pages with Next or the arrow keys. Each page ends with a decision: approve with an owner, park or reject.", go: view !== "book" ? ["Open the book", () => go("book")] : undefined };
+  else if (counts.pending) g = { n: 4, title: "Read the book", text: "One page per company, like a book. Each page ends with a decision: approve with an owner, park or reject. Approve a deal and its page gains a new section — the SWOT projected for after the acquisition closes.", go: view !== "book" ? ["Open the book", () => go("book")] : undefined };
   else if (counts.openFollow) g = { n: 5, title: "Follow up", text: "Approved companies get a tracked plan and watch rules. Tick a step, press 'Simulate next week's run', then record the outcome.", go: view !== "follow" ? ["Open follow-up", () => go("follow")] : undefined };
-  else if (counts.book) g = { n: 5, title: "That's the full story", text: "From each company's SWOT to a shortlist, a book of decisions and follow-up. Restart to try it with other companies." };
-  else g = { n: 1, title: "Start with the SWOT", text: "Each RPG company's SWOT is rebuilt from the signals. Only moves that link a strength or weakness to an opportunity or threat are recommended. Hover a move to see its SWOT items, then tick Shortlist on 2 or 3.", go: view !== "home" ? ["Go to This week", () => go("home")] : undefined };
+  else if (counts.book) g = { n: 6, title: "The rest of the story", text: "One more thing this week's digest does: on the Restricted desk, escalating a flagged signal writes an Escalation Brief — including its ripple effect on sibling RPG subsidiaries that share raw materials, byproducts or support functions with the acquirer.", go: ["See the ripple effect", () => navigate("/board")] };
+  else g = { n: 1, title: "It starts with the weekly digest", text: "Live connectors scout M&A-potential signals into a weekly digest on the Restricted desk; each RPG company's SWOT below is rebuilt from that same evidence. Only moves that link a strength or weakness to an opportunity or threat are recommended — hover one to see its SWOT items, then tick Shortlist on 2 or 3.", go: view !== "home" ? ["Go to This week", () => go("home")] : undefined };
+
+  const deskTip: { title: string; text: string } | null = !onDesk ? null
+    : location.pathname.startsWith("/digests")
+    ? { title: "The weekly digest", text: "Every gate-open subsidiary's scored signals at or above threshold are snapshotted here automatically, once a week — the same evidence each company's SWOT is rebuilt from." }
+    : location.pathname.startsWith("/admin")
+    ? { title: "Compliance control", text: "Sector gates, reviewer scopes and the audit trail. Nothing here touches scoring or the SWOT — it only governs who sees what, and when a sector's signals start flowing at all." }
+    : { title: "Where the digest lands", text: "Flagged signals, scored and routed by subsidiary. Mark one under evaluation to generate its Escalation Brief — pros, cons and a ripple-effect section on which sibling subsidiaries it would affect." };
 
   const restart = async () => {
     try { await api.reset(); } catch (e) { toast((e as Error).message); return; }
@@ -155,6 +167,17 @@ export default function RadarApp() {
 
   const navCount: Partial<Record<View, number>> = { home: counts.home, book: counts.book, follow: counts.follow };
   const active = onDesk ? null : view === "deep" ? "book" : view;
+
+  const renderNavGroup = ([grp, items]: (typeof NAV)[number]) => (
+    <div key={grp} style={{ display: "contents" }}>
+      <div className="navgrp">{grp}</div>
+      {items.map(([k, l]) => (
+        <button key={k} className="navbtn" aria-current={k === active ? "page" : undefined} onClick={() => go(k)}>
+          <span>{l}</span>{navCount[k] !== undefined && <em>{navCount[k]}</em>}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <Ctx.Provider value={state}>
@@ -175,7 +198,7 @@ export default function RadarApp() {
               </div>
             )}
             <span className="spacer" />
-            {!onDesk && <button type="button" className="btnx" aria-pressed={guideOn} onClick={() => setGuideOn(!guideOn)}>Guided demo</button>}
+            <button type="button" className="btnx" aria-pressed={guideOn} onClick={() => setGuideOn(!guideOn)}>Guided demo</button>
             <button type="button" className="btnx" id="themeBtn" aria-pressed={theme === "dark"} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
               title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>{theme === "dark" ? "☀︎" : "☾"}</button>
             <span className="mock" title="Approved real companies' signals are live; rival placeholders, deal targets and decisions are demo data">Live + demo data</span>
@@ -186,16 +209,9 @@ export default function RadarApp() {
           </div>
           <div className="shell">
             <nav className="side" aria-label="Screens">
-              {NAV.map(([grp, items]) => (
-                <div key={grp} style={{ display: "contents" }}>
-                  <div className="navgrp">{grp}</div>
-                  {items.map(([k, l]) => (
-                    <button key={k} className="navbtn" aria-current={k === active ? "page" : undefined} onClick={() => go(k)}>
-                      <span>{l}</span>{navCount[k] !== undefined && <em>{navCount[k]}</em>}
-                    </button>
-                  ))}
-                </div>
-              ))}
+              {renderNavGroup(NAV[0])}
+              {/* Where the weekly digest and the escalation/ripple-effect story live — right after
+                  the per-company SWOT story, since both feed it, not after the secondary screens. */}
               <div className="navgrp">Restricted desk</div>
               {DESK.filter(([, , adminOnly]) => isAdmin || !adminOnly).map(([path, label]) => (
                 <button key={path} className="navbtn" aria-current={location.pathname.startsWith(path) || (path === "/board" && location.pathname.startsWith("/signals")) ? "page" : undefined}
@@ -203,6 +219,7 @@ export default function RadarApp() {
                   <span>{label}</span>
                 </button>
               ))}
+              {NAV.slice(1).map(renderNavGroup)}
               <div className="sep">Signed in: {who}{isAdmin ? " · compliance admin" : ""}</div>
             </nav>
             <main className="am" id="main">
@@ -232,10 +249,19 @@ export default function RadarApp() {
               )}
             </main>
           </div>
-          {guideOn && !onDesk && me && (
+          {guideOn && me && (onDesk ? (
             <div className="guide" role="region" aria-label="Guided demo">
-              <small>Guided demo · step {g.n} of 5</small>
-              <div className="gdots">{[1, 2, 3, 4, 5].map((i) => <i key={i} className={i <= g.n ? "on" : ""} />)}</div>
+              <small>Guided demo · Restricted desk</small>
+              <b>{deskTip!.title}</b><p>{deskTip!.text}</p>
+              <div className="gb">
+                <button className="pri" onClick={() => go("home")}>Back to This week</button>
+                <button onClick={() => setGuideOn(false)}>Hide guide</button>
+              </div>
+            </div>
+          ) : (
+            <div className="guide" role="region" aria-label="Guided demo">
+              <small>Guided demo · step {g.n} of 6</small>
+              <div className="gdots">{[1, 2, 3, 4, 5, 6].map((i) => <i key={i} className={i <= g.n ? "on" : ""} />)}</div>
               <b>{g.title}</b><p>{g.text}</p>
               <div className="gb">
                 {g.go && <button className="pri" onClick={g.go[1]}>{g.go[0]}</button>}
@@ -243,7 +269,7 @@ export default function RadarApp() {
                 <button onClick={() => setGuideOn(false)}>Hide guide</button>
               </div>
             </div>
-          )}
+          ))}
           {toastMsg && <div className="toast" role="status" aria-live="polite">{toastMsg}</div>}
         </div>
       </PageMetaProvider>
