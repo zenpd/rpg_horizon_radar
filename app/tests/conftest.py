@@ -5,12 +5,18 @@ before anything from the app is imported: a throwaway SQLite database, the
 scheduler off, and every external key blank (pydantic-settings lets real env
 vars win over app/.env), so no test can reach a live API or spend a quota.
 Tests that exercise a connector set its key on the settings object and pass an
-``httpx.MockTransport``."""
+``httpx.MockTransport``.
+
+The app seeds no watched companies and only the first user, from
+FIRST_USER_EMAIL / FIRST_USER_PASSWORD; ``seeded`` has that user add a second
+one, the way a team would."""
 from __future__ import annotations
 
 import os
 import pathlib
 import tempfile
+
+from tests.helpers import FIRST, FIRST_PASSWORD, PASSWORD, SECOND, login
 
 _DB = pathlib.Path(tempfile.mkdtemp()) / "test.db"
 os.environ.update({
@@ -19,6 +25,8 @@ os.environ.update({
     "SCHEDULER_ENABLED": "false",
     "TRACING_ENABLED": "false",
     "TEMPORAL_HOST": "127.0.0.1:1",  # unreachable: ingestion takes the inline path at once
+    "FIRST_USER_EMAIL": FIRST,
+    "FIRST_USER_PASSWORD": FIRST_PASSWORD,
 })
 for _key in ("GNEWS_API_KEY", "NEWSDATA_API_KEY", "TAVILY_API_KEY", "ADZUNA_APP_ID", "ADZUNA_APP_KEY", "FETCHLAYER_API_KEY",
              "YOUTUBE_API_KEY", "ALPHA_VANTAGE_API_KEY", "EPO_OPS_CONSUMER_KEY", "EPO_OPS_CONSUMER_SECRET", "FINCRUX_API_KEY",
@@ -63,8 +71,11 @@ def client() -> TestClient:
 
 @pytest.fixture(scope="session")
 def seeded() -> TestClient:
-    """A client whose lifespan has run, i.e. the demo data is seeded."""
+    """A client whose lifespan has run (subsidiaries and the first user seeded), with a second user
+    added by the first."""
     with TestClient(app) as c:
+        r = c.post("/api/v1/reviewers", headers=login(c, FIRST), json={"name": "Second User", "email": SECOND, "password": PASSWORD})
+        assert r.status_code == 200, r.text
         yield c
 
 

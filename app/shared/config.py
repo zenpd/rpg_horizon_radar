@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     azure_openai_endpoint: str = ""
     azure_openai_api_key: str = ""
     azure_openai_deployment: str = "gpt-4.1-mini"
+    # The deployment the Acquisition Thesis agent tries first (agents/llm_routes.thesis_routes); blank = none.
+    azure_thesis_deployment: str = ""
     azure_openai_embedding_deployment: str = "text-embedding-3-small"
     azure_openai_api_version: str = "2025-01-01-preview"
 
@@ -77,9 +79,6 @@ class Settings(BaseSettings):
     arize_phoenix_api_key: str = ""          # resolved from KV
     arize_phoenix_api_key_kv_uri: str = ""
 
-    # ── Prompts ────────────────────────────────────────────────────────────────
-    prompts_dir: str = "config/prompts"
-
     # ────────────────────────────────────────────────────────────────────────────
     # App-specific settings — add your own fields below (external APIs, feature
     # flags, thresholds, etc). Declare a matching ``*_kv_uri`` and add it to the
@@ -89,6 +88,15 @@ class Settings(BaseSettings):
     # Minimum OpportunityScore (0-100) for a signal cluster to be included in a
     # compiled weekly digest. See services/scoring.py and services/digest.py.
     digest_threshold: float = 65.0
+
+    # ── First user (db/seed.py) ────────────────────────────────────────────────
+    # Created on a start against a database where nobody can sign in. That user
+    # adds the others in Admin -> Users. Nothing is created while these are
+    # blank, so no default login ever exists.
+    first_user_email: str = ""
+    first_user_name: str = "First User"
+    first_user_password: str = ""
+    first_user_password_kv_uri: str = ""
 
     # ── Live signal connectors (ingestion/connectors/live/) ────────────────────
     # A connector runs only when its key is set. Each one's quota and pacing is
@@ -122,7 +130,7 @@ class Settings(BaseSettings):
     epo_ops_consumer_secret_kv_uri: str = ""
     fincrux_api_key_kv_uri: str = ""
 
-    # ── Reasoning LLM routes (shared/llm_chat.py) ──────────────────────────────
+    # ── Reasoning LLM routes (agents/llm_routes.py) ──────────────────────────────
     # Used for watchlist discovery and SWOT briefs — never for scoring.
     groq_api_key: str = ""
     nvidia_api_key: str = ""
@@ -131,13 +139,13 @@ class Settings(BaseSettings):
     llm_routes: str = "groq:openai/gpt-oss-120b,nvidia:nvidia/nemotron-3-super-120b-a12b"
     llm_reasoning_effort: str = "low"
 
-    # ── Watchlist discovery + scheduler (services/discovery.py, scheduler.py) ──
-    # Discovered companies are always proposed, never watched, until a
-    # compliance_admin approves them; there is deliberately no auto-approve.
+    # ── Watchlist discovery + scheduler (agents/watchlist_discovery.py, services/scheduler.py) ──
+    # Discovered companies are watched at once; anyone can remove one in Admin -> Watchlist.
     scheduler_enabled: bool = True
     ingest_daily_at: str = "17:00"        # local time
     discovery_every_days: int = 7
-    auto_swot: bool = True                # rebuild a subsidiary's SWOT after its signals change
+    swot_every_days: int = 7              # the SWOT Analyst re-analyses every subsidiary this often
+    opportunity_daily_at: str = "08:00"   # local time: the Opportunity Analyst reads the day's news
 
     # ── Security validators ────────────────────────────────────────────────────
     @model_validator(mode="after")
@@ -167,6 +175,7 @@ class Settings(BaseSettings):
             ("database_url_kv_uri", "database_url"),
             ("redis_url_kv_uri", "redis_url"),
             ("arize_phoenix_api_key_kv_uri", "arize_phoenix_api_key"),
+            ("first_user_password_kv_uri", "first_user_password"),
             ("gnews_api_key_kv_uri", "gnews_api_key"),
             ("newsdata_api_key_kv_uri", "newsdata_api_key"),
             ("tavily_api_key_kv_uri", "tavily_api_key"),

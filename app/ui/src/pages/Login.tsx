@@ -41,8 +41,7 @@ export default function Login() {
           </div>
           <h1 className="text-lg font-extrabold text-gray-900 tracking-tight">RPG Horizon Radar</h1>
           <p className="text-xs text-gray-400 mt-2 max-w-xs leading-relaxed">
-            Restricted — Corporate Strategy. Named-reviewer access only. Contact Compliance to be
-            added to the reviewer list.
+            Corporate Strategy. Sign in with the account a colleague created for you.
           </p>
         </div>
 

@@ -2,9 +2,8 @@
 number in the output can be traced back to this file's constants. No external
 LLM call is made; the rationale string is built with a plain template so the
 scoring path needs no API key and no model to run. (RPG Horizon Radar's
-scoring is intentionally NOT an LLM agent — see DESIGN.md §7/§14. The
-accelerator's LangGraph/agents/ scaffold ships in this repo because the
-template bootstraps it, not because this pipeline uses it.)"""
+scoring is intentionally NOT an LLM agent — see DESIGN.md §7/§14. The app's
+LLM agents live in agents/ and never produce a score.)"""
 from __future__ import annotations
 
 from datetime import datetime, timedelta
@@ -51,9 +50,8 @@ def _multiplier_for(distinct_type_count: int) -> float:
 
 
 def cluster_window(signals: Sequence) -> tuple[datetime, datetime]:
-    """Rolling 90-day window ending at the max observed_at across the given
-    signals (there is no real clock feed in this demo — see caller docstrings
-    for why we never call datetime.now()/utcnow() here)."""
+    """Rolling 90-day window ending at the newest observed_at across the given
+    signals, so a score depends only on the signals, not on when it is computed."""
     now = max(s.observed_at for s in signals)
     return now - timedelta(days=WINDOW_DAYS), now
 
@@ -91,7 +89,7 @@ def compute_score(
     if subsidiary_names:
         routed_text = f" — routed to {', '.join(subsidiary_names)} ({sector_hint} relevance)."
     else:
-        routed_text = " — no open-gate subsidiary currently matches this entity's sectors."
+        routed_text = " — no subsidiary currently matches this entity's sectors."
 
     rationale = (
         f"{entity_name} shows {type_count} concurrent {plural}: {type_list_text}. "

@@ -3,27 +3,27 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 import { PageMetaProvider, usePageMetaContext } from "../context/PageMetaContext";
-import { api, type CaseSummary, type Me } from "./api";
-import Book from "./pages/Book";
-import DeepDive from "./pages/DeepDive";
-import { AskRadar, Competitors, Market, RivalDeals } from "./pages/Explore";
-import FollowUp from "./pages/FollowUp";
-import Home from "./pages/Home";
-import { Theses, Watched, WatchRules } from "./pages/Settings";
-import { COMPANIES, Ctx, type AppState, type View } from "./state";
+import { api, type Me } from "./api";
+import { AskRadar } from "./pages/Ask";
+import Competitors from "./pages/Competitors";
+import Digest from "./pages/Digest";
+import Finance from "./pages/Finance";
+import SelfAnalysis from "./pages/Self";
+import { RadarSettings } from "./pages/Settings";
+import Shortlist from "./pages/Shortlist";
+import Signals from "./pages/Signals";
+import { Ctx, type AppState, type View } from "./state";
 import "./styles.css";
 
 const NAV: [string, [View, string][]][] = [
-  ["Radar", [["home", "This week"], ["book", "Deep-dive book"], ["follow", "Follow-up"]]],
-  ["Explore", [["comp", "Competitors"], ["fin", "Market performance"], ["deals", "Rival deals"], ["ask", "Ask Radar"]]],
-  ["Radar settings", [["thesis", "Acquisition theses"], ["trig", "Watch rules"], ["admin", "Watched companies"]]],
+  ["Radar", [["signals", "M&A Signals"], ["competitors", "Competitor Analysis"], ["ask", "Ask Radar"], ["shortlist", "Shortlisted signals"], ["settings", "Radar settings"]]],
+  ["Self reflection", [["self", "Self analysis"], ["digest", "Weekly digest"], ["finance", "The financial market"]]],
 ];
 
-// The repo's restricted M&A screens (ZenLabs design, rendered inside a .tw wrapper).
-const DESK: [string, string, boolean][] = [
-  ["/board", "Signal board", false],
-  ["/digests", "Digest archive", false],
-  ["/admin", "Admin", true],
+// Workspace: the repo's desk screens (ZenLabs design, rendered inside a .tw wrapper).
+const DESK: [string, string][] = [
+  ["/digests", "Digest archive"],
+  ["/admin", "Users and watchlist"],
 ];
 
 function initialTheme(): "light" | "dark" {
@@ -43,29 +43,25 @@ function DeskTitle() {
 }
 
 export default function RadarApp() {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const onDesk = location.pathname !== "/";
 
   const [me, setMe] = useState<Me | null>(null);
   const [meError, setMeError] = useState<string | null>(null);
-  const [view, setView] = useState<View>("home");
+  const [view, setView] = useState<View>("signals");
   const [scope, setScopeRaw] = useState("CEAT");
   const [cur, setCur] = useState("CEAT");
-  const [shortlist, setShortlist] = useState<string[]>([]);
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [bookPage, setBookPage] = useState(0);
-  const [followSel, setFollowSel] = useState<string | null>(null);
+  const [signalSel, setSignalSel] = useState<string | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [guideOn, setGuideOn] = useState(true);
   const [theme, setTheme] = useState(initialTheme);
-  const [counts, setCounts] = useState({ home: 0, book: 0, follow: 0, pending: 0, openFollow: 0, jobRunning: false });
+  const [counts, setCounts] = useState({ signals: 0, shortlist: 0, digest: 0 });
   const toastTimer = useRef<number>();
 
-  // Which RPG companies this reviewer may open (scope + open gate); "All" only for admins.
+  // Who is signed in, and the RPG companies (every user sees all of them).
   useEffect(() => {
     api.me().then((m) => {
       setMe(m);
@@ -74,9 +70,7 @@ export default function RadarApp() {
     }).catch((e) => setMeError((e as Error).message));
   }, []);
   const companies = me?.companies ?? [];
-  const groupView = !!me?.group_view;
 
-  useEffect(() => { document.body.classList.toggle("guide-on", guideOn && !onDesk); }, [guideOn, onDesk]);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try { localStorage.setItem("hr-theme", theme); } catch { /* storage blocked */ }
@@ -95,66 +89,32 @@ export default function RadarApp() {
   const setScope = useCallback((s: string) => { setScopeRaw(s); if (s !== "All") setCur(s); }, []);
   const who = user?.name || "Reviewer";
 
-  // Counts for the side menu and the guided demo.
+  // Counts for the side menu.
   useEffect(() => {
     if (!me || !companies.length) return;
-    Promise.all([api.home(scope), api.book(), api.followUps(groupView ? "All" : scope)]).then(([h, b, f]) => {
-      const digest = h.recommended.filter((r) => r.case.stage === "digest").length;
-      setCounts({ home: digest, book: b.pages.length, follow: f.filter((x) => x.stage === "act").length,
-        pending: b.pages.filter((p: CaseSummary) => p.stage === "decide").length,
-        openFollow: f.filter((x) => x.in_book && x.stage === "act").length, jobRunning: false });
+    Promise.all([api.signals(scope, "open"), api.opportunityCounts()]).then(([sg, o]) => {
+      setCounts({ signals: sg.counts.open, shortlist: sg.counts.shortlisted,
+                  digest: scope === "All" ? Object.values(o.counts).reduce((a, n) => a + n, 0) : o.counts[scope] || 0 });
     }).catch(() => undefined);
   }, [scope, version, me]);
 
   const state: AppState = useMemo(() => ({
-    view, go, companies, groupView, scope, setScope, cur, user: who, version, bump, toast, jobId, bookPage, setBookPage, followSel, focus,
-    shortlist,
-    toggleShortlist: (id, on) => {
-      if (on && shortlist.length >= 5) { toast("Shortlist up to 5 companies at a time."); return false; }
-      setShortlist((s) => (on ? [...s.filter((x) => x !== id), id] : s.filter((x) => x !== id)));
-      return true;
-    },
-    clearShortlist: () => setShortlist([]),
-    escalate: async () => {
-      try {
-        const j = await api.startDeepDive(shortlist, scope);
-        setShortlist([]); setJobId(j.id); bump(); go("deep");
-      } catch (e) { toast((e as Error).message); }
-    },
-    openBookAt: (id) => { api.book().then((b) => { const i = b.pages.findIndex((p) => p.id === id); setBookPage(i < 0 ? 0 : i + 1); go("book"); }); },
-    openFollowUp: (id) => { setFollowSel(id); go("follow"); },
+    view, go, companies, scope, setScope, cur, user: who, version, bump, toast, focus, signalSel,
+    openSignal: (id) => { setSignalSel(id); go("signals"); },
+    clearSignalSel: () => setSignalSel(null),
     openRow: (id, home) => {
-      // Stay on the current company if it lists the case; otherwise switch to the company that recommends it.
-      api.home(scope).then((h) => {
-        const here = h.recommended.some((r) => r.case_id === id) || h.set_aside.some((s) => s.case_id === id);
-        if (!here) {
-          const target = home || (id.startsWith("t_") ? id.slice(2) : undefined);
-          if (target && COMPANIES.includes(target) && companies.includes(target)) setScope(target);
-          else api.caseDetail(id).then((c) => { if (companies.includes(c.company)) setScope(c.company); });
-        }
-        setFocus(id); go("home");
-      });
+      // Stay on the current company if it watches this one; otherwise switch to a company that does.
+      api.caseDetail(id).then((c) => {
+        const target = home && c.companies.includes(home) ? home : c.companies.find((x) => companies.includes(x));
+        if (!c.companies.includes(cur) && target) setScope(target);
+        setFocus(id); go("competitors");
+      }).catch((e) => toast((e as Error).message));
     },
     clearFocus: () => setFocus(null),
-  }), [view, scope, cur, version, jobId, bookPage, followSel, focus, shortlist, who, companies, groupView]);
+  }), [view, scope, cur, version, focus, signalSel, who, companies]);
 
-  // ---------- guided demo ----------
-  let g: { n: number; title: string; text: string; go?: [string, () => void] };
-  if (view === "deep" && jobId) g = { n: 3, title: "Deep dive", text: "Agents are writing one page per shortlisted company. Only these companies get the paid data and deeper research." };
-  else if (shortlist.length) g = { n: 2, title: "Escalate", text: `${shortlist.length} shortlisted. Add up to 5, then press Escalate in the bar at the bottom.`, go: view !== "home" ? ["Back to This week", () => go("home")] : undefined };
-  else if (counts.pending) g = { n: 4, title: "Read the book", text: "One page per company, like a book. Turn pages with Next or the arrow keys. Each page ends with a decision: approve with an owner, park or reject.", go: view !== "book" ? ["Open the book", () => go("book")] : undefined };
-  else if (counts.openFollow) g = { n: 5, title: "Follow up", text: "Approved companies get a tracked plan and watch rules. Tick a step, press 'Simulate next week's run', then record the outcome.", go: view !== "follow" ? ["Open follow-up", () => go("follow")] : undefined };
-  else if (counts.book) g = { n: 5, title: "That's the full story", text: "From each company's SWOT to a shortlist, a book of decisions and follow-up. Restart to try it with other companies." };
-  else g = { n: 1, title: "Start with the SWOT", text: "Each RPG company's SWOT is rebuilt from the signals. Only moves that link a strength or weakness to an opportunity or threat are recommended. Hover a move to see its SWOT items, then tick Shortlist on 2 or 3.", go: view !== "home" ? ["Go to This week", () => go("home")] : undefined };
-
-  const restart = async () => {
-    try { await api.reset(); } catch (e) { toast((e as Error).message); return; }
-    setShortlist([]); setJobId(null); setBookPage(0); setFollowSel(null); setScope(companies[0] || "CEAT"); go("home"); bump();
-    toast("Demo reset to the start of the week.");
-  };
-
-  const navCount: Partial<Record<View, number>> = { home: counts.home, book: counts.book, follow: counts.follow };
-  const active = onDesk ? null : view === "deep" ? "book" : view;
+  const navCount: Partial<Record<View, number>> = { signals: counts.signals, shortlist: counts.shortlist, digest: counts.digest };
+  const active = onDesk ? null : view;
 
   return (
     <Ctx.Provider value={state}>
@@ -169,20 +129,18 @@ export default function RadarApp() {
               <div className="topctl">
                 <label htmlFor="coSel">Company</label>
                 <select id="coSel" value={scope} onChange={(e) => setScope(e.target.value)}>
-                  {groupView && <option value="All">All companies</option>}
+                  <option value="All">All companies</option>
                   {companies.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
             )}
             <span className="spacer" />
-            {!onDesk && <button type="button" className="btnx" aria-pressed={guideOn} onClick={() => setGuideOn(!guideOn)}>Guided demo</button>}
             <button type="button" className="btnx" id="themeBtn" aria-pressed={theme === "dark"} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
               title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>{theme === "dark" ? "☀︎" : "☾"}</button>
-            <span className="mock" title="Approved real companies' signals are live; rival placeholders, deal targets and decisions are demo data">Live + demo data</span>
             <button type="button" className="btnx" onClick={logout}>Sign out</button>
           </div>
           <div className="restricted-bar" role="note">
-            <b>Restricted — UPSI-adjacent — do not forward.</b> A signal-flagging tool for named reviewers, not a valuation or due-diligence tool. Every view is logged.
+            <b>Restricted — UPSI-adjacent — do not forward.</b> A signal-flagging tool, not a valuation or due-diligence tool. Every view is logged.
           </div>
           <div className="shell">
             <nav className="side" aria-label="Screens">
@@ -196,14 +154,14 @@ export default function RadarApp() {
                   ))}
                 </div>
               ))}
-              <div className="navgrp">Restricted desk</div>
-              {DESK.filter(([, , adminOnly]) => isAdmin || !adminOnly).map(([path, label]) => (
-                <button key={path} className="navbtn" aria-current={location.pathname.startsWith(path) || (path === "/board" && location.pathname.startsWith("/signals")) ? "page" : undefined}
+              <div className="navgrp">Workspace</div>
+              {DESK.map(([path, label]) => (
+                <button key={path} className="navbtn" aria-current={location.pathname.startsWith(path) || (path === "/digests" && location.pathname.startsWith("/signals")) ? "page" : undefined}
                   onClick={() => navigate(path)}>
                   <span>{label}</span>
                 </button>
               ))}
-              <div className="sep">Signed in: {who}{isAdmin ? " · compliance admin" : ""}</div>
+              <div className="sep">Signed in: {who}</div>
             </nav>
             <main className="am" id="main">
               {onDesk ? (
@@ -217,33 +175,18 @@ export default function RadarApp() {
                 <section className="view"><p className="sub">Loading…</p></section>
               ) : (
                 <section className="view">
-                  {view === "home" && <Home />}
-                  {view === "deep" && <DeepDive />}
-                  {view === "book" && <Book />}
-                  {view === "follow" && <FollowUp />}
-                  {view === "comp" && <Competitors />}
-                  {view === "fin" && <Market />}
-                  {view === "deals" && <RivalDeals />}
+                  {view === "signals" && <Signals />}
+                  {view === "competitors" && <Competitors />}
                   {view === "ask" && <AskRadar />}
-                  {view === "thesis" && <Theses />}
-                  {view === "trig" && <WatchRules />}
-                  {view === "admin" && <Watched />}
+                  {view === "shortlist" && <Shortlist />}
+                  {view === "settings" && <RadarSettings />}
+                  {view === "self" && <SelfAnalysis />}
+                  {view === "digest" && <Digest />}
+                  {view === "finance" && <Finance />}
                 </section>
               )}
             </main>
           </div>
-          {guideOn && !onDesk && me && (
-            <div className="guide" role="region" aria-label="Guided demo">
-              <small>Guided demo · step {g.n} of 5</small>
-              <div className="gdots">{[1, 2, 3, 4, 5].map((i) => <i key={i} className={i <= g.n ? "on" : ""} />)}</div>
-              <b>{g.title}</b><p>{g.text}</p>
-              <div className="gb">
-                {g.go && <button className="pri" onClick={g.go[1]}>{g.go[0]}</button>}
-                {isAdmin && <button onClick={restart}>Restart</button>}
-                <button onClick={() => setGuideOn(false)}>Hide guide</button>
-              </div>
-            </div>
-          )}
           {toastMsg && <div className="toast" role="status" aria-live="polite">{toastMsg}</div>}
         </div>
       </PageMetaProvider>

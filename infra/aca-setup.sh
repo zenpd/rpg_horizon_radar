@@ -47,8 +47,14 @@ KV_URL="${KV_URL:-https://zaf-kv-01.vault.azure.net/}"
 SCHEDULER_ENABLED="${SCHEDULER_ENABLED:-true}"
 INGEST_DAILY_AT="${INGEST_DAILY_AT:-17:00}"
 DISCOVERY_EVERY_DAYS="${DISCOVERY_EVERY_DAYS:-7}"
-AUTO_SWOT="${AUTO_SWOT:-true}"
+SWOT_EVERY_DAYS="${SWOT_EVERY_DAYS:-7}"
+OPPORTUNITY_DAILY_AT="${OPPORTUNITY_DAILY_AT:-08:00}"
 LLM_ROUTES="${LLM_ROUTES:-groq:openai/gpt-oss-120b,nvidia:nvidia/nemotron-3-super-120b-a12b}"
+
+# First user (db/seed.py), created only when nobody can sign in yet.
+# The password is a secret: store it in Key Vault and pass its URI, never the raw value.
+FIRST_USER_EMAIL="${FIRST_USER_EMAIL:-}"
+FIRST_USER_PASSWORD_KV_URI="${FIRST_USER_PASSWORD_KV_URI:-}"
 
 # Live connector + LLM-route keys (TODO.md "Rotate every API key"): every one of these was pasted
 # into chat during the build. Rotate first, store the rotated value as a Key Vault secret, then
@@ -92,8 +98,11 @@ COMMON_ENV=(
   "SCHEDULER_ENABLED=$SCHEDULER_ENABLED"
   "INGEST_DAILY_AT=$INGEST_DAILY_AT"
   "DISCOVERY_EVERY_DAYS=$DISCOVERY_EVERY_DAYS"
-  "AUTO_SWOT=$AUTO_SWOT"
+  "SWOT_EVERY_DAYS=$SWOT_EVERY_DAYS"
+  "OPPORTUNITY_DAILY_AT=$OPPORTUNITY_DAILY_AT"
   "LLM_ROUTES=$LLM_ROUTES"
+  "FIRST_USER_EMAIL=$FIRST_USER_EMAIL"
+  "FIRST_USER_PASSWORD_KV_URI=$FIRST_USER_PASSWORD_KV_URI"
   "GNEWS_API_KEY_KV_URI=$GNEWS_API_KEY_KV_URI"
   "NEWSDATA_API_KEY_KV_URI=$NEWSDATA_API_KEY_KV_URI"
   "TAVILY_API_KEY_KV_URI=$TAVILY_API_KEY_KV_URI"

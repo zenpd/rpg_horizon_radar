@@ -136,7 +136,10 @@ class Fincrux(LiveConnector):
         return hits[0]["trading_symbol"] if hits else None
 
     def pull(self, entity: Entity, query: str) -> list[dict]:
+        from services.market_data import keep_financials
+
         d = self.get(f"financials/{query}")["data"]
+        keep_financials(self.state, query, d)  # for The financial market, at no extra call
         when = datetime.fromisoformat(d["last_updated_at"][:19]) if d.get("last_updated_at") else datetime.now()
         out = []
         q = {row[0]: row[1:] for row in d.get("quaterly_results") or []}  # sic, the API's spelling
@@ -200,7 +203,10 @@ class AlphaVantage(LiveConnector):
         return bse or (f"{entity.nse_symbol}.BSE" if entity.nse_symbol else "")
 
     def pull(self, entity: Entity, query: str) -> list[dict]:
+        from services.market_data import keep_prices
+
         series = self.call({"function": "TIME_SERIES_DAILY", "symbol": query, "outputsize": "compact"}).get("Time Series (Daily)") or {}
+        keep_prices(self.state, entity.nse_symbol or query.split(".")[0], series)  # for The financial market
         days = sorted(series)
         if len(days) < 31:
             return []

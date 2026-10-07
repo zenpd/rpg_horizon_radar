@@ -22,14 +22,7 @@ from temporalio.worker import Worker
 from observability.tracing import init_tracing
 from shared.config import get_settings
 from shared.logger import get_logger, setup_logging
-from workflows.activities import (
-    persist_session_to_db,
-    persist_session_to_redis,
-    run_agent_turn,
-    run_ingestion_activity,
-    send_status_notification,
-)
-from workflows.example_workflow import ExampleWorkflow
+from workflows.activities import run_ingestion_activity
 from workflows.ingestion_workflow import IngestionWorkflow
 
 log = get_logger(__name__)
@@ -77,14 +70,8 @@ async def run_worker() -> None:
     async with Worker(
         client,
         task_queue=settings.temporal_task_queue_agents,
-        workflows=[ExampleWorkflow, IngestionWorkflow],
-        activities=[
-            run_agent_turn,
-            persist_session_to_redis,
-            persist_session_to_db,
-            send_status_notification,
-            run_ingestion_activity,
-        ],
+        workflows=[IngestionWorkflow],
+        activities=[run_ingestion_activity],
         max_concurrent_activities=10,
         max_concurrent_workflow_tasks=50,
     ):

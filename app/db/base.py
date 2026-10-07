@@ -16,7 +16,9 @@ from shared.config import get_settings
 
 def _make_engine():
     s = get_settings()
-    return create_async_engine(s.database_url, echo=False, pool_pre_ping=True)
+    # SQLite allows one writer at a time: wait up to 30 s for the lock instead of failing at once.
+    args = {"connect_args": {"timeout": 30}} if s.database_url.startswith("sqlite") else {}
+    return create_async_engine(s.database_url, echo=False, pool_pre_ping=True, **args)
 
 
 engine = _make_engine()

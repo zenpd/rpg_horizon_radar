@@ -3,15 +3,18 @@
 Temporal (durable, retried on transient failure). Fallback: if Temporal or the
 worker isn't reachable — e.g. the API running alone without ``docker compose
 up`` — run the same services.ingest code inline. Afterwards the radar screens
-reload the live signals (radar/bridge.py), and the SWOT Analyst rebuilds the
-SWOT of each subsidiary whose signals changed (AUTO_SWOT)."""
+reload the live signals (radar/bridge.py), and research on an RPG company whose
+last research had a failing source (e.g. Fincrux's daily quota) is retried
+(services/company_research.py). SWOTs are rebuilt weekly by the scheduler, not
+after each ingestion run."""
 from __future__ import annotations
 
 from temporalio.client import Client
 
 from db.base import get_db_session
+from services import company_research
 from services.audit import write_audit
-from services.ingest import run_ingest_for_open_subsidiaries
+from services.ingest import run_ingest_all
 from shared.config import get_settings
 from shared.logger import get_logger
 
@@ -34,16 +37,22 @@ async def _run_via_temporal() -> dict | None:
         return None
 
 
-async def run_ingest(reviewer=None, rebuild_swots: bool | None = None) -> dict:
-    from radar import bridge, swot_agent  # imported here: radar.api imports this module
+async def run_ingest(reviewer=None) -> dict:
+    from radar import bridge  # imported here: radar.api imports this module
 
     result = await _run_via_temporal()
     via = "temporal"
     if result is None:
         async with get_db_session() as db:
-            result = await run_ingest_for_open_subsidiaries(db)
+            result = await run_ingest_all(db)
         via = "inline_fallback"
-    result = {"errors": [], "changed_subsidiaries": [], **result, "via": via, "swot_rebuilt": [], "swot_errors": []}
+    result = {"errors": [], "changed_subsidiaries": [], **result, "via": via, "researched": []}
+    try:
+        async with get_db_session() as db:
+            result["researched"] = await company_research.refresh_due(db)
+    except Exception as exc:  # noqa: BLE001 — research failing must not fail the ingestion run
+        log.warning("company_research_failed", error=str(exc))
+        result["errors"].append(f"Company research: {exc}")
 
     async with get_db_session() as db:
         await write_audit(
@@ -53,11 +62,4 @@ async def run_ingest(reviewer=None, rebuild_swots: bool | None = None) -> dict:
         )
 
     await bridge.sync()
-    if rebuild_swots if rebuild_swots is not None else get_settings().auto_swot:
-        for code in result["changed_subsidiaries"]:
-            co = bridge.CODE_TO_CO.get(code)
-            if co:
-                # A background job; it saves the SWOT (swot_briefs) when its draft passes the rules.
-                swot_agent.start(co, reviewer.name if reviewer else "scheduler")
-                result["swot_rebuilt"].append(code)
     return result

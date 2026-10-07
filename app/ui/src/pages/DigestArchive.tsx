@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarDays } from "lucide-react";
+import { ArrowLeft, CalendarDays, Sparkles } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { usePageMeta } from "../context/PageMetaContext";
-import { getDigest, getDigests } from "../services/api";
+import { generateDigest, getDigest, getDigests } from "../services/api";
 import SignalCard from "../components/SignalCard";
 import type { DigestDetail as DigestDetailType, DigestSummary, SignalClusterSummary } from "../types";
 
@@ -21,11 +22,33 @@ function formatDate(value?: string | null) {
 }
 
 function DigestList() {
-  usePageMeta("Digest Archive", "Past weekly digest issues, in reviewer scope.");
+  usePageMeta("Digest Archive", "Past weekly digest issues.");
 
   const navigate = useNavigate();
   const [digests, setDigests] = useState<DigestSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+
+  const generate = async () => {
+    setGenerating(true);
+    try {
+      const digest = await generateDigest();
+      toast.success("Digest generated.");
+      navigate(`/digests/${digest.id}`);
+    } catch {
+      // handled globally
+    } finally {
+      setGenerating(false);
+    }
+  };
+  const generateBar = (
+    <div className="flex justify-end mb-3">
+      <button type="button" onClick={generate} disabled={generating} className="btn btn-restricted btn-sm">
+        <Sparkles size={13} />
+        {generating ? "Generating…" : "Generate digest"}
+      </button>
+    </div>
+  );
 
   useEffect(() => {
     getDigests()
@@ -40,13 +63,18 @@ function DigestList() {
 
   if (digests.length === 0) {
     return (
-      <div className="text-sm text-gray-400 py-10 text-center border border-dashed border-gray-200 rounded-2xl">
-        No digests have been generated yet.
-      </div>
+      <>
+        {generateBar}
+        <div className="text-sm text-gray-400 py-10 text-center border border-dashed border-gray-200 rounded-2xl">
+          No digests have been generated yet.
+        </div>
+      </>
     );
   }
 
   return (
+    <>
+    {generateBar}
     <div className="card overflow-hidden divide-y divide-gray-50">
       {digests.map((d) => (
         <button
@@ -76,6 +104,7 @@ function DigestList() {
         </button>
       ))}
     </div>
+    </>
   );
 }
 

@@ -1,70 +1,46 @@
-import type { CaseDetail, CaseSummary, SwotItem, SwotView } from "../api";
+import { useState } from "react";
+import type { CaseDetail, CaseSummary, ScoreDetail, Signal, SwotItem, SwotView } from "../api";
 import { useApp } from "../state";
-import { SparkChart } from "./charts";
 
-const JOURNEY: [string, string][] = [
-  ["SWOT", "Where each company stands"], ["Shortlist", "Pick the moves that fit"], ["Deep dive", "Agents do the expensive work"],
-  ["Read the book", "One page per company"], ["Follow up", "Plan, watch, outcome"],
-];
+export const sCls = (s: number) => (s >= 70 ? "s-hi" : s >= 40 ? "s-md" : "s-lo");
 
-/** The five-step story bar shown on the main screens. */
-export function Journey({ step }: { step: number }) {
+/** The rule-based opportunity score, or a note that the company has none yet. */
+export function CaseBadge({ c }: { c: CaseSummary }) {
+  if (c.score === null) return <span className="pill2" title="Not scored yet">no score</span>;
+  return <div className={`score ${sCls(c.score)}`} style={{ width: 54, height: 46 }}><b style={{ fontSize: 19 }}>{Math.round(c.score)}</b><small>score</small></div>;
+}
+
+/** A list of public signals, each linking to its source. */
+export function SignalList({ signals }: { signals: Signal[] }) {
   return (
-    <div className="stepper journey" aria-label="How the radar works">
-      {JOURNEY.map(([l, q], i) => (
-        <div key={l} className={`stp ${i < step ? "done" : i === step ? "now" : ""}`} aria-current={i === step ? "step" : undefined}>
-          <b>{i < step ? "✓ " : ""}{i + 1}. {l}</b><small>{q}</small>
+    <div className="tl">
+      {signals.map((s, i) => (
+        <div key={i}><time>{s.date}</time>
+          <p><b>{s.label}:</b> {s.url ? <a href={s.url} target="_blank" rel="noreferrer">{s.text}</a> : s.text} <span className="mini">{s.source}{s.url ? " ↗" : ""}</span></p>
         </div>
       ))}
     </div>
   );
 }
 
-export const sCls = (s: number) => (s >= 70 ? "s-hi" : s >= 40 ? "s-md" : "s-lo");
-
-export function CaseBadge({ c }: { c: CaseSummary }) {
-  if (c.kind === "deal")
-    return <div className={`score ${sCls(c.score!)}`} style={{ width: 54, height: 46 }}><b style={{ fontSize: 19 }}>{c.score}</b><small>score</small></div>;
-  return <span className={`sev ${c.threat_class}`}>{c.threat}</span>;
-}
-
-/** Evidence shown under "Signals and quick look": free sources only. */
+/** "Signals and quick look": the company's public signals and how its score was reached. */
 export function QuickLookBody({ c }: { c: CaseDetail }) {
   const q = c.quick;
-  if (c.kind === "deal")
-    return (
-      <div className="cols">
-        <div className="stack">
-          <p style={{ margin: 0 }}>{q.story}</p>
-          <div className="tl">{q.signals!.map((s, i) => <div key={i}><time>{s.date}</time><p><b>{s.label}:</b> {s.text} <span className="mini">{s.source}</span></p></div>)}</div>
-        </div>
-        <div className="stack">
-          <div><small className="crumb">Score {q.score!.score}</small>
-            <p className="sub" style={{ fontSize: 12.5, margin: "2px 0 0" }}>{q.score!.parts.map((p) => `${p[0]} ${p[1]}`).join(" + ")} = {q.score!.base}, × {q.score!.m} for {q.score!.n_types} signal types{q.score!.capped ? ", capped at 100" : ""}</p></div>
-          {q.thesis && <div><small className="crumb">Fit with {q.thesis.company}'s thesis · {q.thesis.ok} of {q.thesis.total}</small>
-            <div className="crit" style={{ marginTop: 4 }}>{q.thesis.checks.map((x) => <span key={x[0]} className={x[1] ? "ok" : "no"}>{x[1] ? "✓" : "✗"} {x[0]}</span>)}</div></div>}
-          <div><small className="crumb">Who's involved</small>
-            <p className="sub" style={{ fontSize: 12.5, margin: "2px 0 0" }}>{q.owners!.map((o) => `${o[0]} ${o[1]}%`).join(" · ")}
-              {q.bidders!.length > 0 && <><br /><b>Rival interest:</b> {q.bidders!.join("; ")}</>}</p></div>
-        </div>
-      </div>
-    );
   return (
     <div className="cols">
+      <div className="stack"><SignalList signals={q.signals} /></div>
       <div className="stack">
-        <p style={{ margin: 0 }}>{q.analyst}</p>
-        <div className="tl">{q.timeline!.map((t, i) => <div key={i}><time>{t.date}</time><p><b>{t.label}:</b> {t.text} <span className="mini">{t.source}</span></p></div>)}</div>
-      </div>
-      <div className="stack">
-        <div><small className="crumb">{q.spark!.t}</small><SparkChart sp={q.spark!} /></div>
-        <div><small className="crumb">What customers say</small><p className="sub" style={{ fontSize: 12.5, margin: "2px 0 0" }}><b>{q.voc_top!.sentiment} · {q.voc_top!.topic}</b> {q.voc_top!.text}</p></div>
+        {q.score ? (
+          <div><small className="crumb">Score {Math.round(q.score.score)} · rule-based</small>
+            <p className="sub" style={{ fontSize: 12.5, margin: "2px 0 0" }}>{q.score.rationale || `Signal types: ${q.score.types.join(", ")}`}</p></div>
+        ) : <p className="sub" style={{ fontSize: 12.5 }}>Not scored yet: the score is computed after the next ingestion run.</p>}
+        <p className="sub" style={{ fontSize: 12 }}>Watched for {c.companies.join(", ")} · public sources only</p>
       </div>
     </div>
   );
 }
 
-/** 2×2 SWOT. `big` shows every item; the small version is a tile on the group view. */
-// "Talent Tracker, Patent Scout · Demo data" under a SWOT item.
+// "Annual report, NSE · Live" under a SWOT item.
 function SourceLine({ sources }: { sources: SwotItem["sources"] }) {
   if (!sources.length) return <small className="sw-src">No linked source</small>;
   const names = [...new Set(sources.map((x) => x.source.split(" · ")[0]))].slice(0, 3);
@@ -72,6 +48,7 @@ function SourceLine({ sources }: { sources: SwotItem["sources"] }) {
   return <small className="sw-src">{names.join(", ")}{sources.length > names.length ? ` +${sources.length - names.length}` : ""} · {origins.join(", ")}</small>;
 }
 
+/** 2×2 SWOT. `big` shows every item; the small version is a tile on the group view. */
 export function SwotBox({ s, big, hl, dim }: { s: SwotView; big: boolean; hl?: Set<string>; dim?: boolean }) {
   const { openRow } = useApp();
   const Q: ["S" | "W" | "O" | "T", string, string][] = [["S", "Strengths", "Internal · helps"], ["W", "Weaknesses", "Internal · hurts"], ["O", "Opportunities", "External · helps"], ["T", "Threats", "External · hurts"]];
@@ -85,7 +62,7 @@ export function SwotBox({ s, big, hl, dim }: { s: SwotView; big: boolean; hl?: S
               {s[k].map((x) => (
                 <li key={x.id} id={`sw_${x.id}`} className={`${x.case_id ? "sig" : ""}${hl?.has(x.id) ? " hl" : ""}`}>
                   <span className="mono">{x.id}</span>
-                  <span>{x.text}{x.case_id && <> <a href="#" className="sw-link" onClick={(e) => { e.preventDefault(); openRow(x.case_id!, s.company); }}>signals</a></>}
+                  <span>{x.factor && <span className="chip factor">{x.factor}</span>} {x.text}{x.case_id && <> <a href="#" className="sw-link" onClick={(e) => { e.preventDefault(); openRow(x.case_id!, s.company); }}>signals</a></>}
                     <SourceLine sources={x.sources} /></span>
                 </li>
               ))}
@@ -106,21 +83,16 @@ export function SwotDetails({ s }: { s: SwotView }) {
   const Q: ["S" | "W" | "O" | "T", string][] = [["S", "Strengths"], ["W", "Weaknesses"], ["O", "Opportunities"], ["T", "Threats"]];
   return (
     <details className="panel swdetails">
-      <summary><b>How this SWOT was built</b> <span className="sub">{m.built_by === "agent" ? `SWOT Analyst · ${m.at}` : "demo data"} · reasoning and sources for every item</span></summary>
+      <summary><b>How this SWOT was built</b> <span className="sub">SWOT Analyst · {m.at} · reasoning and sources for every item</span></summary>
       <p>{m.summary}</p>
-      {m.built_by === "demo" && (
-        <p className="sub">{m.live_signals_available
-          ? `${m.live_signals_available} live signals are available for ${s.company}. Press "Rebuild with SWOT Analyst" to build the SWOT from them.`
-          : "No live signals yet for this company: map its rival to a real company under Radar settings → Watched companies, refresh live signals, then rebuild."}</p>
-      )}
       {m.steps.length > 0 && <ol className="swsteps">{m.steps.map((x, i) => <li key={i}>{x}</li>)}</ol>}
       {Q.map(([k, label]) => (
         <div key={k} className="swd-q">
           <h5>{label}</h5>
           {s[k].map((x) => (
             <div key={x.id} className="swd-item">
-              <div><span className="mono">{x.id}</span> <b>{x.text}</b></div>
-              {x.reasoning ? <p className="swd-why"><b>Why:</b> {x.reasoning}</p> : <p className="swd-why sub">No reasoning: written by hand for the demo.</p>}
+              <div><span className="mono">{x.id}</span> <b>{x.text}</b>{x.factor && <> <span className="chip factor">{x.factor}</span></>}</div>
+              {x.reasoning && <p className="swd-why"><b>Why:</b> {x.reasoning}</p>}
               {x.sources.length ? (
                 <ul className="swd-src">{x.sources.map((y) => (
                   <li key={y.id}>
@@ -134,5 +106,32 @@ export function SwotDetails({ s }: { s: SwotView }) {
         </div>
       ))}
     </details>
+  );
+}
+
+
+/** "Opportunity score: 72" with an "i" that shows how that number was calculated. */
+export function ScorePill({ score, detail }: { score: number | null; detail: ScoreDetail | null | undefined }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="score-wrap">
+      <span className="score-pill">Opportunity score: {score !== null ? Math.round(score) : "–"}</span>
+      <button className="info-i" aria-label="How the opportunity score is calculated" aria-expanded={open} onClick={() => setOpen(!open)}>i</button>
+      {open && (
+        <div className="score-pop" role="dialog">
+          <div className="card2-h"><b>How the opportunity score is calculated</b><button className="info-x" aria-label="Close" onClick={() => setOpen(false)}>×</button></div>
+          <p>Rule-based, no AI. Each kind of public move in the latest {detail?.window_days ?? 90} days adds its weight once; several kinds at the same time multiply the total; the result is capped at {detail?.max ?? 100}. A higher score means more signs of change or distress that could open an M&A opportunity. It does not say whether the company can be bought: see its size.</p>
+          {detail ? <>
+            <table className="tbl score-tbl"><tbody>
+              {detail.parts.map((p) => <tr key={p.type}><td style={{ textTransform: "capitalize" }}>{p.type}</td><td className="num">+{p.weight}</td></tr>)}
+              <tr><td><b>Sum of weights</b></td><td className="num"><b>{detail.base}</b></td></tr>
+              <tr><td>× {detail.kinds} kind{detail.kinds === 1 ? "" : "s"} of move at once</td><td className="num">× {detail.multiplier}</td></tr>
+              <tr><td><b>Score</b>{detail.raw > detail.max ? ` (${detail.raw}, capped)` : ""}</td><td className="num"><b>{detail.score}</b></td></tr>
+            </tbody></table>
+            <p className="sub" style={{ fontSize: 11.5, margin: 0 }}>Multiplier: ×{detail.multipliers["1"]} for 1 kind, ×{detail.multipliers["2"]} for 2, ×{detail.multipliers["3"]} for 3, ×{detail.multipliers["4+"]} for 4 or more. Weights: credit downgrade 30; delayed filing, promoter pledge, auditor change 25; leadership churn, distress news, legal action, earnings decline 20; patent shift, hiring scale-down, opportunity news, stake sell-down, share-price slump, deal activity 15; hiring scale-up, fund raise 10.</p>
+          </> : <p className="sub" style={{ margin: 0 }}>No public moves in the window, so no score.</p>}
+        </div>
+      )}
+    </span>
   );
 }

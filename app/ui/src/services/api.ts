@@ -6,7 +6,6 @@ import type {
   DigestDetail,
   DigestSummary,
   EntityOut,
-  EscalationBrief,
   IngestRunResult,
   Job,
   Reviewer,
@@ -75,8 +74,6 @@ export const getMe = () => api.get<User>("/auth/me").then((r) => r.data);
 
 // ---- Subsidiaries ----
 export const getSubsidiaries = () => api.get<Subsidiary[]>("/subsidiaries").then((r) => r.data);
-export const patchSubsidiaryGate = (code: string, compliance_gate: boolean) =>
-  api.patch<Subsidiary>(`/subsidiaries/${code}/gate`, { compliance_gate }).then((r) => r.data);
 
 // ---- Entities ----
 export const getEntities = (subsidiary?: string) =>
@@ -92,10 +89,6 @@ export const getSignals = (params?: GetSignalsParams) =>
   api.get<SignalClusterSummary[]>("/signals", { params }).then((r) => r.data);
 export const getSignal = (id: number | string) =>
   api.get<SignalClusterDetail>(`/signals/${id}`).then((r) => r.data);
-export const markUnderEvaluation = (id: number | string) =>
-  api.post<SignalClusterDetail>(`/signals/${id}/mark-under-evaluation`).then((r) => r.data);
-export const getEscalationBrief = (id: number | string) =>
-  api.get<EscalationBrief>(`/signals/${id}/escalation-brief`).then((r) => r.data);
 
 // ---- Digests ----
 export const getDigests = () => api.get<DigestSummary[]>("/digests").then((r) => r.data);
@@ -121,7 +114,7 @@ export async function waitForJob<R>(job: Job<R>, everyMs = 2000): Promise<Job<R>
 // Starts a run in the background (202); poll it with waitForJob.
 export const runIngest = () => api.post<Job<IngestRunResult>>("/ingest/run").then((r) => r.data);
 
-// ---- Watchlist (compliance_admin) ----
+// ---- Watchlist ----
 export const getWatchlist = () => api.get<WatchlistEntity[]>("/watchlist").then((r) => r.data);
 export const updateWatchlistEntity = (
   id: number,
@@ -136,7 +129,7 @@ export const addWatchlistEntity = (payload: {
 }) => api.post<WatchlistEntity>("/watchlist", payload).then((r) => r.data);
 export interface DiscoveryResult {
   subsidiaries: string[];
-  proposed: string[];
+  added: string[];
   refreshed: string[];
   errors: string[];
 }

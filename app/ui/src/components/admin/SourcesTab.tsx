@@ -65,9 +65,14 @@ export default function SourcesTab() {
               </li>
               <li>
                 Watchlist discovery every <strong>{s.discovery_every_days} days</strong> — next {formatDateTime(s.next.discovery)}.
-                Proposals still need your approval.
+                Companies it finds are watched at once.
               </li>
-              <li>{s.auto_swot ? "SWOT briefs rebuild after a run brings new signals." : "SWOT briefs rebuild only on request."}</li>
+              <li>
+                Opportunity Analyst daily at <strong>{s.opportunity_daily_at}</strong> — next {formatDateTime(s.next.opportunities)}.
+              </li>
+              <li>
+                SWOT Analyst every <strong>{s.swot_every_days} days</strong> (research refreshed first) — next {formatDateTime(s.next.swot)}.
+              </li>
               {s.running && <li className="text-amber-600">Running now: {s.running}</li>}
               {s.last_error && <li className="text-rose-600">Last error: {s.last_error}</li>}
             </ul>

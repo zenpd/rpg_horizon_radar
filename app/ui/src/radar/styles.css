@@ -500,8 +500,7 @@ body.guide-on .shell .am{padding-bottom:230px}
 .swd-src li { margin: 3px 0; }
 .chip { display: inline-block; font-size: 10.5px; padding: 1px 7px; border-radius: 999px; font-weight: 600; letter-spacing: 0.02em; }
 .chip.live { background: var(--opps); color: var(--opp); }
-.chip.demo { background: var(--chip); color: var(--muted); }
-.chip.team { background: var(--highs); color: var(--high); }
+.chip.self { background: var(--highs); color: var(--high); }
 .rivalwhy { display: inline-block; font-size: 12px; }
 .rivalwhy summary { cursor: pointer; display: inline; }
 .rivalwhy a { margin-left: 3px; }
@@ -518,3 +517,81 @@ body.guide-on .shell .am{padding-bottom:230px}
 .view.desk .desk-head h1{font-family:var(--display);font-size:20px;font-weight:800;margin:0;color:#111827}
 .view.desk .desk-head .sub{margin:2px 0 0;font-size:12.5px;color:#6b7280}
 .view.desk a{color:inherit}
+
+/* SWOT factor tags, and the daily Opportunity Analyst's findings (This week) */
+.chip.factor { background: var(--chip); color: var(--muted); font-weight: 600; margin-right: 4px; }
+.chip.daily { background: var(--opps); color: var(--opp); }
+.chk { display: flex; gap: 8px; align-items: center; font-size: 13.5px; padding: 4px 0; cursor: pointer; }
+.chkgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 2px 16px; }
+.findings .intro { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; margin-bottom: 10px; }
+.fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.finding { border: 1px solid var(--rule); border-left: 4px solid var(--opp); border-radius: 12px; padding: 12px 14px; background: var(--surface); }
+.finding.threat { border-left-color: var(--crit); }
+.finding.kept { box-shadow: 0 0 0 2px var(--accent-soft); }
+.finding p { margin: 6px 0; font-size: 13.5px; }
+.finding .fh { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin-bottom: 4px; }
+.finding .feffect { background: var(--accent-soft); border-radius: 8px; padding: 6px 8px; }
+.pill2.opp { background: var(--opps); color: var(--opp); }
+.pill2.thr { background: var(--crits); color: var(--crit); }
+
+/* Cards: M&A Signals, Competitor Analysis, Shortlisted opportunities */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-top: 10px; }
+.card2 { border: 1px solid var(--rule); border-radius: 14px; padding: 14px 16px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.card2.on { box-shadow: 0 0 0 2px var(--accent); }
+.card2 .rt { margin: 2px 0; }
+.card2 p { margin: 2px 0; }
+.card2-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.card2.pick { cursor: pointer; font: inherit; color: inherit; width: 100%; }
+.card2.pick:hover { border-color: var(--accent); }
+.score-pill { font-family: var(--mono, monospace); font-weight: 700; font-size: 13px; padding: 2px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-700); }
+.kv.small { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 4px 0; }
+.kv.small b { font-size: 12.5px; }
+.uses-text { margin: 4px 0; padding-left: 18px; font-size: 12.5px; color: var(--muted); }
+.split { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 16px; margin-top: 12px; align-items: start; }
+@media (max-width: 820px) { .split { grid-template-columns: 1fr; } .kv.small { grid-template-columns: 1fr 1fr; } }
+
+/* The acquisition thesis */
+.tswot { margin-top: 8px; border-radius: 10px; padding: 8px 12px; border-left: 4px solid var(--rule); }
+.tswot small { display: block; text-transform: capitalize; color: var(--faint); font-weight: 600; }
+/* the same quadrant colours as the SWOT on Self analysis */
+.tswot.qS { border-left-color: var(--opp); } .tswot.qW { border-left-color: var(--high); }
+.tswot.qO { border-left-color: var(--watch); } .tswot.qT { border-left-color: var(--crit); }
+.tswot.qS small { color: var(--opp); } .tswot.qW small { color: var(--high); }
+.tswot.qO small { color: var(--watch); } .tswot.qT small { color: var(--crit); }
+.tswot ul, .cmp { margin: 2px 0; padding-left: 18px; font-size: 13.5px; }
+.cmp li { margin: 4px 0; }
+.evlist { font-size: 12.5px; padding-left: 22px; }
+.evlist li { margin: 4px 0; }
+.pill2.eff-complements, .pill2.fit-strong, .pill2.rip-opportunity { background: var(--opps); color: var(--opp); }
+.pill2.eff-overlaps, .pill2.fit-moderate, .pill2.rip-neutral { background: var(--chip); color: var(--muted); }
+.pill2.eff-conflicts, .pill2.fit-weak, .pill2.rip-risk { background: var(--crits); color: var(--crit); }
+.pill2.fit-unknown { background: var(--chip); color: var(--faint); }
+.pswot { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; }
+@media (max-width: 700px) { .pswot { grid-template-columns: 1fr; } }
+.pill2.chg-new, .pill2.chg-strengthened { background: var(--opps); color: var(--opp); }
+.pill2.chg-weakened { background: var(--crits); color: var(--crit); }
+.pill2.chg-carried-over { background: var(--chip); color: var(--muted); }
+
+/* Tags and headlines that open the article behind them */
+.chiplink { text-decoration: none; cursor: pointer; }
+.chiplink:hover { background: var(--accent-soft); color: var(--accent-700); }
+.card2 .latest { font-size: 12.5px; margin: 2px 0; }
+
+.kv .unverified { color: var(--high); }
+
+/* Opportunity score with its "i" */
+.score-wrap { position: relative; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.info-i { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--accent-700); background: transparent; color: var(--accent-700);
+  font: italic 700 11px/1 Georgia, serif; cursor: pointer; padding: 0; }
+.info-i:hover, .info-i[aria-expanded="true"] { background: var(--accent-soft); }
+.score-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; width: min(360px, 86vw); background: var(--surface);
+  border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.15); font-size: 12.5px; text-align: left; }
+.score-pop p { margin: 6px 0; }
+.score-tbl td { padding: 3px 6px; } .score-tbl .num { text-align: right; font-family: var(--mono, monospace); }
+.info-x { border: 0; background: transparent; font-size: 18px; line-height: 1; cursor: pointer; color: var(--muted); }
+
+/* The financial market */
+.tbl.mkt td.num, .tbl.mkt th { white-space: nowrap; }
+.tbl.mkt td.num { font-family: var(--mono, monospace); text-align: right; }
+.tbl.mkt tr.own td { background: var(--accent-soft); }
+.up { color: var(--opp); } .down { color: var(--crit); }

@@ -8,8 +8,6 @@ class ReviewerOut(BaseModel):
     id: int
     name: str
     email: str
-    role: str
-    subsidiary_scopes: list[str]
     created_at: datetime
 
 
@@ -17,5 +15,3 @@ class ReviewerCreate(BaseModel):
     name: str
     email: str
     password: str
-    role: str
-    subsidiary_scopes: list[str] = []

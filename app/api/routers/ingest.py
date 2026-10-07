@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from api.auth import require_role
+from api.auth import get_current_reviewer
 from api.schemas.ingest import JobOut
 from db.models import Reviewer
 from services import jobs, pipeline
@@ -19,5 +19,5 @@ router = APIRouter()
 
 
 @router.post("/run", response_model=JobOut, status_code=202)
-async def run_ingest(admin: Reviewer = Depends(require_role("compliance_admin"))):
-    return jobs.start("ingest", lambda: pipeline.run_ingest(admin), started_by=admin.name)
+async def run_ingest(user: Reviewer = Depends(get_current_reviewer)):
+    return await jobs.start("ingest", lambda: pipeline.run_ingest(user), started_by=user.name)

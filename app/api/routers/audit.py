@@ -1,8 +1,9 @@
+"""The activity history (who did what, when), readable by every user."""
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.auth import require_role
+from api.auth import get_current_reviewer
 from api.dependencies import get_db
 from api.schemas.audit import AuditLogOut
 from db.models import AuditLog, Reviewer
@@ -15,7 +16,7 @@ async def list_audit_log(
     limit: int = 100,
     action: str | None = None,
     reviewer_id: int | None = None,
-    admin: Reviewer = Depends(require_role("compliance_admin")),
+    user: Reviewer = Depends(get_current_reviewer),
     db: AsyncSession = Depends(get_db),
 ):
     limit = max(1, min(limit, 500))

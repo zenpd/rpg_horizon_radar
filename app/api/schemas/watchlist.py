@@ -10,14 +10,12 @@ class WatchlistEntity(BaseModel):
     name: str
     sectors: list[str]
     category: str
-    is_fictional: bool
     origin: str
     status: str
     query_name: str
     nse_symbol: str | None = None
     discovery: dict | None = None
-    approved_by: str | None = None
-    approved_at: datetime | None = None
+    watched_since: datetime | None = None
     raw_signal_count: int = 0
     score: float | None = None
 

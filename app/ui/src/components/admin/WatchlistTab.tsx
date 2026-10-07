@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import toast from "react-hot-toast";
-import { Check, ExternalLink, Plus, Search, X } from "lucide-react";
+import { ExternalLink, Plus, RotateCcw, Search, X } from "lucide-react";
 
 import { addWatchlistEntity, getSubsidiaries, getWatchlist, runDiscovery, updateWatchlistEntity, waitForJob } from "../../services/api";
 import type { Subsidiary, WatchlistEntity } from "../../types";
 
 const STATUS_TABS = [
-  { key: "proposed", label: "Proposed" },
   { key: "watching", label: "Watching" },
-  { key: "dismissed", label: "Dismissed" },
+  { key: "dismissed", label: "Removed" },
 ] as const;
 
 function formatDate(value?: string | null) {
@@ -21,14 +20,14 @@ function formatDate(value?: string | null) {
   }
 }
 
-// Real companies only. A discovered company is a proposal until a
-// compliance_admin approves it here; only "watching" companies are ingested,
-// and every change is audit-logged by the API.
+// Real companies only. Discovered and hand-added companies are watched at once;
+// a removed ("dismissed") one is not fetched and discovery never re-adds it.
+// Every change is recorded in the activity history by the API.
 export default function WatchlistTab() {
   const [rows, setRows] = useState<WatchlistEntity[]>([]);
   const [subsidiaries, setSubsidiaries] = useState<Subsidiary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"proposed" | "watching" | "dismissed">("proposed");
+  const [tab, setTab] = useState<"watching" | "dismissed">("watching");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [discovering, setDiscovering] = useState(false);
   const [form, setForm] = useState({ name: "", sectors: [] as string[], nse_symbol: "", query_name: "" });
@@ -38,7 +37,7 @@ export default function WatchlistTab() {
     setLoading(true);
     Promise.all([getWatchlist(), getSubsidiaries()])
       .then(([w, s]) => {
-        setRows(w.filter((e) => !e.is_fictional));
+        setRows(w);
         setSubsidiaries(s);
       })
       .catch(() => {})
@@ -49,14 +48,13 @@ export default function WatchlistTab() {
 
   const sectors = useMemo(() => Array.from(new Set(subsidiaries.flatMap((s) => s.sectors))).sort(), [subsidiaries]);
   const shown = rows.filter((r) => r.status === tab);
-  const openGates = subsidiaries.filter((s) => s.compliance_gate).map((s) => s.code);
 
   const setStatus = async (row: WatchlistEntity, status: "watching" | "dismissed") => {
     setBusyId(row.id);
     try {
       const updated = await updateWatchlistEntity(row.id, { status });
       setRows((prev) => prev.map((r) => (r.id === row.id ? updated : r)));
-      toast.success(status === "watching" ? `${row.name} approved — it will be ingested on the next run.` : `${row.name} dismissed.`);
+      toast.success(status === "watching" ? `${row.name} is watched again from the next run.` : `${row.name} removed from the watchlist.`);
     } catch {
       // handled globally
     } finally {
@@ -84,10 +82,10 @@ export default function WatchlistTab() {
       } else {
         const r = job.result;
         toast.success(
-          `Discovery done — ${r.proposed.length} new proposals, ${r.refreshed.length} confirmed` +
+          `Discovery done — ${r.added.length} new companies watched, ${r.refreshed.length} confirmed` +
             (r.errors.length ? `; ${r.errors.length} errors: ${r.errors[0]}` : ".")
         );
-        setTab("proposed");
+        setTab("watching");
         load();
       }
     } catch {
@@ -106,7 +104,7 @@ export default function WatchlistTab() {
       setRows((prev) => [...prev, created]);
       setForm({ name: "", sectors: [], nse_symbol: "", query_name: "" });
       setTab("watching");
-      toast.success(`${created.name} added and approved by you.`);
+      toast.success(`${created.name} added — it will be fetched on the next run.`);
     } catch {
       toast.error("Could not add the company (already listed, or an unknown sector).");
     } finally {
@@ -118,8 +116,8 @@ export default function WatchlistTab() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-gray-500 max-w-2xl leading-relaxed">
-          Real, publicly listed companies the live connectors track. Discovery proposes companies for subsidiaries whose
-          compliance gate is open ({openGates.join(", ") || "none open"}); nothing is fetched about a company until you approve it.
+          Real, publicly listed companies the live connectors track. Discovery finds competitors and adjacent players for every
+          subsidiary each week, and they are watched at once. Remove any company that should not be tracked.
         </p>
         <button type="button" onClick={discover} disabled={discovering} className="btn btn-secondary btn-sm shrink-0">
           <Search size={13} className={discovering ? "animate-pulse" : ""} />
@@ -145,7 +143,7 @@ export default function WatchlistTab() {
         <div className="text-sm text-gray-400 py-10 text-center">Loading watchlist…</div>
       ) : shown.length === 0 ? (
         <div className="text-sm text-gray-400 py-10 text-center border border-dashed border-gray-200 rounded-2xl">
-          {tab === "proposed" ? "No proposals waiting. Run discovery or add a company below." : `No ${tab} companies.`}
+          {tab === "watching" ? "No companies yet. Find companies now, or add one below." : "No removed companies."}
         </div>
       ) : (
         <div className="card overflow-hidden divide-y divide-gray-50">
@@ -174,7 +172,7 @@ export default function WatchlistTab() {
                 )}
                 <p className="text-[10px] text-gray-400 mt-1.5">
                   {r.discovery?.last_seen_at && `Last confirmed by discovery ${formatDate(r.discovery.last_seen_at)}. `}
-                  {r.approved_by && `Approved by ${r.approved_by} on ${formatDate(r.approved_at)}. `}
+                  {r.status === "watching" && r.watched_since && `Watched since ${formatDate(r.watched_since)}. `}
                   {r.status === "watching" && `${r.raw_signal_count} signals${r.score != null ? `, score ${Math.round(r.score)}` : ""}.`}
                 </p>
               </div>
@@ -186,14 +184,13 @@ export default function WatchlistTab() {
                   className="input w-28 text-xs font-mono uppercase"
                   aria-label={`NSE symbol for ${r.name}`}
                 />
-                {r.status !== "watching" && (
-                  <button type="button" disabled={busyId === r.id} onClick={() => setStatus(r, "watching")} className="btn btn-restricted btn-sm">
-                    <Check size={13} /> Approve
+                {r.status === "dismissed" ? (
+                  <button type="button" disabled={busyId === r.id} onClick={() => setStatus(r, "watching")} className="btn btn-secondary btn-sm">
+                    <RotateCcw size={13} /> Watch again
                   </button>
-                )}
-                {r.status !== "dismissed" && (
+                ) : (
                   <button type="button" disabled={busyId === r.id} onClick={() => setStatus(r, "dismissed")} className="btn btn-ghost btn-sm">
-                    <X size={13} /> {r.status === "watching" ? "Stop watching" : "Dismiss"}
+                    <X size={13} /> Remove
                   </button>
                 )}
               </div>
@@ -236,7 +233,7 @@ export default function WatchlistTab() {
           </div>
           <div className="sm:col-span-3">
             <button type="submit" disabled={adding || !form.name || form.sectors.length === 0} className="btn btn-restricted">
-              {adding ? "Adding…" : "Add and approve"}
+              {adding ? "Adding…" : "Add to watchlist"}
             </button>
           </div>
         </form>

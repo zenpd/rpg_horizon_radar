@@ -1,72 +1,134 @@
-"""Turns stored records into the shapes the screens need."""
+"""Turns stored records into the shapes the screens need. Every value here comes from the
+database (watched companies, their public signals and rule-based scores, agent SWOTs) or from
+what users did; a screen with nothing real to show says so instead."""
 from __future__ import annotations
 
-from . import evidence as ev
-from . import rules
-from .reference import REF
-from .store import COMPANIES_ORDER, STORE
+from .store import COMPANIES_ORDER, STORE, week_label
 
-MON = {m: i + 1 for i, m in enumerate(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"])}
-THREAT_PRIO = {"High": 85, "Medium": 60, "Low": 35}
-
-
-def dnum(d: str) -> int:
-    a, b = d.split(" ")
-    return MON.get(b, 0) * 100 + int(a)
+TOWS = {"SO": ["Strength × Opportunity", "Use a strength to seize an opportunity"],
+        "WO": ["Weakness × Opportunity", "Use an opportunity to fix a weakness"],
+        "ST": ["Strength × Threat", "Use a strength to blunt a threat"],
+        "WT": ["Weakness × Threat", "Shore up a weakness a threat could exploit"]}
+STATUS = {"open": "New", "shortlisted": "Shortlisted", "dismissed": "Archived"}
 
 
-def threat_level(c: dict) -> str:
-    return c["ws"]["threat"][1].replace("Threat: ", "")
+def type_label(t: str) -> str:
+    return t.replace("_", " ")
 
 
-def priority(c: dict) -> int:
-    return c["target"]["score"] if c["kind"] == "deal" else THREAT_PRIO.get(threat_level(c), 50)
+def score_detail(types: list[str]) -> dict:
+    """How the rule-based opportunity score is built (services/scoring.py), for the "i" next to it:
+    each kind of move in the 90-day window adds its weight once, the sum is multiplied by how many
+    kinds there are, and the result is capped at 100."""
+    from services import scoring
+
+    parts = [{"type": type_label(t), "weight": scoring.BASE_WEIGHTS.get(t, 0)} for t in sorted(set(types))]
+    base, mult = sum(p["weight"] for p in parts), scoring._multiplier_for(len(parts))
+    return {"parts": parts, "base": base, "kinds": len(parts), "multiplier": mult, "raw": round(base * mult, 1),
+            "score": round(min(scoring.MAX_SCORE, base * mult)), "max": scoring.MAX_SCORE, "window_days": scoring.WINDOW_DAYS,
+            "multipliers": {**{str(k): v for k, v in scoring.CO_OCCURRENCE_MULTIPLIER.items()}, "4+": scoring.CO_OCCURRENCE_MULTIPLIER_4_PLUS}}
 
 
 def in_scope(c: dict, scope: str) -> bool:
     return scope == "All" or scope in c["cos"]
 
 
-STATUS = {"deep": "Deep dive running", "decide": "In the book · awaiting decision", "act": "In follow-up"}
+def _signal(x: dict) -> dict:
+    return {"date": x["date"], "label": x["label"], "text": x["text"], "source": x["source"], "url": x.get("url")}
+
+
+def acquirable(c: dict, co: str) -> dict:
+    """Whether ``co`` could plausibly buy this company (services/company_size.fit), and whether it is an
+    M&A signal for ``co``: a company at most half co's size, or a target from target discovery whose
+    size is not known yet (shown as not verified). A competitor of unknown size is never one."""
+    from services import company_size
+
+    from .bridge import CO_TO_CODE
+
+    f = company_size.fit(STORE.sizes.get(company_size.entity_key(c["entity_id"])), STORE.sizes.get(company_size.rpg_key(CO_TO_CODE[co])))
+    return {**f, "signal": f["ok"] is True or (f["ok"] is None and c.get("role") == "target")}
+
+
+def signal_for(c: dict) -> str | None:
+    """The RPG company this company is an M&A signal for (the first that could buy it), or None."""
+    return next((co for co in c["cos"] if acquirable(c, co)["signal"]), None)
+
+
+def listing(c: dict) -> str | None:
+    """The company's NSE symbol, when it has been matched to a listing."""
+    return next((w["nse_symbol"] for ws in (STORE.live_meta.get("watch") or {}).values() for w in ws if w["id"] == c["entity_id"]), None)
 
 
 def summary(c: dict) -> dict:
-    s = {"id": c["id"], "kind": c["kind"], "who": STORE.who(c), "title": c["title"], "company": c["co"], "companies": c["cos"],
-         "stage": c["stage"], "in_book": c["in_book"], "owner": c["owner"], "outcome": c["outcome"], "date": c["date"],
-         "status_label": STATUS.get(c["stage"], c["outcome"] or ("Closed" if c["stage"] == "closed" else ""))}
-    if c["kind"] == "deal":
-        t = c["target"]
-        s.update(score=t["score"], chips=[REF["TYPE_LABEL"][k] for k in t["types"]])
-    else:
-        s.update(threat=threat_level(c), threat_class=c["ws"]["threat"][0], chips=[x[1] for x in c["ws"]["timeline"][:3]])
-    return s
+    """An M&A signal card: the definite facts only."""
+    rec = STORE.rec_for_case(c["id"])
+    co = signal_for(c) or c["co"]
+    return {"id": c["id"], "kind": c["kind"], "role": c.get("role", "competitor"), "who": c["who"], "title": c["title"],
+            "company": co, "companies": c["cos"], "size": acquirable(c, co),
+            "status": c["status"], "status_label": STATUS[c["status"]], "status_at": c["status_at"], "date": c["date"],
+            "score": c["score"], "score_detail": score_detail(c["types"]) if c["score"] is not None else None, "chips": list(dict.fromkeys(s["label"] for s in c["signals"]))[:3], "signal_count": len(c["signals"]),
+            # each tag's latest signal, so the card can link a tag to the article or filing behind it
+            "chip_links": {lab: next(_signal(s) for s in c["signals"] if s["label"] == lab)
+                           for lab in dict.fromkeys(s["label"] for s in c["signals"])},
+            "listing": listing(c), "recommended": {"type": rec["type"], "title": rec["title"], "co": rec["co"]} if rec else None}
 
 
 def quick_look(c: dict) -> dict:
-    if c["kind"] == "deal":
-        t = c["target"]
-        th = next((x for x in STORE.theses if x["desk"] == c["co"]), None)
-        return {"story": t["story"],
-                "signals": [{"date": s[1], "label": REF["TYPE_LABEL"][s[0]], "text": s[2], "source": s[3]} for s in t["signals"]],
-                "score": {"parts": [[REF["TYPE_LABEL"][k].lower(), REF["W"][k]] for k in t["types"]], "base": t["base"], "m": t["m"],
-                          "capped": t["raw"] > 100, "score": t["score"], "n_types": len(t["types"])},
-                "thesis": {"company": c["co"], **rules.thesis_match(th, t)} if th else None,
-                "owners": t["owners"], "bidders": t["bidders"]}
-    w = c["ws"]
-    return {"analyst": w["analyst"], "timeline": [{"date": x[0], "label": x[1], "text": x[2], "source": x[3]} for x in w["timeline"]],
-            "spark": w["spark"], "voc_top": {"sentiment": w["voc"][0][1], "topic": w["voc"][0][2], "text": w["voc"][0][3]}}
+    return {"signals": [_signal(s) for s in c["signals"][:8]],
+            "score": None if c["score"] is None else {"score": c["score"], "rationale": c["rationale"], "types": [type_label(t) for t in c["types"]]}}
 
 
 def case_detail(c: dict) -> dict:
     return {**summary(c), "quick": quick_look(c), "recommended_by": STORE.rec_for_case(c["id"])}
 
 
-def rec_card(r: dict) -> dict:
-    c = STORE.cases[r["case_id"]]
-    return {**r, "tows": REF["TOWS"][r["type"]], "uses_text": {u: STORE.swot_item(r["co"], u) for u in r["uses"]}, "case": case_detail(c)}
+# ---------- This week ----------
+def swot_view(co: str) -> dict | None:
+    if co not in STORE.swot:
+        return None
+    s, src, detail = STORE.swot[co], STORE.swot_source[co], STORE.swot_detail.get(co, {})
+    d = lambda q, i: detail[q][i] if i < len(detail.get(q, [])) else {"reasoning": None, "sources": []}
+    return {"company": co,
+            "S": [{"id": f"S{i + 1}", "text": x, **d("S", i)} for i, x in enumerate(s["S"])],
+            "W": [{"id": f"W{i + 1}", "text": x, **d("W", i)} for i, x in enumerate(s["W"])],
+            "O": [{"id": f"O{i + 1}", "text": x[0], "case_id": x[1], **d("O", i)} for i, x in enumerate(s["O"])],
+            "T": [{"id": f"T{i + 1}", "text": x[0], "case_id": x[1], **d("T", i)} for i, x in enumerate(s["T"])],
+            "moves": len(s["rec"]), "set_aside": len(s["skip"]), "source": src, "method": method(co)}
+
+
+def method(co: str) -> dict:
+    src = STORE.swot_source[co]
+    rounds = src.get("rounds", 1)
+    return {"built_by": "agent", "model": src["model"], "at": src["at"], "rounds": rounds,
+            "live_signals_available": len(STORE.live.get(co, [])),
+            "summary": f"Built by the SWOT Analyst agent ({src['model']}) on {src['at']} from {src.get('evidence', {}).get('self', 0)} "
+                       f"public facts about {co}, {src.get('evidence', {}).get('daily', 0)} kept daily findings and "
+                       f"{src.get('evidence', {}).get('live', 0)} signals on the companies it watches.",
+            "steps": [f"Public facts about {co} were collected from the sources ticked in its SWOT parameters: quarterly results and "
+                      "shareholding, web pages for each analysis factor, and recent news.",
+                      "Judged on: " + (", ".join(src.get("factors") or []) or "every factor") + ".",
+                      "Every piece of evidence was numbered, with its source and date.",
+                      "The agent wrote each strength, weakness, opportunity and threat, cited the evidence behind it and gave its reasoning.",
+                      "It scored each opportunity and threat for impact and urgency (above 50 on both means act now).",
+                      "It proposed moves, each linking a strength or weakness to an opportunity or threat at a watched company.",
+                      f"A rule check verified the draft. It passed after {rounds} round{'s' if rounds != 1 else ''}."]}
+
+
+def swot_status(co: str) -> dict:
+    """Why a company has no SWOT yet, in plain words."""
+    if co in STORE.swot:
+        return {"built": True, "message": None}
+    r = STORE.research.get(co) or {}
+    if r.get("facts"):
+        return {"built": False, "message": f"No SWOT for {co} yet. {len(r['facts'])} public facts about {co} are ready; "
+                "build the SWOT to have the SWOT Analyst write it."}
+    return {"built": False, "message": f"No SWOT for {co} yet. Building it first collects public facts about {co} "
+            "(quarterly results, shareholding, web and news), then the SWOT Analyst writes the SWOT from them."}
 
 
 def positions(co: str) -> list[dict]:
+    if co not in STORE.swot:
+        return []
     recs = STORE.recs_for(co)
     used = {u for r in recs for u in r["uses"]}
     out = []
@@ -79,144 +141,87 @@ def positions(co: str) -> list[dict]:
     return out
 
 
-def swot_view(co: str) -> dict:
-    s, src = STORE.swot[co], STORE.swot_source[co]
-    detail = STORE.swot_detail.get(co) if src["by"] == "agent" else None
-    detail = detail or ev.demo_detail(co)
-    d = lambda q, i: detail[q][i] if i < len(detail[q]) else {"reasoning": None, "sources": []}
-    return {"company": co,
-            "S": [{"id": f"S{i + 1}", "text": x, **d("S", i)} for i, x in enumerate(s["S"])],
-            "W": [{"id": f"W{i + 1}", "text": x, **d("W", i)} for i, x in enumerate(s["W"])],
-            "O": [{"id": f"O{i + 1}", "text": x[0], "case_id": x[1], **d("O", i)} for i, x in enumerate(s["O"])],
-            "T": [{"id": f"T{i + 1}", "text": x[0], "case_id": x[1], **d("T", i)} for i, x in enumerate(s["T"])],
-            "moves": len(s["rec"]), "set_aside": len(s["skip"]), "source": src, "method": method(co)}
-
-
-def method(co: str) -> dict:
-    """How this SWOT was built, in plain words, for the details section."""
-    src = STORE.swot_source[co]
-    live = len(STORE.live.get(co, []))
-    if src["by"] != "agent":
-        return {"built_by": "demo", "summary": "Written by hand for the demo. Nobody derived these items from the evidence, so there is no reasoning; "
-                "the sources shown are the demo records each item links to.",
-                "live_signals_available": live, "steps": []}
-    n = src.get("evidence", {})
-    basis = (f"{n.get('live', 0)} live signals about {src.get('rival')}" if src.get("live_data")
-             else f"the demo rival story (no live signals were available)") + f", {n.get('demo', 0)} demo records on the deal targets"         + f" and the strategy team's list of {n.get('team', 0)} strengths and weaknesses"
-    return {"built_by": "agent", "model": src["model"], "at": src["at"], "rounds": src.get("rounds"), "live_signals_available": live,
-            "summary": f"Built by the SWOT Analyst agent ({src['model']}) on {src['at']} from {basis}.",
-            "steps": ["Every piece of evidence was numbered, with its source, date and whether it is live or demo data.",
-                      "The agent wrote each strength, weakness, opportunity and threat, cited the evidence behind it and gave its reasoning.",
-                      "It scored each opportunity and threat for impact and urgency (above 50 on both means act now).",
-                      "It proposed moves, each linking a strength or weakness to an opportunity or threat, and set aside deal targets whose risks outweigh the fit.",
-                      f"A rule check verified the draft: every item cites real evidence, every move links the two halves of the SWOT, every act-now item drives a move, and no case is used twice. "
-                      f"It passed after {src.get('rounds', 1)} round{'s' if src.get('rounds', 1) != 1 else ''}."]}
-
-
-def analyst_text(scope: str) -> str:
-    if scope == "All":
-        n = sum(len(STORE.recs_for(co)) for co in COMPANIES_ORDER)
-        k = len(STORE.group_skips())
-        return (f"Across the group, the radar found {n} moves that fit and set {k} aside. The strongest fits close a weakness: "
-                "CEAT's supplier risk at Meridian, Zensar's GenAI gap through Northfield and RPG Life Sciences' missing USFDA plant at Veltrix.")
-    r, k = STORE.recs_for(scope), len(STORE.swot[scope]["skip"])
-    tail = f"; {k} other{' was' if k == 1 else 's were'} set aside" if k else ""
-    return f"{STORE.companies[scope]['analyst']} Against {scope}'s strengths and weaknesses, {len(r)} move{'s fit' if len(r) > 1 else ' fits'} this week{tail}."
+def rec_card(r: dict) -> dict:
+    return {**r, "tows": TOWS[r["type"]], "uses_text": {u: STORE.swot_item(r["co"], u) for u in r["uses"]}, "case": case_detail(STORE.cases[r["case_id"]])}
 
 
 def feed(scope: str) -> list[dict]:
     items = []
-    for c in STORE.cases.values():
-        if not in_scope(c, scope):
-            continue
-        if c["kind"] == "deal":
-            for s in c["target"]["signals"]:
-                items.append({"date": s[1], "who": STORE.who(c), "label": REF["TYPE_LABEL"][s[0]], "text": s[2], "case_id": c["id"]})
-        else:
-            for t in c["ws"]["timeline"]:
-                items.append({"date": t[0], "who": STORE.who(c), "label": t[1], "text": t[2], "case_id": c["id"]})
     for co in (COMPANIES_ORDER if scope == "All" else [scope]):
         for x in STORE.live.get(co, []):
-            items.append({"date": x["date"], "who": x["company"], "label": f"Live · {x['label']}", "text": x["text"],
-                          "case_id": f"t_{co}", "live": True, "source": x["source"], "url": x.get("url")})
-    items.sort(key=lambda x: -dnum(x["date"]))
+            items.append({**_signal(x), "who": x["company"], "case_id": f"r{x['entity_id']}", "observed_at": x["observed_at"]})
+    items = list({(i["case_id"], i["observed_at"], i["text"]): i for i in items}.values())  # one row when shared by two companies
+    items.sort(key=lambda x: x["observed_at"], reverse=True)
     return items
+
+
+def analyst_text(scope: str, cases: list[dict], n_signals: int) -> str:
+    where = "across the group" if scope == "All" else f"for {scope}"
+    if not cases:
+        return (f"No watched company has public signals {where} yet. Signals appear once companies are on the watchlist "
+                "(Find rivals, or Admin → Watchlist) and an ingestion run has fetched their filings and news.")
+    top = max(cases, key=lambda c: c["score"] or 0)
+    tail = f" The highest rule-based score is {top['who']} at {top['score']:.0f}." if top["score"] is not None else ""
+    return f"{len(cases)} watched compan{'ies have' if len(cases) != 1 else 'y has'} {n_signals} public signals {where} in the last 120 days.{tail}"
 
 
 def home(scope: str) -> dict:
     cos = COMPANIES_ORDER if scope == "All" else [scope]
     recs = [rec_card(r) for co in cos for r in STORE.recs_for(co)]
-    skips = STORE.group_skips() if scope == "All" else [{"co": scope, "case_id": cid, "why": why} for cid, why in STORE.swot[scope]["skip"]]
-    for s in skips:
-        s["who"] = STORE.who(STORE.cases[s["case_id"]])
+    rec_ids = {r["case_id"] for r in recs}
+    skips = [{**s, "who": STORE.cases[s["case_id"]]["who"]} for co in cos for s in STORE.skips_for(co) if s["case_id"] not in rec_ids]
+    cases = [c for c in STORE.cases.values() if in_scope(c, scope)]
+    watched = sorted((case_detail(c) for c in cases if c["id"] not in rec_ids), key=lambda c: -(c["score"] or 0))
     f = feed(scope)
-    return {"scope": scope, "week": "Week 40", "analyst": analyst_text(scope), "recommended": recs, "set_aside": skips,
-            "swot": None if scope == "All" else swot_view(scope), "positions": None if scope == "All" else positions(scope),
-            "tiles": [swot_view(co) for co in COMPANIES_ORDER] if scope == "All" else None,
+    return {"scope": scope, "week": week_label(), "analyst": analyst_text(scope, cases, len(f)),
+            "recommended": recs, "set_aside": skips, "watched": watched,
+            "swot": None if scope == "All" else swot_view(scope), "swot_status": None if scope == "All" else swot_status(scope),
+            "positions": None if scope == "All" else positions(scope),
+            "tiles": [{"company": co, "swot": swot_view(co), "watched": sum(1 for c in cases if co in c["cos"]),
+                       "signals": len(STORE.live.get(co, []))} for co in COMPANIES_ORDER] if scope == "All" else None,
             "signals": f[:14], "signal_count": len(f)}
-
-
-# ---------- detailed overview (one book page) ----------
-def overview(c: dict) -> dict:
-    base = {"id": c["id"], "kind": c["kind"], "title": c["title"], "who": STORE.who(c), "company": c["co"], "written": c["ov_date"],
-            "stage": c["stage"], "owner": c["owner"], "approved": c["approved"], "outcome": c["outcome"],
-            "owners": rules.owners_for(c), "plan": rules.plan_for(c)}
-    r = STORE.rec_for_case(c["id"])
-    if r:
-        base["why"] = {"company": r["co"], "title": r["title"], "uses": [{"id": u, "text": STORE.swot_item(r["co"], u)} for u in r["uses"]]}
-    if c["kind"] == "deal":
-        t, sc = c["target"], c["target"]["scenario"]
-        b = rules.make_brief(t)
-        th = next((x for x in STORE.theses if x["desk"] == c["co"]), None)
-        rec = sc["a"]["opts"][0]
-        base.update(
-            recommendation={"title": rec[0], "text": rec[1], "decision": f'approve a formal evaluation of {t["name"]}, name an owner and release a diligence budget.', "confidence": sc["conf"]},
-            glance=[["Opportunity score", f'{t["score"]} of 100'], ["Financial health", rules.verdict_of(t)[0]],
-                    ["Rival interest", sc["rival"] if t["bidders"] else "None seen"], ["Deal complexity", b["complexity"]],
-                    ["Competition-law check", b["cci"]], ["Urgency", "High · a rival is moving" if t["bidders"] else "Normal"]],
-            story=t["story"], signals=quick_look(c)["signals"], impact=sc["a"]["hit"], pros=b["pros"],
-            thesis=rules.thesis_match(th, t)["checks"] if th else [], health=rules.health_block(t),
-            scenario={"rival": sc["rival"], "rival_first": sc["a"]["play"], "we_buy": sc["b"]["react"], "basis": sc["basis"]},
-            graph={"name": t["name"], "score": t["score"], "owners": t["owners"], "directors": t["directors"], "subs": t["subs"]},
-            risks=b["cons"] + sc["b"]["risk"], flags=b["flags"], questions=rules.diligence_questions(t),
-            sources=list(dict.fromkeys(s[3] for s in t["signals"])) + ["MCA filings (paid)", "SAST disclosures", "CCI orders", "deal databases"])
-    else:
-        w, co = c["ws"], c["co"]
-        rec = next((o for o in w["war"]["opts"] if o[0] == "rec"), w["war"]["opts"][0])
-        f = w["fin"]
-        rv = f["rivals"].get(w["rival"])
-        market = None
-        if rv:
-            market = {"rival_return": rv["ret"]["1Y"], "base_return": f["base"]["ret"]["1Y"], "base_name": co if f["listed"] else "the listed sector index",
-                      "why": rv["why"], "act": rv["act"]}
-        base.update(
-            recommendation={"title": rec[1], "text": rec[2], "decision": "approve the response plan and name an owner.", "confidence": w["war"]["conf"]},
-            glance=[["Threat level", threat_level(c)], ["Rival", w["rival"]], ["Signals in 60 days", str(len(w["timeline"]))],
-                    ["Customer mentions · 30 days", str(sum(v[4] for v in w["voc"]))]],
-            timeline=quick_look(c)["timeline"], analyst=w["analyst"], suggest=w["suggest"], market=market,
-            voc=[{"sentiment": v[1], "topic": v[2], "text": v[3], "mentions": v[4]} for v in w["voc"]], opening=w["opening"],
-            scenario={"question": w["war"]["q"], "play": w["war"]["play"], "basis": w["war"]["basis"]},
-            options=[{"recommended": o[0] == "rec", "title": o[1], "text": o[2], "impact": o[3], "cost": o[4], "risk": o[5]} for o in w["war"]["opts"]],
-            sources=w["ask"]["src"] + ["exchange price data"])
-    return base
-
-
-def follow_up(c: dict) -> dict:
-    return {**summary(c), "approved": c["approved"], "plan": c["plan"], "updates": c["updates"], "watching": rules.watch_for(c)}
 
 
 # ---------- competitors ----------
 def roster(co: str) -> list[dict]:
-    w, f = STORE.companies[co], STORE.companies[co]["fin"]
-    out = [{"name": w["rival"], "segment": w["seg"], "watch": "Deep", "threat": w["threat"], "signals_30d": len(w["timeline"]) + len(w["voc"]),
-            "latest_move": f'{w["timeline"][0][1]}: {w["timeline"][0][2]}', "primary": True, "timeline": w["timeline"], "voc": w["voc"],
-            "analyst": w["analyst"], "suggest": w["suggest"], "spark": w["spark"], "tone": w["tone"], "case_id": "t_" + co}]
-    for n, r in f["rivals"].items():
-        if n == w["rival"]:
+    """Every company on the watchlist for this RPG company, with its signals."""
+    rivals = {r["id"]: r for r in STORE.rivals.get(co, [])}
+    out = []
+    for w in (STORE.live_meta.get("watch") or {}).get(co, []):
+        if w["status"] == "dismissed":
             continue
-        out.append({"name": n, "segment": r["seg"], "watch": "Deep" if co + n in STORE.followed else "Standard", "threat": ["watch", "Threat: Medium"],
-                    "signals_30d": 2, "latest_move": r["ev"][1], "why": r["why"], "act": r["act"], "primary": False})
-    for x in w["extra_rivals"]:
-        out.append({"name": x["name"], "segment": x["segment"], "watch": "Deep" if co + x["name"] in STORE.followed else "Light",
-                    "threat": ["watch", "Threat: Low"], "signals_30d": 1, "latest_move": x["latest_move"], "primary": False})
+        r = rivals.get(w["id"])
+        latest = r["signals"][0] if r else None
+        cid = f"r{w['id']}"
+        from services import company_size
+
+        from .bridge import CO_TO_CODE
+        size = company_size.fit(STORE.sizes.get(company_size.entity_key(w["id"])), STORE.sizes.get(company_size.rpg_key(CO_TO_CODE[co])))
+        out.append({"entity_id": w["id"], "name": w["name"], "status": w["status"], "role": w.get("role", "competitor"), "size": size,
+                    "score": w["score"], "score_detail": score_detail(r["types"]) if r and w["score"] is not None else None,
+                    "signals": len(r["signals"]) if r else 0,
+                    "nse_symbol": w.get("nse_symbol"), "origin": w.get("origin"), "found_at": (w.get("found_at") or "")[:10] or None,
+                    "signal_status": STORE.cases[cid]["status"] if cid in STORE.cases else None,
+                    "latest_move": f"{latest['label']}: {latest['text']}" if latest else None, "latest_date": latest["date"] if latest else None,
+                    "why": w["why"], "sources": w["sources"], "case_id": f"r{w['id']}" if f"r{w['id']}" in STORE.cases else None,
+                    "timeline": [_signal(s) for s in r["signals"][:10]] if r else []})
+    out.sort(key=lambda x: (x["status"] != "watching", -x["signals"], x["name"]))
+    return out
+
+
+def watched_companies() -> list[dict]:
+    """Every watched company with a score, for watch rules."""
+    return [{"case_id": c["id"], "name": c["who"], "score": c["score"], "cos": c["cos"]} for c in STORE.cases.values()]
+
+
+DEAL_TYPES = {"deal_activity", "fund_raise", "stake_selldown"}
+
+
+def deals(scope: str) -> list[dict]:
+    """Deal-related public signals of watched companies: acquisitions, mergers, divestments, fund raises, stake sales."""
+    out = [{**_signal(x), "company": x["company"], "type": type_label(x["signal_type"]), "case_id": f"r{x['entity_id']}",
+            "for": co, "observed_at": x["observed_at"]}
+           for co in (COMPANIES_ORDER if scope == "All" else [scope]) for x in STORE.live.get(co, []) if x["signal_type"] in DEAL_TYPES]
+    out = list({(d["case_id"], d["observed_at"], d["text"]): d for d in out}.values())
+    out.sort(key=lambda d: d["observed_at"], reverse=True)
     return out

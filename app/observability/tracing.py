@@ -94,14 +94,6 @@ def init_tracing(service_name: str = "rpg-horizon-radar-backend") -> None:
 
         # ── Instrumentors (each optional) ──────────────────────────────────────
         try:
-            from openinference.instrumentation.langchain import LangChainInstrumentor
-
-            LangChainInstrumentor().instrument(tracer_provider=provider)
-            log.info("LangChain instrumented (openinference)")
-        except Exception as exc:  # noqa: BLE001
-            log.warning("langchain instrumentation skipped: %s", exc)
-
-        try:
             from openinference.instrumentation.openai import OpenAIInstrumentor
 
             OpenAIInstrumentor().instrument(tracer_provider=provider)

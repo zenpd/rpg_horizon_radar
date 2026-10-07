@@ -5,12 +5,9 @@ from db.models import Entity
 
 
 class Connector(ABC):
-    """Abstract ingestion connector. A real news/filings/patent/hiring API
-    integration is a drop-in swap of this interface — not a redesign. In this
-    prototype every concrete connector (mock_news, mock_filings, mock_patents,
-    mock_hiring) returns small, deterministic, hard-coded fictional records
-    per known seed entity — no external HTTP calls, no non-reproducible
-    randomness."""
+    """Abstract ingestion connector. Every concrete connector is a live source
+    in ingestion/connectors/live/ (news, filings, patents, hiring, prices), so
+    adding a source means implementing this interface, not a redesign."""
 
     source_type: str = "news"
 

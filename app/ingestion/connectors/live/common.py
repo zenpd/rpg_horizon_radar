@@ -89,6 +89,24 @@ def short_name(name: str) -> str:
     return short if len(short) >= 3 else name
 
 
+_NOISE = re.compile(r"\([^)]*\)|\b(?:ltd|limited|pvt|private|co|company|corporation|corp|inc|plc|group|india|"
+                    r"industries|international|holdings|enterprises|and|of|the)\b\.?|[.,&']", re.I)
+
+
+def company_words(name: str) -> list[str]:
+    """The words that identify a company: 'Plantation Corporation of Kerala Limited (PCKL)' ->
+    ['plantation', 'kerala']; tyres and tires are the same word."""
+    return [w.replace("tyre", "tire") for w in _NOISE.sub(" ", name.lower()).split()]
+
+
+def same_company(a: str, b: str) -> bool:
+    """Two names for one company: the same identifying words, or the shorter (two words or more) is
+    the start of the longer ('Techno Electric' and 'Techno Electric & Engineering Company Ltd',
+    'Sterlite Power' and 'Sterlite Power Transmission Limited')."""
+    x, y = sorted((company_words(a), company_words(b)), key=len)
+    return bool(x) and (x == y or (len(x) >= 2 and y[: len(x)] == x))
+
+
 def query_name(entity: Entity) -> str:
     return (entity.query_name or "").strip() or short_name(entity.name)
 
@@ -112,13 +130,27 @@ HEADLINE_RULES = [
     (r"\b(?:acquir\w*|acquisition|merger|merges?|merged|buyout|takeover|stake sale|sells? (?:\w+ )?stake|divest\w*|demerg\w*)\b", "deal_activity"),
     (r"\b(?:loss(?:es)? widen\w*|net loss|plunge[sd]?|slump(?:s|ed)?|shuts?|shutdown|closure|strike|lockout|halts?)\b|"
      r"\bprofit (?:falls?|drops?|declines?|slumps?|dips?)\b", "press_distress"),
-    (r"\b(?:wins?|bags?|secures?|orders?|contracts?|new plant|capacity expansion|expands?|launch(?:es|ed)?)\b", "press_opportunity"),
+    (r"\b(?:wins?|won|bags?|bagged|secures?|secured)\b.{0,50}\b(?:orders?|contracts?|deals?|projects?|mandates?)\b|"
+     r"\b(?:orders? (?:worth|of|from)|order inflow|new orders?|contract (?:worth|from))\b|\bnew (?:plant|factory|facility)\b|"
+     r"\bcapacity expansion\b|\bexpands?\b.{0,40}\b(?:capacity|plant|footprint|operations|presence)\b|"
+     r"\blaunch(?:es|ed)?\b.{0,60}\b(?:products?|range|tyres?|plant|brand|platform|services?|solutions?|drugs?|cables?|lab|centre|center|fans?)\b|"
+     r"\b(?:products?|range|tyres?|brand|platform|services?|solutions?|drugs?|cables?|fans?)\b.{0,40}\blaunched\b",
+     "press_opportunity"),
 ]
+
+# Headlines about sport, sponsorship, awards and hobby videos name a company without saying anything
+# about its business (a rally it sponsors, a chess league, an RC model): never a signal.
+NOT_BUSINESS = re.compile(
+    r"\b(?:rally of|(?:car|motor|road|dakar) rally|racing|race|grand prix|motorsport|championship|tournament|league|chess|grandmasters?|endgame|cricket|"
+    r"football|hockey|marathon|trophy|cup|match|innings|wicket|olympic|sponsor\w*|title partner|awards?|awarded|felicitat\w*|"
+    r"#shorts|shorts|unboxing|vlog|rc (?:car|plane|model)|inflatable|toy)\b|\bgcl\b", re.I)
 
 
 def classify_headline(text: str) -> str | None:
     """The signal type a headline reports, or None when it reports none of them."""
     t = text.lower()
+    if NOT_BUSINESS.search(t):
+        return None
     return next((kind for pat, kind in HEADLINE_RULES if re.search(pat, t)), None)
 
 

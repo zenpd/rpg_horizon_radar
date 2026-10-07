@@ -8,13 +8,7 @@ from db.models import Entity, Subsidiary
 
 
 def matching_subsidiaries(entity: Entity, subsidiaries: list[Subsidiary]) -> list[Subsidiary]:
-    """Any sector overlap between entity.sectors and subsidiary.sectors = route.
-
-    IMPORTANT: this intentionally does NOT filter on compliance_gate. A
-    routing link may be recorded for a gated-off subsidiary — it simply must
-    be excluded from anything a reviewer can see until that subsidiary's gate
-    opens. Visibility filtering happens at read time (see services/visibility.py).
-    """
+    """Any sector overlap between entity.sectors and subsidiary.sectors = route."""
     entity_sectors = set(entity.sectors or [])
     if not entity_sectors:
         return []

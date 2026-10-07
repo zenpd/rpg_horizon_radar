@@ -1,5 +1,5 @@
 """Weekly digest compiler. Selects live SignalCluster rows above
-DIGEST_THRESHOLD for each gated-open subsidiary and snapshots them into a new
+DIGEST_THRESHOLD for each subsidiary and snapshots them into a new
 DigestIssue/DigestItem set."""
 from __future__ import annotations
 
@@ -28,11 +28,9 @@ async def generate_digest(db: AsyncSession, created_by: Reviewer | None) -> Dige
     db.add(digest)
     await db.flush()
 
-    open_subsidiaries = (
-        (await db.execute(select(Subsidiary).where(Subsidiary.compliance_gate.is_(True)))).scalars().all()
-    )
+    subsidiaries = (await db.execute(select(Subsidiary))).scalars().all()
 
-    for sub in open_subsidiaries:
+    for sub in subsidiaries:
         links = (
             (await db.execute(select(ClusterSubsidiaryLink).where(ClusterSubsidiaryLink.subsidiary_code == sub.code)))
             .scalars()

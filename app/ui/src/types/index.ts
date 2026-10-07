@@ -1,13 +1,11 @@
 // Shared API types for RPG Horizon Radar, matching the FastAPI schemas under
 // app/api/schemas/*.py (see services/api.ts for the endpoints that return
-// them). Kept as plain interfaces — this is a demo app, not a library.
+// them). Kept as plain interfaces.
 
 export interface User {
   id: number;
   name: string;
   email: string;
-  role: "compliance_admin" | "corp_strategy_reviewer";
-  subsidiary_scopes: string[];
 }
 
 export interface TokenResponse {
@@ -20,7 +18,6 @@ export interface Subsidiary {
   code: string;
   name: string;
   sectors: string[];
-  compliance_gate: boolean;
   signal_focus: string;
 }
 
@@ -42,7 +39,7 @@ export interface RawSignalOut {
   headline: string;
   source_excerpt: string;
   source_url: string;
-  provider: string; // "NSE", "GNews" ... or "mock" for the fictional demo connectors
+  provider: string; // the live connector that fetched it: "NSE", "GNews" ...
   observed_at: string;
 }
 
@@ -69,24 +66,6 @@ export interface SignalClusterDetail extends SignalClusterSummary {
   raw_signals: RawSignalOut[];
   evaluated_by?: string | null;
   evaluated_at?: string | null;
-}
-
-// ---- Escalation brief ----
-export interface DirectionalConsideration {
-  label: string;
-  value: string;
-}
-
-export interface EscalationBrief {
-  id: number;
-  cluster_id: number;
-  generated_at: string;
-  escalated_by?: string | null;
-  pros: string[];
-  cons: string[];
-  directional_considerations: DirectionalConsideration[];
-  deal_complexity: string;
-  disclaimer: string;
 }
 
 // ---- Digests ----
@@ -144,9 +123,8 @@ export interface WatchlistEntity {
   name: string;
   sectors: string[];
   category: string;
-  is_fictional: boolean;
-  origin: "seed" | "discovered" | "manual";
-  status: "watching" | "proposed" | "dismissed";
+  origin: "discovered" | "manual";
+  status: "watching" | "dismissed";
   query_name: string;
   nse_symbol: string | null;
   discovery: {
@@ -158,8 +136,7 @@ export interface WatchlistEntity {
     last_seen_at?: string;
     model?: string;
   } | null;
-  approved_by: string | null;
-  approved_at: string | null;
+  watched_since: string | null;
   raw_signal_count: number;
   score: number | null;
 }
@@ -178,9 +155,10 @@ export interface SchedulerStatus {
   enabled: boolean;
   ingest_daily_at: string;
   discovery_every_days: number;
-  auto_swot: boolean;
-  last: { ingest: string | null; discovery: string | null };
-  next: { ingest: string; discovery: string };
+  opportunity_daily_at: string;
+  swot_every_days: number;
+  last: { ingest: string | null; discovery: string | null; opportunities: string | null; swot: string | null };
+  next: { ingest: string; discovery: string; opportunities: string; swot: string };
   running: string | null;
   last_error: string | null;
 }
@@ -197,8 +175,6 @@ export interface Reviewer {
   id: number;
   name: string;
   email: string;
-  role: "compliance_admin" | "corp_strategy_reviewer";
-  subsidiary_scopes: string[];
   created_at: string;
 }
 
@@ -206,8 +182,6 @@ export interface ReviewerCreate {
   name: string;
   email: string;
   password: string;
-  role: "compliance_admin" | "corp_strategy_reviewer";
-  subsidiary_scopes: string[];
 }
 
 // ---- Audit log ----

@@ -6,9 +6,4 @@ class SubsidiaryOut(BaseModel):
     code: str
     name: str
     sectors: list[str]
-    compliance_gate: bool
     signal_focus: str
-
-
-class GateUpdateRequest(BaseModel):
-    compliance_gate: bool

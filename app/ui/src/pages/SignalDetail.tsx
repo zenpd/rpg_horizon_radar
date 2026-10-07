@@ -13,16 +13,10 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { useAuth } from "../context/AuthContext";
 import { usePageMeta } from "../context/PageMetaContext";
-import { getEscalationBrief, getSignal, markUnderEvaluation } from "../services/api";
+import { getSignal } from "../services/api";
 import ScoreBadge from "../components/ScoreBadge";
-import ConfirmModal from "../components/ConfirmModal";
-import EscalationBrief from "../components/EscalationBrief";
-import type {
-  EscalationBrief as EscalationBriefType,
-  SignalClusterDetail,
-} from "../types";
+import type { SignalClusterDetail } from "../types";
 
 // Distinct color per raw-signal source_type, matching digital-onboarding's
 // AuditTrailPage icon-in-colored-box convention.
@@ -59,29 +53,13 @@ function formatDate(value?: string | null) {
 export default function SignalDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
 
   const [signal, setSignal] = useState<SignalClusterDetail | null>(null);
-  const [brief, setBrief] = useState<EscalationBriefType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
   usePageMeta(
     signal ? signal.entity_name : "Signal Detail",
     signal ? `Routed → ${(signal.subsidiaries || []).join(", ") || "—"}` : undefined
   );
-
-  const loadBriefIfEscalated = useCallback(async (sig: SignalClusterDetail | null) => {
-    if (sig?.status !== "under_evaluation") return;
-    try {
-      const briefData = await getEscalationBrief(sig.id);
-      setBrief(briefData);
-    } catch {
-      // Older signals escalated before this feature existed may have no
-      // brief on record — fail quietly rather than blocking the page.
-    }
-  }, []);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -89,36 +67,19 @@ export default function SignalDetail() {
     try {
       const data = await getSignal(id);
       setSignal(data);
-      await loadBriefIfEscalated(data);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 404) {
         toast.error("Signal not found.");
-        navigate("/board", { replace: true });
+        navigate("/digests", { replace: true });
       }
     } finally {
       setLoading(false);
     }
-  }, [id, navigate, loadBriefIfEscalated]);
+  }, [id, navigate]);
 
   useEffect(() => {
     load();
   }, [load]);
-
-  const handleConfirmEvaluation = async () => {
-    if (!id) return;
-    setSubmitting(true);
-    try {
-      const updated = await markUnderEvaluation(id);
-      setSignal(updated);
-      toast.success("Signal marked under active evaluation and handed off to the formal M&A process.");
-      setModalOpen(false);
-      await loadBriefIfEscalated(updated);
-    } catch {
-      // handled globally
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   if (loading) {
     return <div className="text-sm text-gray-400 py-10 text-center">Loading signal…</div>;
@@ -193,16 +154,7 @@ export default function SignalDetail() {
           </div>
         )}
 
-        {isAdmin && signal.status === "live" && (
-          <div className="mt-5 flex justify-end">
-            <button type="button" onClick={() => setModalOpen(true)} className="btn btn-danger btn-sm">
-              Mark Under Active Evaluation
-            </button>
-          </div>
-        )}
       </div>
-
-      {signal.status === "under_evaluation" && <EscalationBrief brief={brief} entityName={signal.entity_name} />}
 
       <div>
         <h2 className="section-title">Contributing Raw Signals</h2>
@@ -219,7 +171,7 @@ export default function SignalDetail() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
                       {rs.signal_type?.replace(/_/g, " ")} · {rs.source_type?.replace(/_/g, " ")}
-                      {rs.provider && rs.provider !== "mock" ? ` · ${rs.provider}` : " · demo data"}
+                      {rs.provider ? ` · ${rs.provider}` : ""}
                     </span>
                     <span className="text-[10px] font-mono text-gray-400">{formatDate(rs.observed_at)}</span>
                   </div>
@@ -242,21 +194,6 @@ export default function SignalDetail() {
         </div>
       </div>
 
-      <ConfirmModal
-        open={modalOpen}
-        title="Mark Under Active Evaluation"
-        description={
-          <>
-            This is a <strong>one-way</strong> action. The signal will exit Horizon Radar and hand off
-            to RPG's existing formal, restricted M&A process. It will drop off the live board and there
-            is no way to undo this from here.
-          </>
-        }
-        confirmLabel="Confirm hand-off"
-        busy={submitting}
-        onConfirm={handleConfirmEvaluation}
-        onCancel={() => setModalOpen(false)}
-      />
     </div>
   );
 }

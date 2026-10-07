@@ -51,7 +51,7 @@
   }
   /* Horizon Radar's own primary actions (login, mark-under-evaluation,
      generate digest) use the rose "restricted" gradient instead of zen-indigo
-     — a visual cue that this app's actions carry compliance weight. */
+     — a visual cue that these actions change shared data. */
   .btn-restricted {
     @apply btn bg-gradient-restricted text-white shadow-sm hover:shadow-glow-restricted hover:-translate-y-px
            active:translate-y-0 active:shadow-sm;
@@ -85,7 +85,7 @@
   .chip-open   { @apply px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 ring-1 ring-rose-200; }
   .chip-locked { @apply px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-400 ring-1 ring-gray-200 cursor-not-allowed; }
 
-  /* ── Audit-action badges (Admin → Audit Log) ──────────── */
+  /* ── Activity-action badges (Users and watchlist → Activity) ── */
   .action-view    { @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100  text-gray-600; }
   .action-write   { @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100  text-blue-700; }
   .action-escalate{ @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700; }

@@ -1,6 +1,5 @@
-"""Durable save/load for the radar's mutable demo state (store.py), so decisions, plans,
-follow-ups, theses, watch rules, universe additions and the activity feed survive a restart
-(TODO.md "Persistence and platform"). Reuses the existing ``connector_state`` key/value table
+"""Durable save/load for what reviewers do on the radar (store.py), so escalations, decisions,
+plans, theses, watch rules, universe additions and the activity feed survive a restart. Reuses the existing ``connector_state`` key/value table
 (services/state.py's pattern) under one key — no new migration needed.
 
 Store's methods are plain sync functions, called from FastAPI's sync path-operation handlers
@@ -89,7 +88,7 @@ def _run(coro: Coroutine[Any, Any, Any]) -> Any:
 
 def load() -> dict:
     """The last-saved snapshot, or {} if there isn't one yet (first boot) or the load fails —
-    the radar falls back to its demo defaults either way, so a bad read is never fatal."""
+    the radar then starts with nothing escalated, so a bad read is never fatal."""
     try:
         return _run(_load_async()) or {}
     except Exception as e:  # noqa: BLE001 — a read failure must not block the app from starting

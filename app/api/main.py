@@ -1,8 +1,8 @@
 """FastAPI application entry point — RPG Horizon Radar.
 
-Accelerator baseline: environment-scoped CORS, structured logging, Phoenix
-tracing, and a session-oriented example router. Add routers under
-api/routers/ and register them in the "Routers" block.
+Accelerator baseline: environment-scoped CORS, structured logging and Phoenix
+tracing. Add routers under api/routers/ and register them in the "Routers"
+block.
 """
 from __future__ import annotations
 
@@ -16,7 +16,6 @@ from api.routers import (
     auth,
     digests,
     entities,
-    example,
     health,
     ingest,
     jobs,
@@ -47,11 +46,11 @@ async def lifespan(app: FastAPI):
     init_tracing()
     # Schema is managed by Alembic — run `alembic upgrade head` before starting
     # (pre-deploy pipeline step or init container), not create_all() on startup.
-    # Seeding is separate from schema creation: it only inserts demo rows into
-    # tables Alembic already created, and is a no-op once seeded once.
+    # Seeding is separate from schema creation: it only inserts the six RPG
+    # subsidiaries and the first user (db/seed.py), and is a no-op once done.
     async with get_db_session() as db:
         await seed(db)
-    # The radar screens: agent SWOTs from swot_briefs, live signals of approved companies.
+    # The radar screens: agent SWOTs from swot_briefs, live signals of watched companies.
     await radar_bridge.startup()
     # Daily live ingestion + weekly watchlist discovery (SCHEDULER_ENABLED).
     scheduler.start()
@@ -94,10 +93,6 @@ app.add_middleware(
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(health.router, tags=["Health"])
-# Kept as shipped — proves the accelerator spine (LangGraph + Redis session
-# persistence) is intact. RPG Horizon Radar's own scoring is deliberately
-# rule-based, not an LLM agent (see DESIGN.md §7/§14), so it doesn't use this.
-app.include_router(example.router, prefix="/api/v1/example", tags=["Example"])
 
 # ── RPG Horizon Radar routers ────────────────────────────────────────────────
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
@@ -111,5 +106,5 @@ app.include_router(audit.router, prefix="/api/v1/audit-log", tags=["Audit"])
 app.include_router(watchlist.router, prefix="/api/v1/watchlist", tags=["Watchlist"])
 app.include_router(jobs.router, prefix="/api/v1/jobs", tags=["Jobs"])
 # The radar screens (SWOT home, deep-dive book, follow-up, explore, radar settings): every
-# request needs a reviewer login, is scope- and gate-checked, and is audit-logged.
+# request needs a login and is recorded in the activity history.
 app.include_router(radar_api.router, prefix="/api/v1/radar", tags=["Radar"], dependencies=[Depends(radar_access)])

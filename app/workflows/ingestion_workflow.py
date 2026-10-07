@@ -2,10 +2,9 @@
 
 This is the accelerator's Temporal durability pattern (see BOOTSTRAP_GUIDE.md
 "Durability with Temporal") applied to the thing Horizon Radar actually needs
-it for: the scheduled ingestion pipeline, not a conversational agent turn.
-Unlike ExampleWorkflow (a stand-in for a chat/session turn), this workflow has
-no LLM step at all — RPG Horizon Radar's scoring is deliberately rule-based
-and auditable (see DESIGN.md §7/§14).
+it for: the scheduled ingestion pipeline. It has no LLM step at all — RPG
+Horizon Radar's scoring is deliberately rule-based and auditable (see
+DESIGN.md §7/§14).
 """
 from __future__ import annotations
 

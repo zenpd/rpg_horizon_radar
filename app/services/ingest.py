@@ -1,15 +1,13 @@
-"""Ingestion + clustering orchestration. Both db/seed.py and the ingestion
-Temporal activity (workflows/activities.py) call these same functions — there
-is exactly one code path that turns RawSignal rows into SignalCluster +
-OpportunityScore + ClusterSubsidiaryLink rows, so the two never drift apart.
+"""Ingestion + clustering orchestration. The ingestion Temporal activity
+(workflows/activities.py) and the inline fallback call these same functions —
+there is exactly one code path that turns RawSignal rows into SignalCluster +
+OpportunityScore + ClusterSubsidiaryLink rows.
 
-Fictional seed entities are served by the mock connectors. Real entities
-(``is_fictional=False``) are served by the live connectors in
-ingestion/connectors/live/, and only while ``status == "watching"`` — i.e.
-after a compliance_admin approved them — and their sector's gate is open.
-Live calls are blocking HTTP, so they run in a worker thread
-(``asyncio.to_thread``); their pacing, budgets and snapshots persist in the
-``live`` ConnectorState row between runs."""
+Entities are served by the live connectors in ingestion/connectors/live/
+while ``status == "watching"`` (a dismissed company is not fetched). Live
+calls are blocking HTTP, so they
+run in a worker thread (``asyncio.to_thread``); their pacing, budgets and
+snapshots persist in the ``live`` ConnectorState row between runs."""
 from __future__ import annotations
 
 import asyncio
@@ -20,28 +18,12 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models import ClusterSubsidiaryLink, Entity, OpportunityScore, RawSignal, SignalCluster, Subsidiary
-from ingestion.connectors.base import Connector
 from ingestion.connectors.live import SourceError, live_connectors, resolve_nse_symbol
-from ingestion.connectors.mock_filings import MockFilingsConnector
-from ingestion.connectors.mock_hiring import MockHiringConnector
-from ingestion.connectors.mock_news import MockNewsConnector
-from ingestion.connectors.mock_patents import MockPatentsConnector
 from services import routing, scoring
 from services import state as state_store
 from shared.config import get_settings
 
-# "Beginning of time" for this demo — connectors are deterministic/hard-coded,
-# so we always ask for everything and rely on the dedupe check below to keep
-# re-runs idempotent, rather than tracking a real incremental cursor.
-DEFAULT_SINCE = datetime(2000, 1, 1)
 SYMBOL_RETRY_DAYS = 7  # a failed NSE-symbol lookup is retried weekly
-
-CONNECTORS: list[Connector] = [
-    MockNewsConnector(),
-    MockFilingsConnector(),
-    MockPatentsConnector(),
-    MockHiringConnector(),
-]
 
 # One ingestion run at a time per process (the scheduler and an admin click can overlap).
 RUN_LOCK = asyncio.Lock()
@@ -89,19 +71,15 @@ async def fetch_and_store_raw_signals(
     db: AsyncSession, entity: Entity, state: dict | None = None,
     transport: httpx.BaseTransport | None = None, errors: list[str] | None = None,
 ) -> int:
-    """Fetch one entity's signals — the 4 mock connectors for a fictional
-    entity, the live connectors for a real one (``state`` required) — and
-    insert new RawSignal rows. Skips exact duplicates on (entity_id,
+    """Fetch one entity's signals from the live connectors (``state`` required)
+    and insert new RawSignal rows. Skips exact duplicates on (entity_id,
     signal_type, headline, observed_at) so this is safely re-runnable.
-    Returns the count of newly inserted rows; live errors go to ``errors``."""
-    if entity.is_fictional:
-        records = [rec for connector in CONNECTORS for rec in connector.fetch(entity, DEFAULT_SINCE)]
-    else:
-        if state is None or not get_settings().live_connectors_enabled:
-            return 0
-        records, errs, _ = await asyncio.to_thread(collect_live, entity, state, transport)
-        if errors is not None:
-            errors.extend(errs)
+    Returns the count of newly inserted rows; connector errors go to ``errors``."""
+    if state is None or not get_settings().live_connectors_enabled:
+        return 0
+    records, errs, _ = await asyncio.to_thread(collect_live, entity, state, transport)
+    if errors is not None:
+        errors.extend(errs)
 
     result = await db.execute(select(RawSignal).where(RawSignal.entity_id == entity.id))
     existing_keys = {(r.signal_type, r.headline, r.observed_at) for r in result.scalars().all()}
@@ -120,7 +98,7 @@ async def fetch_and_store_raw_signals(
                 headline=record["headline"],
                 source_excerpt=record.get("source_excerpt", ""),
                 source_url=record.get("source_url") or "",
-                provider=record.get("provider", "mock"),
+                provider=record["provider"],
                 observed_at=record["observed_at"],
                 created_at=now,
             )
@@ -213,14 +191,11 @@ async def recompute_cluster_for_entity(
     return cluster
 
 
-async def run_ingest_for_open_subsidiaries(db: AsyncSession, transport: httpx.BaseTransport | None = None) -> dict:
-    """The ingest-run implementation: only subsidiaries with
-    compliance_gate=True get their sectors' entities ingested — a closed gate
-    blocks ingestion itself, not just display. Only ``watching`` entities are
-    ingested; proposed or dismissed ones are never fetched."""
+async def run_ingest_all(db: AsyncSession, transport: httpx.BaseTransport | None = None) -> dict:
+    """The ingest-run implementation: every ``watching`` entity routed to a
+    subsidiary by sector is fetched, scored and routed."""
     async with RUN_LOCK:
         all_subsidiaries = (await db.execute(select(Subsidiary))).scalars().all()
-        open_subsidiaries = [s for s in all_subsidiaries if s.compliance_gate]
 
         all_entities = (await db.execute(select(Entity).where(Entity.status == "watching"))).scalars().all()
         live_state = await state_store.load(db, "live")
@@ -229,17 +204,16 @@ async def run_ingest_for_open_subsidiaries(db: AsyncSession, transport: httpx.Ba
         new_by_entity: dict[int, int] = {}
         errors: list[str] = []
 
-        for sub in open_subsidiaries:
+        for sub in all_subsidiaries:
             sub_sectors = set(sub.sectors or [])
             entities = [e for e in all_entities if sub_sectors & set(e.sectors or [])]
             for entity in entities:
                 if entity.id not in touched_entity_ids:
                     new_by_entity[entity.id] = await fetch_and_store_raw_signals(db, entity, live_state, transport, errors)
                     touched_entity_ids.add(entity.id)
-                    if not entity.is_fictional:
-                        # keep budgets and pulls even if a later entity fails
-                        await state_store.save(db, "live", live_state)
-                        await db.commit()
+                    # keep budgets and pulls even if a later entity fails
+                    await state_store.save(db, "live", live_state)
+                    await db.commit()
 
         entities_by_id = {e.id: e for e in all_entities}
         clusters_updated = 0
@@ -249,7 +223,7 @@ async def run_ingest_for_open_subsidiaries(db: AsyncSession, transport: httpx.Ba
             if cluster is not None:
                 clusters_updated += 1
                 if new_by_entity.get(entity_id):
-                    changed_subsidiaries |= {s.code for s in routing.matching_subsidiaries(entities_by_id[entity_id], open_subsidiaries)}
+                    changed_subsidiaries |= {s.code for s in routing.matching_subsidiaries(entities_by_id[entity_id], all_subsidiaries)}
 
         live_state["last_run"] = {"at": datetime.now().isoformat(timespec="seconds"), "errors": errors[-50:],
                                   "new_raw_signals": sum(new_by_entity.values())}

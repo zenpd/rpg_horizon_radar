@@ -1,14 +1,12 @@
-"""Auth — named-reviewer JWT, replacing the accelerator's default EntraID stub.
+"""Auth — named-user JWT, replacing the accelerator's default EntraID stub.
 
-RPG Horizon Radar's access model is the product's core requirement (see
-DESIGN.md §4/§8), not an accelerator afterthought: a small, named, auditable
-reviewer allow-list, never "anyone with a login." There is deliberately no
-signup/registration endpoint anywhere in this API — reviewers are created only
-by a ``compliance_admin`` via ``api/routers/reviewers.py``.
+Every user who can sign in sees everything; there are no roles (DESIGN.md §4).
+There is no signup endpoint: users are added by another signed-in user via
+``api/routers/reviewers.py``, and the first one comes from FIRST_USER_EMAIL /
+FIRST_USER_PASSWORD (db/seed.py).
 
-If a future deployment needs EntraID SSO on top of this, front it at the
-reviewer-provisioning step (map an Entra identity to a named ``Reviewer`` row),
-not by loosening this module back to "any authenticated token is fine."
+If a future deployment needs EntraID SSO, map an Entra identity to a
+``Reviewer`` row at sign-in.
 """
 from __future__ import annotations
 
@@ -39,14 +37,16 @@ def hash_password(raw_password: str) -> str:
 
 
 def verify_password(raw_password: str, password_hash: str) -> bool:
-    return _pwd_context.verify(raw_password, password_hash)
+    try:
+        return _pwd_context.verify(raw_password, password_hash)
+    except ValueError:  # not a bcrypt hash, e.g. a login disabled by migration 0004
+        return False
 
 
 def create_access_token(reviewer: Reviewer) -> str:
     now = datetime.now(timezone.utc)
     payload = {
         "sub": str(reviewer.id),
-        "role": reviewer.role,
         "name": reviewer.name,
         "email": reviewer.email,
         "iat": now,
@@ -77,17 +77,6 @@ async def get_current_reviewer(
     result = await db.execute(select(Reviewer).where(Reviewer.id == int(reviewer_id)))
     reviewer = result.scalar_one_or_none()
     if reviewer is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Reviewer no longer exists")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User no longer exists")
 
     return reviewer
-
-
-def require_role(required_role: str):
-    def _dependency(reviewer: Reviewer = Depends(get_current_reviewer)) -> Reviewer:
-        if reviewer.role != required_role:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail=f"Requires role '{required_role}'"
-            )
-        return reviewer
-
-    return _dependency

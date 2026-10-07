@@ -1,6 +1,4 @@
-"""Live connectors for real watched companies. The mock connectors
-(ingestion/connectors/mock_*.py) keep serving the fictional seed entities;
-services/ingest.py picks the set by ``Entity.is_fictional``."""
+"""Live connectors for the approved, watched companies (services/ingest.py)."""
 from __future__ import annotations
 
 import httpx
