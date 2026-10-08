@@ -36,7 +36,7 @@ from ingestion.connectors.live.common import SourceError, about, clip, get_json,
 from ingestion.connectors.live.filings import Fincrux
 from ingestion.connectors.live.news import GNews
 from services import state as state_store
-from services import swot_settings
+from services import swot_settings, web_search
 from shared.config import get_settings
 from shared.http import client
 
@@ -100,9 +100,9 @@ def results(name: str, symbol: str, live_state: dict, transport=None) -> list[di
     if not fx.configured:
         return []
     d = fx.get(f"financials/{symbol}")["data"]
-    from services.market_data import keep_financials
+    from services.market_data import health, health_text, keep_financials
 
-    keep_financials(live_state, symbol, d)  # for The financial market, at no extra call
+    kept = keep_financials(live_state, symbol, d)  # for The financial market, at no extra call
     when = datetime.fromisoformat(d["last_updated_at"][:19]) if d.get("last_updated_at") else datetime.now()
     out = []
     q = {row[0]: row[1:] for row in d.get("quaterly_results") or []}  # sic, the API's spelling
@@ -125,13 +125,26 @@ def results(name: str, symbol: str, live_state: dict, transport=None) -> list[di
         if parts:
             out.append(_fact("shareholding", f"{name} shareholding, {ss[-1]} quarter: " + ", ".join(parts) + ".",
                              "Fincrux shareholding pattern", when))
+    if text := health_text(name, health(kept)):
+        out.append(_fact("results", text, "Fincrux annual balance sheet", when))
     return out
 
 
 def _tavily(body: dict, transport=None) -> list[dict]:
-    with client(transport, timeout=60.0) as c:
-        r = c.post(TAVILY_URL, headers={"Authorization": f"Bearer {get_settings().tavily_api_key}"}, json=body)
-    return get_json(r, "Tavily").get("results") or []
+    """A Tavily search; DuckDuckGo answers it instead when Tavily refuses or has no key (services/web_search.py).
+    A test transport always goes to Tavily."""
+    if web_search.use_tavily() or transport is not None:
+        try:
+            with client(transport, timeout=60.0) as c:
+                r = c.post(TAVILY_URL, headers={"Authorization": f"Bearer {get_settings().tavily_api_key}"}, json=body)
+            return get_json(r, "Tavily").get("results") or []
+        except SourceError as e:
+            web_search.tavily_failed(e)
+            if transport is not None or not web_search.enabled():
+                raise
+    if not web_search.enabled():
+        return []
+    return web_search.search(body)
 
 
 def _host(url: str | None) -> str:
@@ -139,15 +152,22 @@ def _host(url: str | None) -> str:
 
 
 def _published(x: dict) -> datetime | None:
-    try:
-        return parsedate_to_datetime(x["published_date"]).astimezone(timezone.utc).replace(tzinfo=None) if x.get("published_date") else None
-    except (TypeError, ValueError):
+    """Tavily's RFC 2822 date, or DuckDuckGo's ISO 8601 one, as naive UTC."""
+    v = x.get("published_date")
+    if not v:
         return None
+    try:
+        return parsedate_to_datetime(v).astimezone(timezone.utc).replace(tzinfo=None)
+    except (TypeError, ValueError):
+        try:
+            return datetime.fromisoformat(str(v).replace("Z", "+00:00")).astimezone(timezone.utc).replace(tzinfo=None)
+        except ValueError:
+            return None
 
 
 def web(full: str, query: str, factors: list[str], transport=None) -> list[dict]:
     """One basic web search (1 Tavily credit) per ticked analysis factor."""
-    if not get_settings().tavily_api_key:
+    if not web_search.available():
         return []
     out = []
     for f in factors:
@@ -159,14 +179,14 @@ def web(full: str, query: str, factors: list[str], transport=None) -> list[dict]
 
 
 def tavily_news(query: str, transport=None, days: int = 30, must_name: str | None = None, kind: str = "news") -> list[dict]:
-    if not get_settings().tavily_api_key:
+    if not web_search.available():
         return []
     out = []
     for x in _tavily({"query": f"{query} India", "topic": "news", "days": days, "max_results": 10}, transport):
         title = (x.get("title") or "").strip()
         if must_name is None or about(must_name, title):
             text = f"{title}: {x['content'].strip()}" if x.get("content") else title
-            out.append(_fact(kind, text, _host(x.get("url")), _published(x), x.get("url"), title))
+            out.append(_fact(kind, text, x.get("source") or _host(x.get("url")), _published(x), x.get("url"), title))
     return out
 
 
@@ -242,10 +262,10 @@ def daily_news(code: str, settings: dict, watched: list[str], transport=None) ->
         if gnews:
             try:
                 found = headlines(q, transport, since, exact, kind)
-                if found or not get_settings().tavily_api_key:
+                if found or not web_search.available():
                     return found
             except SourceError:
-                if not get_settings().tavily_api_key:
+                if not web_search.available():
                     raise
         return tavily_news(q, transport, 2, q if exact else None, kind)  # no GNews key, GNews refused, or found nothing
 

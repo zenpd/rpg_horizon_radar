@@ -54,3 +54,4 @@ pyyaml
 # ── Testing ───────────────────────────────────────────────────────────────────
 pytest
 pytest-asyncio
+ddgs>=9.0  # DuckDuckGo fallback for Tavily searches (services/web_search.py)

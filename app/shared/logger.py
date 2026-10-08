@@ -11,6 +11,10 @@ settings = get_settings()
 def setup_logging() -> None:
     log_level = getattr(logging, settings.log_level.upper(), logging.INFO)
     logging.basicConfig(level=log_level, format="%(message)s")
+    # httpx logs every request's full URL at INFO, and several providers (GNews, Alpha Vantage, YouTube,
+    # Fincrux) take their API key in the URL: keep those lines out of the logs. Failures still show.
+    for noisy in ("httpx", "httpcore"):
+        logging.getLogger(noisy).setLevel(max(log_level, logging.WARNING))
 
     structlog.configure(
         processors=[

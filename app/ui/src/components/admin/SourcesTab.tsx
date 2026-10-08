@@ -68,7 +68,7 @@ export default function SourcesTab() {
                 Companies it finds are watched at once.
               </li>
               <li>
-                Opportunity Analyst daily at <strong>{s.opportunity_daily_at}</strong> — next {formatDateTime(s.next.opportunities)}.
+                Opportunity Analyst and Sector Scout with the daily news run — next {formatDateTime(s.next.opportunities)}.
               </li>
               <li>
                 SWOT Analyst every <strong>{s.swot_every_days} days</strong> (research refreshed first) — next {formatDateTime(s.next.swot)}.

@@ -1,25 +1,27 @@
 """Keeps the radar current without anyone pressing a button. An asyncio task
-started with the API (api/main.py) checks once a minute and runs what is due:
+started with the API (api/main.py) checks once a minute; once a day, at
+INGEST_DAILY_AT (default 17:00 local), it runs the daily run — the news first,
+then everything that searches from it, in order, each saving what it finds:
 
-  discovery  Watchlist discovery (competitors) and target discovery (smaller
-             companies to acquire, agents/target_discovery.py) for every
-             subsidiary every DISCOVERY_EVERY_DAYS days (default 7), and on first
-             start. The companies found are watched at once.
-  ingest     A live ingestion run daily at INGEST_DAILY_AT (default 17:00 local).
-             Each connector keeps its own pace and quota on top of this.
-  opportunities  The Opportunity Analyst (agents/opportunity_analyst.py) daily at
-             OPPORTUNITY_DAILY_AT (default 08:00 local): each company's news of
-             the last two days, judged against its SWOT.
-  theses     Every THESIS_EVERY: company sizes still missing or a month old
-             (services/company_size.py), then the Acquisition Thesis agent
-             (agents/acquisition_thesis.py) writes the thesis of every new M&A
-             signal and rewrites one older than a week.
-  swot       The SWOT Analyst (agents/swot_analyst.py) every SWOT_EVERY_DAYS days
-             (default 7), and on first start: each company's research is
-             refreshed, then its SWOT rebuilt, one company after another.
+  ingest     The live ingestion run (news, filings, results, prices; services/
+             pipeline.py), then the RPG companies' own prices and results
+             (services/market_data.py). Each connector keeps its own pace and quota.
+  opportunities  The Opportunity Analyst (agents/opportunity_analyst.py): each
+             company's news of the last two days, judged against its SWOT.
+  scout      The Sector Scout (agents/sector_scout.py): targets in the
+             industry's news.
+  discovery  Watchlist and target discovery, on the daily run once
+             DISCOVERY_EVERY_DAYS days (default 7) have passed since the last.
+  swot       The SWOT Analyst, on the daily run once SWOT_EVERY_DAYS days
+             (default 7) have passed: research refreshed, then each SWOT rebuilt.
+  theses     Company sizes still missing or a month old (services/company_size.py),
+             then the theses and competitor overviews the day's news, SWOTs and
+             targets made out of date.
 
-SCHEDULER_ENABLED=false turns it off (tests do). Last runs are kept in the
-``scheduler`` ConnectorState row, so a restart does not repeat work.
+Nothing searches because the API started: a restart runs nothing unless that
+day's run is due and has not happened yet (the API was down at INGEST_DAILY_AT),
+and then it runs once. SCHEDULER_ENABLED=false turns it off (tests do). Last runs
+are kept in the ``scheduler`` ConnectorState row, so a restart does not repeat work.
 
 Every replica starts the loop, but only the one holding the ``scheduler`` lease
 (services/lease.py) runs a tick; it renews the lease every TICK, including
@@ -41,7 +43,7 @@ from shared.logger import get_logger
 log = get_logger("services.scheduler")
 
 TICK = 60  # seconds between checks
-THESIS_EVERY = timedelta(minutes=30)  # new signals get their thesis within this
+DAILY = ("ingest", "opportunities", "scout")  # every daily run, in this order; then the weekly ones when due, then theses
 LEASE = "scheduler"
 LEASE_TTL = timedelta(seconds=3 * TICK)
 STATUS: dict = {"running": None, "last_error": None}
@@ -53,35 +55,34 @@ def _slot(now: datetime, at: str) -> datetime:
     return now.replace(hour=h, minute=m, second=0, microsecond=0)
 
 
+def _weekly_due(now: datetime, last: str | None, days: int) -> bool:
+    # an hour's slack: a run that finished at 17:40 last week is due on this week's 17:00 run
+    return not last or now - datetime.fromisoformat(last) >= timedelta(days=days) - timedelta(hours=1)
+
+
 def due(now: datetime, state: dict) -> list[str]:
+    """The jobs of the daily run when it is due — today's INGEST_DAILY_AT has passed and today's run has not
+    happened — else nothing."""
     s = get_settings()
-    out = []
-    last_d = state.get("discovery")
-    if not last_d or now - datetime.fromisoformat(last_d) >= timedelta(days=s.discovery_every_days):
-        out.append("discovery")
-    for job, at in (("ingest", s.ingest_daily_at), ("opportunities", s.opportunity_daily_at)):
-        slot, last = _slot(now, at), state.get(job)
-        if now >= slot and (not last or datetime.fromisoformat(last) < slot):
-            out.append(job)
-    last_s = state.get("swot")
-    if not last_s or now - datetime.fromisoformat(last_s) >= timedelta(days=s.swot_every_days):
-        out.append("swot")
-    last_t = state.get("theses")
-    # last, and straight after new signals, a rebuilt SWOT or new targets: those make theses out of date
-    if not last_t or now - datetime.fromisoformat(last_t) >= THESIS_EVERY or {"ingest", "swot", "discovery"} & set(out):
-        out.append("theses")
-    return out
+    slot, last = _slot(now, s.ingest_daily_at), state.get("ingest")
+    if now < slot or (last and datetime.fromisoformat(last) >= slot):
+        return []
+    weekly = [job for job, days in (("discovery", s.discovery_every_days), ("swot", s.swot_every_days)) if _weekly_due(now, state.get(job), days)]
+    return [*DAILY, *weekly, "theses"]
 
 
 def next_runs(now: datetime, state: dict) -> dict:
+    """When each job next runs: the daily ones on the next daily run, the weekly ones on the first daily run
+    their interval allows."""
     s = get_settings()
-    out = {}
-    for job, at in (("ingest", s.ingest_daily_at), ("opportunities", s.opportunity_daily_at)):
-        slot, last = _slot(now, at), state.get(job)
-        out[job] = (slot if now < slot or not last or datetime.fromisoformat(last) < slot else slot + timedelta(days=1)).isoformat(timespec="minutes")
+    slot, last = _slot(now, s.ingest_daily_at), state.get("ingest")
+    daily = slot if now < slot or not last or datetime.fromisoformat(last) < slot else slot + timedelta(days=1)
+    out = {job: daily.isoformat(timespec="minutes") for job in (*DAILY, "theses")}
     for job, days in (("discovery", s.discovery_every_days), ("swot", s.swot_every_days)):
-        last = state.get(job)
-        out[job] = (datetime.fromisoformat(last) + timedelta(days=days) if last else now).isoformat(timespec="minutes")
+        run = daily
+        while not _weekly_due(run, state.get(job), days):
+            run += timedelta(days=1)
+        out[job] = run.isoformat(timespec="minutes")
     return out
 
 
@@ -138,6 +139,12 @@ async def run_due(now: datetime | None = None) -> list[str]:
                 async with get_db_session() as db:
                     res = await opportunity_analyst.analyse_all(db)
                 await bridge_sync()
+            elif job == "scout":  # targets in the industry's news (agents/sector_scout.py)
+                from agents import sector_scout
+
+                async with get_db_session() as db:
+                    res = await sector_scout.scan(db)
+                await bridge_sync()
             elif job == "swot":
                 res = await weekly_swot()
             elif job == "theses":
@@ -180,7 +187,7 @@ async def bridge_sync() -> None:
     await bridge.sync()
 
 
-JOBS = ("ingest", "discovery", "opportunities", "swot", "theses")
+JOBS = ("ingest", "discovery", "opportunities", "scout", "swot", "theses")
 
 
 async def status() -> dict:
@@ -188,7 +195,7 @@ async def status() -> dict:
     async with get_db_session() as db:
         state = await state_store.load(db, "scheduler")
     return {"enabled": s.scheduler_enabled, "ingest_daily_at": s.ingest_daily_at, "discovery_every_days": s.discovery_every_days,
-            "opportunity_daily_at": s.opportunity_daily_at, "swot_every_days": s.swot_every_days,
+            "opportunity_daily_at": s.ingest_daily_at, "swot_every_days": s.swot_every_days,
             "last": {k: state.get(k) for k in JOBS},
             "last_results": {k: state.get(f"{k}_result") for k in JOBS},
             "next": next_runs(datetime.now(), state), "leader": await lease.holder(LEASE), **STATUS}

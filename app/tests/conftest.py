@@ -33,6 +33,8 @@ for _key in ("GNEWS_API_KEY", "NEWSDATA_API_KEY", "TAVILY_API_KEY", "ADZUNA_APP_
              "GROQ_API_KEY", "NVIDIA_API_KEY", "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY"):
     os.environ[_key] = ""
 os.environ["NSE_ENABLED"] = "false"
+os.environ["GDELT_ENABLED"] = "false"  # keyless, so off unless a test turns it on
+os.environ["DDG_FALLBACK"] = "false"  # no real DuckDuckGo searches in tests
 
 import pytest  # noqa: E402
 from alembic import command  # noqa: E402

@@ -15,7 +15,7 @@ from .store import STORE
 
 STOP = set("which what where when how does has have been that this with from about rival rivals company companies the and for are is in on of to its their doing".split())
 RISK_TYPES = {"credit_downgrade", "delayed_filing", "legal_action", "auditor_change", "leadership_churn", "promoter_pledge",
-              "earnings_decline", "stake_selldown", "share_price_slump", "hiring_scaledown", "press_distress"}
+              "earnings_decline", "stake_selldown", "share_price_slump", "hiring_scaledown", "press_distress", "balance_sheet_stress"}
 MEANING = "these are public signals on a watchlist company. Open the linked source before acting on any of them."
 
 

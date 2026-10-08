@@ -595,3 +595,41 @@ body.guide-on .shell .am{padding-bottom:230px}
 .tbl.mkt td.num { font-family: var(--mono, monospace); text-align: right; }
 .tbl.mkt tr.own td { background: var(--accent-soft); }
 .up { color: var(--opp); } .down { color: var(--crit); }
+
+/* An M&A signal card's balance-sheet line */
+.zone-distress { color: var(--crit); } .zone-grey { color: var(--high); } .zone-safe { color: var(--opp); }
+/* Quarterly results charts */
+.qcharts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 8px; }
+.qchart { border: 1px solid var(--rule); border-radius: 12px; padding: 10px 12px; }
+.qchart.own { border-color: var(--accent); }
+.qchart-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; }
+.qchart-h span { font-size: 12px; font-family: var(--mono, monospace); }
+
+/* Acquisition thesis tabs */
+.thesis-tabs { margin-top: 14px; flex-wrap: wrap; }
+.evlist li.hl { background: var(--accent-soft); border-radius: 6px; }
+
+/* Sidebar section headings: labels, not buttons */
+.side .navgrp{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.14em;color:var(--faint);opacity:.8;
+  margin:16px 4px 6px;padding:12px 6px 0;border-top:1px solid var(--rule);cursor:default;user-select:none}
+.side > div:first-child > .navgrp{border-top:0;padding-top:0;margin-top:2px}
+.side .navbtn{margin-left:8px;width:calc(100% - 8px)}
+
+/* An M&A signal found in the industry's news */
+.pill2.from-news { align-self: flex-start; background: var(--watchs); color: var(--watch); }
+
+/* Ask Radar */
+.ask-wrap { display: grid; grid-template-columns: 250px 1fr; gap: 14px; align-items: start; }
+@media (max-width: 800px) { .ask-wrap { grid-template-columns: 1fr; } }
+.ask-threads { max-height: 75vh; overflow-y: auto; }
+.ask-thread { display: flex; align-items: center; gap: 4px; border-radius: 10px; }
+.ask-thread.on, .ask-thread:hover { background: var(--accent-soft); }
+.ask-thread > button:first-child { flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; padding: 7px 8px; cursor: pointer; font: inherit; color: var(--ink); display: flex; flex-direction: column; }
+.ask-thread > button:first-child span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+.ask-thread small { color: var(--faint); font-size: 11px; }
+.chat-src { margin-top: 6px; font-size: 12.5px; }
+.chat-src summary { cursor: pointer; color: var(--muted); }
+.chat-src ol { padding-left: 18px; margin: 6px 0 0; }
+.chat-src li { margin: 3px 0; }
+.pill2.src-web { background: var(--watchs); color: var(--watch); } .pill2.src-radar { background: var(--accent-soft); color: var(--accent-700); }
+.a.typing { opacity: .8; }

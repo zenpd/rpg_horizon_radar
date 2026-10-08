@@ -1,9 +1,9 @@
 // Competitor Analysis → Overview: one watched company's recent moves, financial snapshot, SWOT,
-// how it competes with the RPG company, the threat it poses and what to watch.
+// how it competes with the RPG company, the competitive intensity and what to watch.
 import { useEffect, useState } from "react";
 import { api, type Overview, type SignalJob } from "../api";
 import { useApp } from "../state";
-import { SignalList } from "./ui";
+import { ScorePill, SignalList } from "./ui";
 
 const SIDE: Record<string, string> = { ahead: "rip-risk", behind: "rip-opportunity", "head-to-head": "rip-neutral" };
 const THREAT: Record<string, string> = { high: "fit-weak", medium: "fit-moderate", low: "fit-strong" };
@@ -49,7 +49,7 @@ export function CompetitorOverview({ id, company, onBack }: { id: number; compan
         <div><small>Listing</small><b>{r.nse_symbol ? `NSE: ${r.nse_symbol}` : "Not matched to a listing"}</b></div>
         <div><small>Size</small><b>{r.size.label.replace("the RPG company's", company)}</b></div>
         <div><small>Recent moves · 120 days</small><b>{r.signals}{r.latest_date ? ` · latest ${r.latest_date}` : ""}</b></div>
-        <div><small>Threat to {company}</small><b>{p ? <span className={`pill2 ${THREAT[p.draft.threat.level]}`}>{p.draft.threat.level}</span> : "—"}</b></div>
+        <div><small>Competitive intensity</small><b><ScorePill score={r.score} detail={r.score_detail} label="Score" /></b></div>
       </div>
 
       {p ? (
@@ -94,7 +94,7 @@ export function CompetitorOverview({ id, company, onBack }: { id: number; compan
             <li key={i}><span className={`pill2 ${SIDE[x.side]}`}>{x.side === "ahead" ? `ahead of ${company}` : x.side === "behind" ? `behind ${company}` : "head-to-head"}</span>
               {x.swot_ref && <span className="mono"> {x.swot_ref}</span>} {x.point} {cite(x.evidence)}</li>
           ))}</ul>
-          <p style={{ marginBottom: 0 }}><b>Threat to {company}: <span className={`pill2 ${THREAT[p.draft.threat.level]}`}>{p.draft.threat.level}</span></b> {p.draft.threat.reason}</p>
+          <p style={{ marginBottom: 0 }}><b>Overall: <span className={`pill2 ${THREAT[p.draft.threat.level]}`}>{p.draft.threat.level}</span></b> {p.draft.threat.reason}</p>
         </div>
 
         <div className="panel"><h5>What to watch next</h5><ul className="cmp">{p.draft.watch.map((w, i) => <li key={i}>{w}</li>)}</ul></div>

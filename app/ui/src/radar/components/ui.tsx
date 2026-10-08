@@ -111,16 +111,19 @@ export function SwotDetails({ s }: { s: SwotView }) {
 
 
 /** "Opportunity score: 72" with an "i" that shows how that number was calculated. */
-export function ScorePill({ score, detail }: { score: number | null; detail: ScoreDetail | null | undefined }) {
+export function ScorePill({ score, detail, label = "Opportunity score" }: { score: number | null; detail: ScoreDetail | null | undefined; label?: string }) {
   const [open, setOpen] = useState(false);
+  const competitor = label !== "Opportunity score";
   return (
     <span className="score-wrap">
-      <span className="score-pill">Opportunity score: {score !== null ? Math.round(score) : "–"}</span>
-      <button className="info-i" aria-label="How the opportunity score is calculated" aria-expanded={open} onClick={() => setOpen(!open)}>i</button>
+      <span className="score-pill">{label}: {score !== null ? Math.round(score) : "–"}</span>
+      <button className="info-i" aria-label={`How the ${label.toLowerCase()} is calculated`} aria-expanded={open} onClick={() => setOpen(!open)}>i</button>
       {open && (
         <div className="score-pop" role="dialog">
-          <div className="card2-h"><b>How the opportunity score is calculated</b><button className="info-x" aria-label="Close" onClick={() => setOpen(false)}>×</button></div>
-          <p>Rule-based, no AI. Each kind of public move in the latest {detail?.window_days ?? 90} days adds its weight once; several kinds at the same time multiply the total; the result is capped at {detail?.max ?? 100}. A higher score means more signs of change or distress that could open an M&A opportunity. It does not say whether the company can be bought: see its size.</p>
+          <div className="card2-h"><b>How the {label.toLowerCase()} is calculated</b><button className="info-x" aria-label="Close" onClick={() => setOpen(false)}>×</button></div>
+          <p>Rule-based, no AI. Each kind of public move in the latest {detail?.window_days ?? 90} days adds its weight once; several kinds at the same time multiply the total; the result is capped at {detail?.max ?? 100}. {competitor
+            ? "A higher score means the company is making more moves at once — deals, fund raises, leadership changes, results, distress — so it needs closer watching."
+            : "A higher score means more signs of change or distress that could open an M&A opportunity. It does not say whether the company can be bought: see its size."}</p>
           {detail ? <>
             <table className="tbl score-tbl"><tbody>
               {detail.parts.map((p) => <tr key={p.type}><td style={{ textTransform: "capitalize" }}>{p.type}</td><td className="num">+{p.weight}</td></tr>)}

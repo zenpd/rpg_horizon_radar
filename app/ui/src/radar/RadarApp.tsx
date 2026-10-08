@@ -146,7 +146,7 @@ export default function RadarApp() {
             <nav className="side" aria-label="Screens">
               {NAV.map(([grp, items]) => (
                 <div key={grp} style={{ display: "contents" }}>
-                  <div className="navgrp">{grp}</div>
+                  <div className="navgrp" role="heading" aria-level={2}>{grp}</div>
                   {items.map(([k, l]) => (
                     <button key={k} className="navbtn" aria-current={k === active ? "page" : undefined} onClick={() => go(k)}>
                       <span>{l}</span>{navCount[k] !== undefined && <em>{navCount[k]}</em>}
@@ -154,7 +154,7 @@ export default function RadarApp() {
                   ))}
                 </div>
               ))}
-              <div className="navgrp">Workspace</div>
+              <div className="navgrp" role="heading" aria-level={2}>Workspace</div>
               {DESK.map(([path, label]) => (
                 <button key={path} className="navbtn" aria-current={location.pathname.startsWith(path) || (path === "/digests" && location.pathname.startsWith("/signals")) ? "page" : undefined}
                   onClick={() => navigate(path)}>

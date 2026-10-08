@@ -360,3 +360,38 @@ class OpportunityFinding(Base):
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="new", server_default="new")
     decided_by_id: Mapped[int | None] = mapped_column(ForeignKey("reviewers.id"), nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class ChatThread(Base):
+    """One Ask Radar conversation. Private to the user who started it: every read and write is
+    filtered on ``reviewer_id`` (radar/api.py), so no other user can list or open it."""
+
+    __tablename__ = "chat_threads"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    reviewer_id: Mapped[int] = mapped_column(ForeignKey("reviewers.id"), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    company: Mapped[str] = mapped_column(String(64), nullable=False, default="All")
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+
+
+class ChatMessage(Base):
+    """One turn in an Ask Radar conversation.
+
+    role: user | assistant
+    sources: the numbered evidence the answer cites — [{id, kind: radar | web, text, source, date, url}]
+    """
+
+    __tablename__ = "chat_messages"
+    __table_args__ = (CheckConstraint("role in ('user', 'assistant')", name="ck_chat_role"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    thread_id: Mapped[int] = mapped_column(ForeignKey("chat_threads.id", ondelete="CASCADE"), nullable=False, index=True)
+    role: Mapped[str] = mapped_column(String(16), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    company: Mapped[str] = mapped_column(String(64), nullable=False, default="All")
+    sources: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
+    used_web: Mapped[bool] = mapped_column(nullable=False, default=False)
+    model: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

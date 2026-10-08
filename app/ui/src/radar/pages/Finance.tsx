@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { api, type Market, type MarketRow, type SignalJob } from "../api";
+import { QuarterlyResults } from "../components/charts";
 import { useApp } from "../state";
 
 const PALETTE = ["var(--watch)", "var(--high)", "var(--crit)", "var(--opp)", "#8B5CF6", "#0EA5E9", "#D946EF", "#64748B"];
 const pct = (v: number | null | undefined, signed = true) => v === null || v === undefined ? "—" : `${signed && v > 0 ? "+" : ""}${v.toFixed(1)}%`;
 const cr = (v: number | null | undefined) => v === null || v === undefined ? "—" : `₹${Math.round(v).toLocaleString("en-IN")} cr`;
+const ZONE: Record<string, string> = { safe: "fit-strong", grey: "fit-moderate", distress: "fit-weak" };
 const tone = (v: number | null | undefined) => v === null || v === undefined ? "" : v > 0 ? "up" : v < 0 ? "down" : "";
 
 /** Lines on one chart, each a list of [x label, value]; the company's own line drawn thicker. */
@@ -126,8 +128,53 @@ export default function Finance() {
         </div>
       )}
 
+      {rows.some((r) => (r.sales_series?.length || 0) > 1) && (
+        <div className="panel">
+          <h5 style={{ margin: 0 }}>Quarterly results, last year</h5>
+          <p className="sub" style={{ fontSize: 12.5, margin: "2px 0 0" }}>The last five quarters for each company, so the latest quarter sits beside the same quarter a year earlier. Bars are sales and net profit in ₹ crore, each company on its own scale; the line is operating margin. Companies with no results on record are left out.</p>
+          <div className="qcharts">
+            {rows.filter((r) => (r.sales_series?.length || 0) > 1).map((r) => (
+              <QuarterlyResults key={r.name} name={r.name} own={r.own} quarters={r.quarters || []} sales={r.sales_series || []} profit={r.profit_series || []} opm={r.opm_series || []} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {px && <LineChart title="Share price, indexed to 100" sub={`Each company's BSE closing price over the last ~100 trading days, set to 100 on the first day, so moves compare whatever the price level. ${co} is the thick line.`} xs={px.xs} series={px.series} unit="" base={100} />}
       {opm && <LineChart title="Operating margin by quarter" sub={`Operating profit as a share of sales, quarter by quarter (Fincrux). ${co} is the thick line.`} xs={opm.xs} series={opm.series} unit="%" />}
+
+      <div className="panel">
+        <h5>Balance sheet and market multiples</h5>
+        <p className="sub" style={{ marginTop: 0, fontSize: 12.5 }}>From each company's latest annual accounts (Fincrux). Multiples are market facts for comparing peers, not a valuation.</p>
+        <div style={{ overflowX: "auto" }}>
+          <table className="tbl mkt">
+            <thead><tr><th>Company</th><th>Year</th><th>Debt / equity</th><th>Interest cover</th><th>Free cash flow</th><th>ROCE</th><th>Sales growth · 3 yrs a year</th><th>Altman Z</th><th>P/E</th><th>P/B</th><th>EV / EBITDA</th><th>ROE</th></tr></thead>
+            <tbody>{rows.map((r) => {
+              const h = r.health || {};
+              const x = (v: number | null | undefined, unit = "") => v === null || v === undefined ? "—" : `${v}${unit}`;
+              return (
+                <tr key={r.name} className={r.own ? "own" : ""}>
+                  <td><b>{r.name}</b></td><td>{h.year || "—"}</td>
+                  <td className="num">{x(h.debt_to_equity, "x")}</td><td className="num">{x(h.interest_cover, "x")}</td>
+                  <td className={`num ${tone(h.fcf)}`}>{cr(h.fcf)}</td><td className="num">{pct(h.roce, false)}</td>
+                  <td className={`num ${tone(h.sales_cagr_3y)}`}>{pct(h.sales_cagr_3y)}</td>
+                  <td className="num">{h.altman_z ? <span className={`pill2 ${ZONE[h.altman_z.zone]}`} title={`${h.altman_z.zone} zone`}>{h.altman_z.z} · {h.altman_z.zone}</span> : "—"}</td>
+                  <td className="num">{x(h.pe)}</td><td className="num">{x(h.pb)}</td><td className="num">{x(h.ev_ebitda)}</td><td className="num">{pct(h.roe, false)}</td>
+                </tr>
+              );
+            })}</tbody>
+          </table>
+        </div>
+        <details style={{ marginTop: 8 }}>
+          <summary className="sub" style={{ fontSize: 12.5, cursor: "pointer" }}>How these are calculated</summary>
+          <ul className="cmp" style={{ fontSize: 12.5 }}>
+            <li><b>Debt / equity</b>: borrowings ÷ (equity capital + reserves). <b>Interest cover</b>: (profit before tax + interest) ÷ interest, last twelve months.</li>
+            <li><b>Altman Z-score</b> = 1.2 × working capital/assets + 1.4 × reserves/assets + 3.3 × EBIT/assets + 0.6 × market cap/liabilities + 1.0 × sales/assets. Above 2.99 safe, 1.81–2.99 grey, below 1.81 distress. Built for listed manufacturers: read it with care for IT services. Fincrux does not split out working capital, so it is estimated from working-capital days.</li>
+            <li><b>EV</b> = market cap + borrowings (Fincrux gives no cash figure, so cash is not subtracted). <b>EV / EBITDA</b> uses operating profit for the last twelve months.</li>
+            <li>A distress-zone score, debt above 2× equity or interest cover below 1.5× raises a <b>Balance sheet</b> signal on the company.</li>
+          </ul>
+        </details>
+      </div>
 
       <div className="panel">
         <h5>Side by side · {rows.length} companies</h5>

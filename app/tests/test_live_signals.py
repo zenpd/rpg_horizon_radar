@@ -17,7 +17,7 @@ from db import base
 from db.models import AuditLog, ClusterSubsidiaryLink, Entity, RawSignal, SignalCluster
 from ingestion.connectors.live.common import SourceError, classify_headline, short_name
 from ingestion.connectors.live.filings import NSE, Fincrux, nse_type
-from services import company_research
+from services import company_research, market_data
 from services.ingest import run_ingest_all
 from tests.helpers import FIRST, SECOND, login
 
@@ -344,3 +344,88 @@ def test_ingest_runs_as_a_background_job(seeded):
         time.sleep(0.2)
     assert job["status"] == "completed", job
     assert job["result"]["via"] == "inline_fallback"
+
+
+# ---------- balance-sheet health (services/market_data.py) and GDELT ----------
+def stressed_fincrux():
+    years = ["Mar 2021", "Mar 2022", "Mar 2023", "Mar 2024", "Mar 2025", "Mar 2026"]
+    return {"success": "true", "data": {
+        "last_updated_at": "2026-09-26T22:31:46",
+        "top_ratios": {"Market Cap": "₹100Cr.", "Current Price": "₹20", "Book Value": "₹6.0", "Stock P/E": "", "ROE": "-40%"},
+        "profit_and_loss": [["Category", *years, "TTM"], ["Sales", "600", "650", "700", "800", "900", "1,000", "1,020"],
+                            ["Operating Profit", "60", "60", "60", "60", "60", "70", "70"], ["Interest", "100", "100", "100", "110", "120", "120", "120"],
+                            ["Profit before tax", "-20", "-30", "-40", "-50", "-50", "-50", "-50"], ["Net Profit", "-20", "-30", "-40", "-50", "-50", "-50", "-50"]],
+        "balance_sheet": [["Category", "Mar 2024", "Mar 2025", "Mar 2026"], ["Equity Capital", "50", "50", "50"], ["Reserves", "10", "-5", "-20"],
+                          ["Borrowings", "300", "350", "400"], ["Total Liabilities", "600", "650", "700"]],
+        "cash_flows": [["Category", "Mar 2026"], ["Cash from Operating Activity", "20"], ["Free Cash Flow", "-35"]],
+        "ratios": [["Category", "Mar 2026"], ["Working Capital Days", "-30"], ["ROCE %", "4%"]]}}
+
+
+def test_a_stressed_balance_sheet_is_a_signal_and_its_health_is_worked_out(settings):
+    settings.fincrux_api_key = "fx"
+    t = httpx.MockTransport(lambda req: httpx.Response(200, json=stressed_fincrux()))
+    e = _entity(id=998, name="Weak Rubber Ltd", sectors=["tyres"], status="watching", nse_symbol="WEAKRUB")
+    state: dict = {}
+    sig = {s["signal_type"]: s for s in Fincrux(state, t).pull(e, "WEAKRUB")}["balance_sheet_stress"]
+    assert sig["headline"].startswith("Weak Rubber Ltd balance sheet, Mar 2026: Altman Z-score 1.") and "debt 13.33 times equity" in sig["headline"]
+    assert "interest cover 0.6x" in sig["headline"]
+    h = market_data.health(state["market"]["fin"]["WEAKRUB"])
+    assert h["altman_z"]["zone"] == "distress" and h["fcf"] == -35 and h["sales_cagr_3y"] == round(((1000 / 700) ** (1 / 3) - 1) * 100, 1)
+    assert h["sales_cagr_5y"] == round(((1000 / 600) ** (1 / 5) - 1) * 100, 1)
+    assert h["ev"] == 500 and h["ev_ebitda"] == round(500 / 70, 1) and h["pb"] == 3.33 and h["pe"] is None
+    assert "Altman Z-score" in market_data.health_text("Weak Rubber Ltd", h) and "P/E" not in market_data.health_text("Weak Rubber Ltd", h), \
+        "the agents get the balance sheet, not the multiples"
+    assert market_data.health({}) == {} and market_data.stress({}) == []
+
+
+def test_gdelt_headlines_become_signals_and_a_refusal_is_reported(settings):
+    settings.gdelt_enabled = True
+    seen: list[str] = []
+
+    def ok(req: httpx.Request) -> httpx.Response:
+        seen.append(req.url.params["query"])
+        return httpx.Response(200, json={"articles": [
+            {"title": "Apollo Tyres wins Rs 900 crore order from defence ministry", "seendate": "20261005T101500Z", "url": "https://x.in/1", "domain": "x.in"},
+            {"title": "Apollo Tyres Q2 preview: what to expect", "seendate": "20261004T090000Z", "url": "https://x.in/2", "domain": "x.in"},
+            {"title": "Tyre makers rally", "seendate": "bad", "url": "https://x.in/3", "domain": "x.in"}]})
+    e = _entity(id=997, name="Apollo Tyres Ltd", sectors=["tyres"], status="watching")
+    from ingestion.connectors.live.news import GDELT
+    out = GDELT({}, httpx.MockTransport(ok), sleep=lambda s: None).pull(e, "Apollo Tyres")
+    assert [s["signal_type"] for s in out] == ["press_opportunity"] and out[0]["provider"] == "GDELT"
+    assert seen == ['"Apollo Tyres" sourcecountry:IN sourcelang:english']
+    busy = GDELT({}, httpx.MockTransport(lambda req: httpx.Response(429, text="Please limit requests")), sleep=lambda s: None)
+    with pytest.raises(SourceError, match="one request every 5 seconds"):
+        busy.pull(e, "Apollo Tyres")
+
+
+# ---------- DuckDuckGo as Tavily's fallback (services/web_search.py) ----------
+def test_duckduckgo_answers_searches_when_tavily_refuses_but_never_sizes(settings, monkeypatch):
+    from ingestion.connectors.live.news import DuckDuckGo
+    from services import company_size, web_search
+
+    settings.ddg_fallback, settings.tavily_api_key = True, ""
+    asked: list[tuple[str, str]] = []
+    story = {"title": "Omega Infotech wins Rs 40 crore order from a bank", "url": "https://n.example/1", "content": "Omega Infotech, a Pune IT firm...",
+             "published_date": "2026-10-06T09:30:00+00:00", "source": "Mint"}
+    monkeypatch.setattr(web_search, "news", lambda q, days=7, n=10: asked.append(("news", q)) or [story])
+    monkeypatch.setattr(web_search, "text", lambda q, n=6: asked.append(("text", q)) or [{"title": "Omega Infotech", "url": "https://o.example", "content": "IT services"}])
+    monkeypatch.setattr(web_search, "_down", None)
+
+    facts = company_research.tavily_news("IT services funding", days=7, kind="sector_news")
+    assert facts[0]["source"] == "Mint" and facts[0]["observed_at"].startswith("2026-10-06T09:30") and asked[-1][0] == "news", \
+        "no Tavily key: DuckDuckGo news, with its outlet and date"
+
+    settings.tavily_api_key = "tv"
+    web_search.tavily_failed(SourceError('Tavily error HTTP 432: {"detail":{"error":"This request exceeds your plan\'s set usage limit."}}'))
+    assert web_search.tavily_down() and not web_search.use_tavily()
+    assert company_research._tavily({"query": "Omega Infotech", "topic": "general"})[0]["url"] == "https://o.example", \
+        "after a refusal the day's searches go straight to DuckDuckGo"
+    with pytest.raises(SourceError, match="sizes are not checked"):
+        company_size.lookup("Omega Infotech", False)
+    e = _entity(id=996, name="Omega Infotech", sectors=["it"], status="watching")
+    out = DuckDuckGo({}).pull(e, "Omega Infotech")
+    assert [(s["signal_type"], s["provider"]) for s in out] == [("press_opportunity", "DuckDuckGo")]
+    assert asked[-1] == ("news", '"Omega Infotech"')
+    monkeypatch.setattr(web_search, "_down", None)
+    settings.ddg_fallback = False
+    assert DuckDuckGo({}).configured is False, "off with DDG_FALLBACK=false"

@@ -136,10 +136,10 @@ class Fincrux(LiveConnector):
         return hits[0]["trading_symbol"] if hits else None
 
     def pull(self, entity: Entity, query: str) -> list[dict]:
-        from services.market_data import keep_financials
+        from services.market_data import health, keep_financials, stress
 
         d = self.get(f"financials/{query}")["data"]
-        keep_financials(self.state, query, d)  # for The financial market, at no extra call
+        kept = keep_financials(self.state, query, d)  # for The financial market, at no extra call
         when = datetime.fromisoformat(d["last_updated_at"][:19]) if d.get("last_updated_at") else datetime.now()
         out = []
         q = {row[0]: row[1:] for row in d.get("quaterly_results") or []}  # sic, the API's spelling
@@ -163,6 +163,10 @@ class Fincrux(LiveConnector):
             if cuts:
                 out.append(self.signal("stake_selldown", f"{entity.name} {ss[-1]} quarter: " + "; ".join(cuts), when,
                                        excerpt=f"Shareholding {ss[-2]} → {ss[-1]}. Source: Fincrux shareholding pattern."))
+        h = health(kept)
+        if why := stress(h):
+            out.append(self.signal("balance_sheet_stress", f"{entity.name} balance sheet, {h['year']}: " + "; ".join(why), when,
+                                   excerpt="Source: Fincrux annual balance sheet and profit and loss (working capital in the Altman Z-score is estimated)."))
         return out
 
 

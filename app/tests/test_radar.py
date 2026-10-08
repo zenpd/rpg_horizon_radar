@@ -14,7 +14,7 @@ from sqlalchemy import delete, select
 import httpx
 from ingestion.connectors.live import common
 
-from agents import acquisition_thesis, competitor_profile, opportunity_analyst, swot_analyst
+from agents import acquisition_thesis, competitor_profile, opportunity_analyst, sector_scout, swot_analyst
 from agents.llm_azure import AZURE
 from db import base
 from db.models import AuditLog, Entity, OpportunityFinding, RawSignal, Subsidiary
@@ -619,17 +619,16 @@ def test_opportunity_analyst_rejects_a_repeat_of_an_earlier_finding():
     assert opportunity_analyst.check({"findings": [finding("Steel prices rise", None)]}, {"N1"}, set(), ["opportunity: Natural rubber prices fall"]) == []
 
 
-def test_scheduler_runs_opportunities_daily_and_the_swot_weekly(settings):
-    settings.opportunity_daily_at, settings.ingest_daily_at, settings.swot_every_days = "08:00", "17:00", 7
-    morning = datetime(2026, 10, 8, 9, 0)
-    fresh = {"discovery": "2026-10-07T09:00:00", "ingest": "2026-10-07T17:30:00", "theses": "2026-10-08T08:45:00"}
-    assert scheduler.due(morning, {**fresh, "opportunities": "2026-10-07T08:05:00", "swot": "2026-10-03T09:00:00"}) == ["opportunities"]
-    assert scheduler.due(morning, {**fresh, "opportunities": "2026-10-08T08:05:00", "swot": "2026-10-01T09:00:00"}) == ["swot", "theses"],         "a rebuilt SWOT is followed at once by the theses it makes out of date"
-    assert scheduler.due(morning, {**fresh, "opportunities": "2026-10-08T08:05:00", "swot": "2026-10-03T09:00:00"}) == []
-    assert scheduler.due(morning, {**fresh, "opportunities": "2026-10-08T08:05:00", "swot": "2026-10-03T09:00:00",
-                                   "theses": "2026-10-08T08:20:00"}) == ["theses"], "new signals get their thesis within 30 minutes"
-    nxt = scheduler.next_runs(morning, {**fresh, "opportunities": "2026-10-08T08:05:00", "swot": "2026-10-03T09:00:00"})
-    assert nxt["opportunities"] == "2026-10-09T08:00" and nxt["swot"] == "2026-10-10T09:00"
+def test_everything_that_searches_runs_after_the_daily_news_run_and_never_on_a_restart(settings):
+    settings.ingest_daily_at, settings.swot_every_days, settings.discovery_every_days = "17:00", 7, 7
+    week = {"discovery": "2026-10-05T17:20:00", "swot": "2026-10-05T17:40:00"}
+    done_today = {**week, "ingest": "2026-10-08T17:05:00"}
+    assert scheduler.due(datetime(2026, 10, 8, 9, 0), {**week, "ingest": "2026-10-07T17:05:00"}) == [],         "a restart in the morning searches nothing: the daily run is at 17:00"
+    assert scheduler.due(datetime(2026, 10, 8, 17, 1), {**week, "ingest": "2026-10-07T17:05:00"}) == ["ingest", "opportunities", "scout", "theses"]
+    assert scheduler.due(datetime(2026, 10, 8, 19, 0), done_today) == [], "a restart after today's run repeats nothing"
+    assert scheduler.due(datetime(2026, 10, 12, 17, 0), {**week, "ingest": "2026-10-11T17:05:00"}) ==         ["ingest", "opportunities", "scout", "discovery", "swot", "theses"], "the weekly jobs ride on the daily run a week on"
+    nxt = scheduler.next_runs(datetime(2026, 10, 8, 19, 0), done_today)
+    assert nxt["ingest"] == nxt["scout"] == nxt["theses"] == "2026-10-09T17:00" and nxt["discovery"] == "2026-10-12T17:00"
 
 
 def test_every_signal_gets_its_thesis_without_anyone_opening_it(user):
@@ -875,3 +874,211 @@ def test_financial_market_compares_results_and_prices_with_listed_peers(user, se
                 await state_store.save(db, "live", live)
                 await db.commit()
         asyncio.run(clean())
+
+
+def test_signal_cards_and_theses_show_the_targets_finances(user):
+    a = case_of(ALPHA)
+    card = next(c for c in user.get("/signals", params={"company": "CEAT"}).json()["signals"] if c["id"] == a)
+    assert card["finance"] == {"listed": False, "label": "Not listed: no published accounts"}
+    w = next(x for x in STORE.live_meta["watch"]["CEAT"] if x["name"] == ALPHA)
+    w["nse_symbol"] = "ALPHATYRE"
+    stressed = {"at": datetime.now().isoformat(), "quarters": [f"Q{i}" for i in range(8)], "sales": ["100"] * 7 + ["120"],
+                "profit": ["10"] * 8, "opm": ["12%"] * 8, "holding_quarters": [], "holding": {},
+                "balance": {"periods": ["Mar 2026"], "Equity Capital": ["10"], "Reserves": ["10"], "Borrowings": ["60"], "Total Liabilities": ["200"]},
+                "annual": {"periods": ["Mar 2026", "TTM"], "Sales": ["400", "420"], "Operating Profit": ["40", "40"], "Interest": ["30", "30"],
+                           "Profit before tax": ["5", "5"], "Net Profit": ["4", "4"]}, "cash": {}, "ratios": {}, "top": {}}
+
+    async def put(entry):
+        async with base.get_db_session() as db:
+            live = await state_store.load(db, "live")
+            if entry is None:
+                live.pop("market", None)
+            else:
+                live.setdefault("market", {}).setdefault("fin", {})["ALPHATYRE"] = entry
+            await state_store.save(db, "live", live)
+            await db.commit()
+    try:
+        card = next(c for c in user.get("/signals", params={"company": "CEAT"}).json()["signals"] if c["id"] == a)
+        assert card["finance"]["pending"] is True and card["finance"]["label"].startswith("Figures pending")
+        asyncio.run(put(stressed))
+        card = next(c for c in user.get("/signals", params={"company": "CEAT"}).json()["signals"] if c["id"] == a)
+        assert card["finance"]["label"] == "debt 3.0x equity" and "debt 3.0 times equity" in card["finance"]["stress"]
+        f = user.get(f"/cases/{a}/thesis", params={"company": "CEAT"}).json()["financials"]
+        assert f["target"]["sales_yoy"] == 20.0 and f["target"]["health"]["interest_cover"] == 1.2
+        assert f["target"]["expected"] == {"quarters": 8, "from": "Q0", "to": "Q7", "sales": 102.5, "profit": 10.0, "opm": 12.0}, \
+            "the 8-quarter average is the level to expect after a deal"
+        assert f["acquirer"]["listed"] is True and f["acquirer"]["symbol"] == "CEATLTD"
+    finally:
+        w["nse_symbol"] = None
+        asyncio.run(put(None))
+
+
+def test_zensar_targets_follow_its_profile_and_unsignalled_targets_are_candidates(user, world):
+    qs = target_discovery.queries("ZENSAR", "", [])
+    assert any("employees" in q for q in qs) and any("US " in q or "UK " in q for q in qs), "headcount and US/UK digital firms"
+    assert target_discovery.queries("CEAT", "", [])[0].startswith("small "), "the others keep the generic searches"
+    assert user.get("/candidates", params={"company": "CEAT"}).json()["candidates"] == [], "watched targets with signals are M&A signals, not candidates"
+
+    async def add():
+        async with base.get_db_session() as db:
+            e = Entity(name="Delta Digital Pvt Ltd", sectors=["tyres"], category="Target · tyres", origin="discovered", status="watching",
+                       role="target", watched_since=datetime.utcnow(),
+                       discovery={"for": "CEAT", "kind": "target", "why": "A small digital firm.", "employees": "about 400",
+                                  "clients": "Indian tyre dealers", "headquarters": "Pune, India", "sources": [{"title": "t", "url": "https://x.example"}]})
+            db.add(e)
+            await db.flush()
+            await state_store.save(db, company_size.entity_key(e.id), {})  # an earlier test's company may have had this id
+            await db.commit()
+            return e.id
+    eid = asyncio.run(add())
+    asyncio.run(bridge.sync())
+    try:
+        c = next(x for x in user.get("/candidates", params={"company": "CEAT"}).json()["candidates"] if x["entity_id"] == eid)
+        assert (c["employees"], c["clients"], c["headquarters"]) == ("about 400", "Indian tyre dealers", "Pune, India")
+        assert c["size"]["label"] == "Size not verified"
+        assert user.get(f"/competitors/{eid}/overview", params={"company": "CEAT"}).status_code == 200, "Overview opens for a candidate"
+    finally:
+        async def drop():
+            async with base.get_db_session() as db:
+                await db.delete(await db.get(Entity, eid))
+                await db.commit()
+        asyncio.run(drop())
+        asyncio.run(bridge.sync())
+
+
+
+def test_sector_scout_turns_industry_news_into_m_and_a_signals(user, settings):
+    settings.tavily_api_key, settings.gnews_api_key = "tv", ""
+    asked: list[str] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        body = json.loads(req.content)
+        asked.append(body["query"])
+        if body.get("include_answer"):  # size lookups
+            return httpx.Response(200, json={"answer": "Its annual revenue is ₹300 crore." if "Omega" in body["query"] else "Revenue of ₹90,000 crore.",
+                                             "results": []})
+        return httpx.Response(200, json={"results": [
+            {"title": "Omega Treads raises Rs 50 crore to expand truck tyre plant", "url": "https://news.example/omega", "content": "Omega Treads, a Pune tyre maker...",
+             "published_date": "Mon, 05 Oct 2026 08:00:00 GMT"},
+            {"title": "Megatyre buys a stake in Omega Treads rival", "url": "https://news.example/mega", "content": "Megatyre is India's largest...",
+             "published_date": "Sun, 04 Oct 2026 08:00:00 GMT"}]})
+    g = {"scale": "small", "segment": "same", "acquired": False}
+    picks = {"companies": [
+        {"name": "Omega Treads", "event": "fund_raise", "why": "A small tyre maker raising money to grow.", "size_hint": "Rs 50 crore raise", "items": [1], **g},
+        {"name": "Megatyre", "event": "deal", "why": "Large.", "size_hint": None, "items": [2], **g, "scale": "mid"},
+        {"name": "Phantom Rubber", "event": "distress", "why": "Not in the news.", "size_hint": None, "items": [1], **g}]}
+
+    async def go():
+        async with base.get_db_session() as db:
+            res = await sector_scout.scan(db, codes=["CEAT"], drafter=FakeDrafter([picks]), transport=httpx.MockTransport(handler))
+        await bridge.sync()
+        return res
+    res = asyncio.run(go())
+    assert res["added"] == ["Omega Treads"] and res["too_big"] == ["Megatyre"] and res["signals"] == 1, res
+    assert any("stake sale" in q for q in asked), "it reads the industry's news, not a watchlist"
+    card = next(c for c in user.get("/signals", params={"company": "CEAT"}).json()["signals"] if c["who"] == "Omega Treads")
+    assert card["found_via"] == "sector news" and card["chips"] == ["Fund raise"] and card["size"]["ok"] is True
+    assert card["chip_links"]["Fund raise"]["url"] == "https://news.example/omega"
+
+    async def clean():
+        async with base.get_db_session() as db:
+            for name in ("Omega Treads", "Megatyre"):
+                e = (await db.execute(select(Entity).where(Entity.name == name))).scalar_one()
+                for r in (await db.execute(select(RawSignal).where(RawSignal.entity_id == e.id))).scalars().all():
+                    await db.delete(r)
+                await state_store.save(db, company_size.entity_key(e.id), {})
+                await db.delete(e)
+            await db.commit()
+        await bridge.sync()
+    asyncio.run(clean())
+
+
+def test_fincrux_market_cap_replaces_a_search_answer(user):
+    async def put(top):
+        async with base.get_db_session() as db:
+            live = await state_store.load(db, "live")
+            if top is None:
+                live.pop("market", None)
+            else:
+                live.setdefault("market", {}).setdefault("fin", {})["CEATLTD"] = {"at": datetime.now().isoformat(), "top": top}
+            await state_store.save(db, "live", live)
+            await db.commit()
+        await bridge.sync()
+    try:
+        asyncio.run(put({"Market Cap": "₹13,314Cr."}))
+        own = STORE.sizes[company_size.rpg_key("CEAT")]["market_cap"]
+        assert own["cr"] == 13314 and own["source"] == "Fincrux"
+    finally:
+        asyncio.run(put(None))
+    assert STORE.sizes[company_size.rpg_key("CEAT")]["market_cap"]["cr"] == 10000, "back to the stored figure"
+
+
+
+def test_sector_scout_drops_large_unrelated_and_acquired_picks():
+    items = [{"title": f"{n} news", "text": f"{n} news: something happened", "source": "Mint", "observed_at": "2026-10-06T00:00:00", "url": f"https://n.example/{i}"}
+             for i, n in enumerate(["Yes Bank", "Gradiant", "Continuus", "Kappa Soft"], 1)]
+    g = lambda n, i, **k: {"name": n, "event": "growth", "why": "x", "size_hint": None, "items": [i], "scale": "small", "segment": "same", "acquired": False, **k}
+    fake = FakeDrafter([{"companies": [g("Yes Bank", 1, scale="large"), g("Gradiant", 2, segment="unrelated"), g("Continuus", 3, acquired=True), g("Kappa Soft", 4)]}])
+    out, _, dropped = sector_scout.pick("ZENSAR", items, None, fake)
+    assert [p["name"] for p in out] == ["Kappa Soft"]
+    assert dropped == ["Yes Bank (large)", "Gradiant (unrelated)", "Continuus (being acquired)"]
+
+
+# ---------- Ask Radar conversations (agents/ask_agent.py) ----------
+class AskFake:
+    """Answers from the evidence it is given: the radar's when that names Alpha, else asks for the web."""
+    model = "fake-model"
+
+    def __init__(self):
+        self.calls = []
+
+    def draft(self, system, messages, schema, name="draft"):
+        payload = json.loads(messages[-1]["content"])
+        self.calls.append(payload)
+        ev = payload["evidence"] if isinstance(payload["evidence"], list) else []
+        web = [x for x in ev if x["id"].startswith("W")]
+        mine = [x for x in ev if ALPHA in x["text"]]
+        if web:
+            return json.dumps({"answer": f"From the web: {web[0]['text']} [{web[0]['id']}]", "needs_web": False, "web_query": None})
+        if mine and "Alpha" in payload["question"]:
+            return json.dumps({"answer": f"- {mine[0]['text']} [{mine[0]['id']}]", "needs_web": False, "web_query": None})
+        return json.dumps({"answer": "The radar has no data on that.", "needs_web": True, "web_query": "Zeta Corp news"})
+
+
+def test_ask_radar_answers_from_the_radar_then_the_web_and_keeps_chats_private(user, other, monkeypatch):
+    from agents import ask_agent
+
+    fake = AskFake()
+    monkeypatch.setattr(ask_agent, "Drafter", lambda routes=None: fake)
+    monkeypatch.setattr(ask_agent, "web_evidence", lambda q: ([{"id": "W1", "kind": "web", "text": "Zeta Corp opened a plant",
+                                                                  "source": "Mint", "date": "2026-10-06", "url": "https://n.example/z"}], []))
+    t = user.post("/chats", json={"company": "CEAT"}).json()
+    r = user.post(f"/chats/{t['id']}/messages", json={"text": f"What has {ALPHA} been doing?", "company": "CEAT"}).json()
+    assert r["answer"]["used_web"] is False and r["answer"]["sources"][0]["kind"] == "radar", "the radar's data first"
+    assert ALPHA in r["answer"]["content"] and r["thread"]["title"] == f"What has {ALPHA} been doing?"
+    assert any("CEAT SWOT" in x["text"] or "watchlist" in x["source"].lower() for x in fake.calls[0]["evidence"])
+
+    r = user.post(f"/chats/{t['id']}/messages", json={"text": "And what about Zeta Corp?", "company": "CEAT"}).json()
+    assert r["answer"]["used_web"] is True and r["answer"]["sources"] == [
+        {"id": "W1", "kind": "web", "text": "Zeta Corp opened a plant", "source": "Mint", "date": "2026-10-06", "url": "https://n.example/z"}]
+    got = user.get(f"/chats/{t['id']}").json()
+    assert [m["role"] for m in got["messages"]] == ["user", "assistant", "user", "assistant"], "the conversation is saved"
+
+    assert t["id"] in [x["id"] for x in user.get("/chats").json()]
+    assert t["id"] not in [x["id"] for x in other.get("/chats").json()], "another user does not see it"
+    assert other.get(f"/chats/{t['id']}").status_code == 404
+    assert other.post(f"/chats/{t['id']}/messages", json={"text": "hi", "company": "CEAT"}).status_code == 404
+    assert other.delete(f"/chats/{t['id']}").status_code == 404
+    assert user.delete(f"/chats/{t['id']}").status_code == 204 and user.get(f"/chats/{t['id']}").status_code == 404
+
+
+def test_ask_radar_drops_citations_to_sources_it_was_not_given():
+    from agents import ask_agent
+
+    class Bad:
+        model = "fake"
+
+        def draft(self, *a, **k):
+            return json.dumps({"answer": "Revenue rose 40% [R9].", "needs_web": False, "web_query": None})
+    reply, _ = ask_agent.draft("q", [], "CEAT", [{"id": "R1", "kind": "radar", "text": "x", "source": "s"}], Bad())
+    assert "[R9]" not in reply["answer"], "after one retry an unknown citation is removed, never shown as a source"

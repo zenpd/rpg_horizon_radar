@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from agents.llm_routes import Drafter, LLMError
 from db.models import Entity, Subsidiary
-from ingestion.connectors.live.common import about, get_json, same_company
+from ingestion.connectors.live.common import SourceError, about, get_json, same_company
 from services.audit import write_audit
 from shared.config import get_settings
 from shared.http import client
@@ -62,10 +62,22 @@ class DiscoveryError(Exception):
 
 
 def _search(query: str, key: str, transport=None) -> list[dict]:
+    """A Tavily search; DuckDuckGo answers it when Tavily refuses or has no key (services/web_search.py)."""
+    from services import web_search
+
     body = {"query": query, "topic": "general", "max_results": 6, "search_depth": "advanced", "chunks_per_source": 3}
-    with client(transport, timeout=60.0) as c:
-        r = c.post(TAVILY_URL, headers={"Authorization": f"Bearer {key}"}, json=body)
-    return [x for x in get_json(r, "Tavily").get("results") or [] if x.get("title")]
+    if (key and not web_search.tavily_down()) or transport is not None:
+        try:
+            with client(transport, timeout=60.0) as c:
+                r = c.post(TAVILY_URL, headers={"Authorization": f"Bearer {key}"}, json=body)
+            return [x for x in get_json(r, "Tavily").get("results") or [] if x.get("title")]
+        except SourceError as e:
+            web_search.tavily_failed(e)
+            if transport is not None or not web_search.enabled():
+                raise
+    if not web_search.enabled():
+        raise DiscoveryError("TAVILY_API_KEY is not set.")
+    return web_search.text(query, 6)
 
 
 def _grounded(name: str, results: list[dict], cited: list[int]) -> bool:
@@ -78,7 +90,7 @@ def _grounded(name: str, results: list[dict], cited: list[int]) -> bool:
 def find_companies(code: str, focus: str, drafter: Drafter | None = None, transport=None) -> tuple[list[dict], str]:
     """Blocking: search, pick, ground. Returns (companies, model name)."""
     key = get_settings().tavily_api_key
-    if not key:
+    if not key and not get_settings().ddg_fallback:
         raise DiscoveryError("TAVILY_API_KEY is not set.")
     full, seg = PROFILES.get(code, (code, ""))
     results = _search(f"{full} competitors India {seg}", key, transport) + _search(f"India {seg} companies {focus}", key, transport)
@@ -122,7 +134,7 @@ async def discover(db: AsyncSession, reviewer=None, drafter: Drafter | None = No
     for sub in subs:
         try:
             found, model = await asyncio.to_thread(find_companies, sub.code, sub.signal_focus, drafter, transport)
-        except (DiscoveryError, LLMError, httpx.HTTPError) as e:  # one subsidiary failing does not stop the rest
+        except (DiscoveryError, LLMError, SourceError, httpx.HTTPError) as e:  # one subsidiary failing does not stop the rest
             errors.append(f"{sub.code}: {e}")
             continue
         for c in found:

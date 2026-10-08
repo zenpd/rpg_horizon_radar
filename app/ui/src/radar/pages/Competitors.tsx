@@ -5,7 +5,7 @@ import { ScorePill } from "../components/ui";
 import { useApp } from "../state";
 
 /** Radar → Competitor Analysis: a card per watched company, and its overview (moves, financials, SWOT,
- * how it competes, threat, what to watch) on demand. */
+ * how it competes, competitive intensity, what to watch) on demand. */
 export default function Competitors() {
   const app = useApp();
   const co = app.cur;
@@ -31,7 +31,7 @@ export default function Competitors() {
       <div>
         <span className="crumb"><b>Radar</b> / Competitor Analysis · {co}</span>
         <h4>{co}'s competitors and their moves · {list.length}</h4>
-        <p className="sub">Competitors and adjacent players {co} watches, found by discovery or added by hand, with their recent public moves (news, filings, patents, hiring, deals) and rule-based scores.
+        <p className="sub">Competitors and adjacent players {co} watches, found by discovery or added by hand, with their recent public moves (news, filings, patents, hiring, deals) and a rule-based competitive intensity score (the "i" shows how it is worked out).
           {app.scope === "All" && <> Showing {co} — pick a company above to change.</>}</p>
       </div>
       {!list.length ? (
@@ -42,7 +42,7 @@ export default function Competitors() {
             <div key={x.name} className="card2">
               <div className="card2-h">
                 <b className="rt" style={{ margin: 0 }}>{x.name}</b>
-                <ScorePill score={x.score} detail={x.score_detail} />
+                <ScorePill score={x.score} detail={x.score_detail} label="Competitive intensity" />
               </div>
               <div className="kv small">
                 <div><small>Listing</small><b>{x.nse_symbol ? `NSE: ${x.nse_symbol}` : "Not matched"}</b></div>

@@ -27,6 +27,7 @@ from sqlalchemy import func, select
 from db.base import get_db_session
 from db.models import Entity, OpportunityFinding, OpportunityScore, RawSignal, SignalCluster, Subsidiary, SwotBrief
 from services import company_research, company_size, routing, swot_settings
+from services import state as state_store
 from shared.logger import get_logger
 
 from .store import COMPANIES_ORDER, STORE
@@ -43,12 +44,13 @@ WINDOW_DAYS = 120
 KEPT_DAYS = 7  # kept daily findings feed the weekly SWOT for this long
 MAX_LIVE = 40
 SYNC_EVERY = 300  # seconds
-NEWS_PROVIDERS = {"GNews", "NewsData.io", "Tavily", "YouTube"}
+NEWS_PROVIDERS = {"GNews", "GDELT", "NewsData.io", "Tavily", "DuckDuckGo", "YouTube", "Sector news"}
 LABEL = {"leadership_churn": "Leadership", "delayed_filing": "Filing delay", "credit_downgrade": "Rating",
          "patent_shift": "Patents", "hiring_scaledown": "Hiring", "hiring_scaleup": "Hiring", "press_distress": "News",
          "press_opportunity": "News", "promoter_pledge": "Pledge", "auditor_change": "Auditor change",
          "legal_action": "Legal", "earnings_decline": "Earnings", "stake_selldown": "Shareholding",
-         "share_price_slump": "Share price", "deal_activity": "Deal", "fund_raise": "Fund raise"}
+         "share_price_slump": "Share price", "deal_activity": "Deal", "fund_raise": "Fund raise",
+         "balance_sheet_stress": "Balance sheet"}
 
 LOOP: asyncio.AbstractEventLoop | None = None
 _last_sync = 0.0
@@ -92,7 +94,12 @@ async def sync(force: bool = True) -> None:
             counts = dict((await db.execute(select(RawSignal.entity_id, func.count()).group_by(RawSignal.entity_id))).all())
             research = await company_research.load_all(db)
             params = await swot_settings.load_all(db)
-            sizes = await company_size.load_all(db)
+            # Fincrux's exchange market cap, where it has one, over a search answer's
+            sizes = company_size.with_fincrux(
+                await company_size.load_all(db),
+                {**{company_size.entity_key(e.id): e.nse_symbol for e in real},
+                 **{company_size.rpg_key(code): sym for code, (_, _, sym) in company_research.PROFILES.items()}},
+                await state_store.load(db, "live"))
             kept = (await db.execute(select(OpportunityFinding).where(
                 OpportunityFinding.status == "kept", OpportunityFinding.found_on >= datetime.utcnow() - timedelta(days=KEPT_DAYS))
                 .order_by(OpportunityFinding.found_on.desc()))).scalars().all()
@@ -108,6 +115,7 @@ async def sync(force: bool = True) -> None:
             watch[co] = [{"id": e.id, "name": e.name, "status": e.status, "role": e.role, "origin": e.origin, "nse_symbol": e.nse_symbol,
                           "why": (e.discovery or {}).get("why"), "sources": (e.discovery or {}).get("sources", []),
                           "found_at": (e.discovery or {}).get("found_at"), "signals": counts.get(e.id, 0),
+                          **{k: (e.discovery or {}).get(k) for k in ("employees", "clients", "headquarters", "found_via")},
                           "score": scores[e.id].score if e.id in scores else None} for e in mine]
             watched = [e for e in mine if e.status == "watching" and by_entity.get(e.id)]
             rivals[co] = sorted(({"id": e.id, "name": e.name, "role": e.role,

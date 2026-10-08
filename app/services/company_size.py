@@ -50,13 +50,23 @@ def amount_cr(text: str) -> float | None:
 
 
 def _answer(query: str, transport=None) -> tuple[str, str | None]:
+    """Tavily's sourced answer. There is no fallback: a search snippet is not a sourced figure, so when
+    Tavily is down the company is reported as not sized (services/web_search.py)."""
+    from services import web_search
+
     key = get_settings().tavily_api_key
     if not key:
         raise SourceError("TAVILY_API_KEY is not set.")
+    if web_search.tavily_down() and transport is None:
+        raise SourceError("Tavily is unavailable today (credits used up or key refused), so sizes are not checked.")
     with client(transport, timeout=60.0) as c:
         r = c.post(TAVILY_URL, headers={"Authorization": f"Bearer {key}"},
                    json={"query": query, "include_answer": "basic", "max_results": 3, "topic": "general"})
-    body = get_json(r, "Tavily")
+    try:
+        body = get_json(r, "Tavily")
+    except SourceError as e:
+        web_search.tavily_failed(e)
+        raise
     return body.get("answer") or "", next((x.get("url") for x in body.get("results") or []), None)
 
 
@@ -157,6 +167,21 @@ async def refresh_due(db: AsyncSession, limit: int = 10, transport=None) -> list
         await db.commit()
         done.append(name)
     return done
+
+
+def with_fincrux(sizes: dict[str, dict], symbols: dict[str, str | None], live: dict) -> dict[str, dict]:
+    """Sizes with Fincrux's market cap (the exchange figure) in place of a search answer's, for every listed
+    company Fincrux has been asked about. ``symbols``: size key -> NSE symbol."""
+    from services.market_data import _figure
+
+    fin = (live.get("market") or {}).get("fin") or {}
+    out = dict(sizes)
+    for key, sym in symbols.items():
+        cap = _figure(((fin.get((sym or "").upper()) or {}).get("top") or {}).get("Market Cap")) if sym else None
+        if cap:
+            out[key] = {**out.get(key, {}), "market_cap": {"cr": cap, "text": f"Market cap ₹{cap:,.0f} crore (Fincrux, exchange data)",
+                                                           "url": None, "source": "Fincrux"}}
+    return out
 
 
 async def load_all(db: AsyncSession) -> dict[str, dict]:

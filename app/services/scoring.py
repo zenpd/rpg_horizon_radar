@@ -30,6 +30,7 @@ BASE_WEIGHTS: dict[str, int] = {
     "share_price_slump": 15,   # Alpha Vantage: -20% over 30 trading days
     "deal_activity": 15,       # NSE/news: acquisition, merger, divestment
     "fund_raise": 10,          # NSE: allotment, QIP, NCDs, rights issue
+    "balance_sheet_stress": 25,  # Fincrux: Altman Z below 1.81, debt over 2x equity, or interest cover under 1.5x
 }
 
 # Co-occurrence multiplier keyed by count of DISTINCT signal types present.

@@ -17,7 +17,7 @@ from agents.llm_azure import AZURE, AzureError
 from api.auth import get_current_reviewer
 from api.dependencies import get_db
 from db.base import get_db_session
-from db.models import OpportunityFinding, Reviewer
+from db.models import ChatMessage, ChatThread, OpportunityFinding, Reviewer
 from ingestion.connectors.live import live_connectors
 from services import jobs as repo_jobs
 from services import pipeline, scheduler, swot_settings
@@ -321,11 +321,15 @@ async def signals(company: str = Scope, status: Literal["open", "shortlisted", "
     check_scope(company)
     mine = [c for c in STORE.cases.values() if views.in_scope(c, company)
             and (views.acquirable(c, company)["signal"] if company != "All" else views.signal_for(c))]
+    from services import market_data
+
+    live = await state_store.load(db, "live")
     out = []
     for c in sorted((c for c in mine if c["status"] == status), key=lambda c: -(c["score"] or 0)):
         co = company if company != "All" else views.signal_for(c)
         t = await acquisition_thesis.load(db, c["id"], co)
-        out.append({**views.summary(c), "thesis": {"headline": t["draft"]["headline"], "acquisition_type": t["draft"]["acquisition_type"], "at": t["at"]} if t else None})
+        out.append({**views.summary(c), "finance": market_data.brief(views.listing(c), live),
+                    "thesis": {"headline": t["draft"]["headline"], "acquisition_type": t["draft"]["acquisition_type"], "at": t["at"]} if t else None})
     return {"company": company, "status": status, "signals": out,
             "counts": {st: sum(1 for c in mine if c["status"] == st) for st in ("open", "shortlisted", "dismissed")}}
 
@@ -359,7 +363,12 @@ async def thesis(case_id: str, company: str | None = None, db: AsyncSession = De
     """The signal with its acquisition thesis for one RPG company (None until it has been written)."""
     c = get_case(case_id)
     co = _thesis_company(c, company)
-    return {"company": co, "signal": views.case_detail(c), "thesis": await acquisition_thesis.load(db, case_id, co),
+    from services import market_data
+    from services.company_research import PROFILES
+
+    live = await state_store.load(db, "live")
+    financials = {"target": market_data.company(views.listing(c), live), "acquirer": market_data.company(PROFILES[bridge.CO_TO_CODE[co]][2], live)}
+    return {"company": co, "signal": views.case_detail(c), "thesis": await acquisition_thesis.load(db, case_id, co), "financials": financials,
             "failed": acquisition_thesis.FAILED.get(acquisition_thesis.key(case_id, bridge.CO_TO_CODE[co]))}
 
 
@@ -397,10 +406,67 @@ def competitors(company: str = Query(...)):
     return {"company": check_company(company), "rivals": views.roster(company)}
 
 
+@router.post("/scout", status_code=202, tags=["signals"])
+async def scout(response: Response, company: str = Query(...), reviewer: Reviewer = Depends(get_current_reviewer)):
+    """Have the Sector Scout read the company's industry news now and add the companies in it it could buy. Poll the job."""
+    from agents import sector_scout
+
+    co = check_company(company)
+
+    async def work():
+        async with get_db_session() as db:
+            res = await sector_scout.scan(db, reviewer, codes=[bridge.CO_TO_CODE[co]])
+        await bridge.sync()
+        await repo_jobs.start("theses", scheduler.write_agents_due, started_by=reviewer.name)  # the new signals' theses
+        return res
+    job = await repo_jobs.start(f"scout-{bridge.CO_TO_CODE[co]}", work, started_by=reviewer.name)
+    response.headers["Location"] = f"/api/v1/radar/scout-jobs/{job['id']}"
+    return {"id": job["id"], "status": job["status"], "error": job.get("error"), "result": job.get("result")}
+
+
+@router.get("/scout-jobs/{job_id}", tags=["signals"])
+async def scout_job(job_id: str):
+    job = await repo_jobs.get(job_id)
+    if not job or not job["kind"].startswith("scout-"):
+        raise HTTPException(404, f"No sector scout job with id '{job_id}'.")
+    return {"id": job["id"], "status": job["status"], "error": job.get("error"), "result": job.get("result")}
+
+
+@router.get("/candidates", tags=["signals"])
+def candidates(company: str = Query(...)):
+    """Targets the company could buy that have no public signals yet (radar/views.candidates)."""
+    return {"company": check_company(company), "candidates": views.candidates(company)}
+
+
+@router.post("/candidates/discover", status_code=202, tags=["signals"])
+async def discover_candidates(response: Response, company: str = Query(...), reviewer: Reviewer = Depends(get_current_reviewer)):
+    """Run Target Discovery for one RPG company now (sized as found; ones too big are set aside). Poll the job."""
+    from agents import target_discovery
+
+    co = check_company(company)
+
+    async def work():
+        async with get_db_session() as db:
+            res = await target_discovery.discover(db, reviewer, codes=[bridge.CO_TO_CODE[co]])
+        await bridge.sync()
+        return res
+    job = await repo_jobs.start(f"targets-{bridge.CO_TO_CODE[co]}", work, started_by=reviewer.name)
+    response.headers["Location"] = f"/api/v1/radar/target-jobs/{job['id']}"
+    return {"id": job["id"], "status": job["status"], "error": job.get("error"), "result": job.get("result")}
+
+
+@router.get("/target-jobs/{job_id}", tags=["signals"])
+async def target_job(job_id: str):
+    job = await repo_jobs.get(job_id)
+    if not job or not job["kind"].startswith("targets-"):
+        raise HTTPException(404, f"No target discovery job with id '{job_id}'.")
+    return {"id": job["id"], "status": job["status"], "error": job.get("error"), "result": job.get("result")}
+
+
 # ---------- competitor overview (agents/competitor_profile.py) ----------
 MOVE_GROUPS = [("Deals and ownership", {"Deal", "Fund raise", "Shareholding", "Pledge"}),
                ("Patents", {"Patents"}), ("Hiring and leadership", {"Hiring", "Leadership"}),
-               ("Results and filings", {"Earnings", "Filing delay", "Auditor change", "Rating", "Share price", "Legal"})]
+               ("Results and filings", {"Earnings", "Balance sheet", "Filing delay", "Auditor change", "Rating", "Share price", "Legal"})]
 
 
 def _company_row(entity_id: int, co: str) -> dict:
@@ -501,6 +567,97 @@ def deals(company: str = Scope):
 class AskIn(BaseModel):
     company: str
     question: str = Field(min_length=1, max_length=500)
+
+
+# ---------- Ask Radar conversations (agents/ask_agent.py), private to their user ----------
+class ChatIn(BaseModel):
+    company: str = "All"
+
+
+class ChatMessageIn(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)
+    company: str = "All"
+
+
+def _thread(t: ChatThread) -> dict:
+    return {"id": t.id, "title": t.title, "company": t.company, "created_at": t.created_at.isoformat(timespec="seconds"),
+            "updated_at": t.updated_at.isoformat(timespec="seconds")}
+
+
+def _message(m: ChatMessage) -> dict:
+    return {"id": m.id, "role": m.role, "content": m.content, "company": m.company, "sources": m.sources, "used_web": m.used_web,
+            "model": m.model, "created_at": m.created_at.isoformat(timespec="seconds")}
+
+
+async def _own_thread(db: AsyncSession, thread_id: int, reviewer: Reviewer) -> ChatThread:
+    t = await db.get(ChatThread, thread_id)
+    if t is None or t.reviewer_id != reviewer.id:  # another user's conversation does not exist for you
+        raise HTTPException(404, "No such conversation.")
+    return t
+
+
+@router.get("/chats", tags=["ask"])
+async def chats(db: AsyncSession = Depends(get_db), reviewer: Reviewer = Depends(get_current_reviewer)):
+    """Your conversations, newest first. Only yours."""
+    rows = (await db.execute(select(ChatThread).where(ChatThread.reviewer_id == reviewer.id)
+                             .order_by(ChatThread.updated_at.desc()))).scalars().all()
+    return [_thread(t) for t in rows]
+
+
+@router.post("/chats", status_code=201, tags=["ask"])
+async def chat_create(body: ChatIn, db: AsyncSession = Depends(get_db), reviewer: Reviewer = Depends(get_current_reviewer)):
+    now = datetime.utcnow()
+    t = ChatThread(reviewer_id=reviewer.id, title="New conversation", company=check_scope(body.company), created_at=now, updated_at=now)
+    db.add(t)
+    await db.commit()
+    return _thread(t)
+
+
+@router.get("/chats/{thread_id}", tags=["ask"])
+async def chat_get(thread_id: int, db: AsyncSession = Depends(get_db), reviewer: Reviewer = Depends(get_current_reviewer)):
+    t = await _own_thread(db, thread_id, reviewer)
+    msgs = (await db.execute(select(ChatMessage).where(ChatMessage.thread_id == t.id).order_by(ChatMessage.id))).scalars().all()
+    return {**_thread(t), "messages": [_message(m) for m in msgs]}
+
+
+@router.delete("/chats/{thread_id}", status_code=204, tags=["ask"])
+async def chat_delete(thread_id: int, db: AsyncSession = Depends(get_db), reviewer: Reviewer = Depends(get_current_reviewer)):
+    t = await _own_thread(db, thread_id, reviewer)
+    for m in (await db.execute(select(ChatMessage).where(ChatMessage.thread_id == t.id))).scalars().all():
+        await db.delete(m)
+    await db.delete(t)
+    await db.commit()
+    return Response(status_code=204)
+
+
+@router.post("/chats/{thread_id}/messages", tags=["ask"])
+async def chat_send(thread_id: int, body: ChatMessageIn, db: AsyncSession = Depends(get_db),
+                    reviewer: Reviewer = Depends(get_current_reviewer)):
+    """Ask in a conversation: the question is saved, the Ask Radar agent answers from the radar's data
+    (and the web when that is not enough), and the answer is saved with the sources it cites."""
+    from agents import ask_agent
+
+    t = await _own_thread(db, thread_id, reviewer)
+    co = check_scope(body.company)
+    history = [{"role": m.role, "content": m.content} for m in
+               (await db.execute(select(ChatMessage).where(ChatMessage.thread_id == t.id).order_by(ChatMessage.id))).scalars().all()]
+    now = datetime.utcnow()
+    q = ChatMessage(thread_id=t.id, role="user", content=body.text.strip(), company=co, created_at=now)
+    db.add(q)
+    if not history:
+        t.title = body.text.strip()[:80]
+    t.updated_at, t.company = now, co
+    await db.commit()
+    try:
+        res = await ask_agent.answer(db, body.text.strip(), history, co if co != "All" else "")
+    except ask_agent.AskError as e:
+        res = {"content": f"I could not answer just now: {e}", "sources": [], "used_web": False, "model": "", "errors": [str(e)]}
+    a = ChatMessage(thread_id=t.id, role="assistant", content=res["content"], company=co, sources=res["sources"],
+                    used_web=res["used_web"], model=res["model"], created_at=datetime.utcnow())
+    db.add(a)
+    t.updated_at = a.created_at
+    await db.commit()
+    return {"thread": _thread(t), "question": _message(q), "answer": _message(a), "errors": res.get("errors") or []}
 
 
 @router.get("/ask", tags=["explore"])

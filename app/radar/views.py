@@ -59,6 +59,11 @@ def listing(c: dict) -> str | None:
     return next((w["nse_symbol"] for ws in (STORE.live_meta.get("watch") or {}).values() for w in ws if w["id"] == c["entity_id"]), None)
 
 
+def found_via(c: dict) -> str | None:
+    """How the company came to be watched, when it was not by hand: "sector news" for the Sector Scout."""
+    return next((w.get("found_via") for ws in (STORE.live_meta.get("watch") or {}).values() for w in ws if w["id"] == c["entity_id"]), None)
+
+
 def summary(c: dict) -> dict:
     """An M&A signal card: the definite facts only."""
     rec = STORE.rec_for_case(c["id"])
@@ -70,7 +75,7 @@ def summary(c: dict) -> dict:
             # each tag's latest signal, so the card can link a tag to the article or filing behind it
             "chip_links": {lab: next(_signal(s) for s in c["signals"] if s["label"] == lab)
                            for lab in dict.fromkeys(s["label"] for s in c["signals"])},
-            "listing": listing(c), "recommended": {"type": rec["type"], "title": rec["title"], "co": rec["co"]} if rec else None}
+            "listing": listing(c), "found_via": found_via(c), "recommended": {"type": rec["type"], "title": rec["title"], "co": rec["co"]} if rec else None}
 
 
 def quick_look(c: dict) -> dict:
@@ -206,6 +211,27 @@ def roster(co: str) -> list[dict]:
                     "why": w["why"], "sources": w["sources"], "case_id": f"r{w['id']}" if f"r{w['id']}" in STORE.cases else None,
                     "timeline": [_signal(s) for s in r["signals"][:10]] if r else []})
     out.sort(key=lambda x: (x["status"] != "watching", -x["signals"], x["name"]))
+    return out
+
+
+def candidates(co: str) -> list[dict]:
+    """Targets ``co`` could buy (at most half its size, or not sized yet) that have no public signals yet, so
+    they are not M&A signals: found by target discovery, waiting for news, filings or results."""
+    from services import company_size
+
+    from .bridge import CO_TO_CODE
+    signalled = {c["entity_id"] for c in STORE.cases.values() if c["signals"]}
+    out = []
+    for w in (STORE.live_meta.get("watch") or {}).get(co, []):
+        if w["status"] != "watching" or w.get("role") != "target" or w["id"] in signalled:
+            continue
+        size = company_size.fit(STORE.sizes.get(company_size.entity_key(w["id"])), STORE.sizes.get(company_size.rpg_key(CO_TO_CODE[co])))
+        if size["ok"] is False:
+            continue
+        out.append({"entity_id": w["id"], "name": w["name"], "size": size, "nse_symbol": w.get("nse_symbol"),
+                    "why": w["why"], "sources": w["sources"], "found_at": (w.get("found_at") or "")[:10] or None,
+                    "employees": w.get("employees"), "clients": w.get("clients"), "headquarters": w.get("headquarters")})
+    out.sort(key=lambda x: (x["size"]["ok"] is not True, x["name"]))
     return out
 
 

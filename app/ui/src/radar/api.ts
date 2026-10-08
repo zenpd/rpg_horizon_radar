@@ -125,7 +125,20 @@ export interface ThesisDoc {
     open_questions: string[];
   };
 }
-export interface SignalCard extends CaseSummary { thesis: { headline: string; acquisition_type: string; at: string } | null }
+export interface SignalCard extends CaseSummary {
+  found_via?: string | null;
+  thesis: { headline: string; acquisition_type: string; at: string } | null;
+  finance?: { listed: boolean; pending?: boolean; zone?: "safe" | "grey" | "distress" | null; stress?: string[]; label: string };
+}
+/** One company's figures in a thesis (services/market_data.company). */
+export interface CompanyFinancials extends Partial<MarketRow> {
+  listed: boolean; symbol?: string; pending?: boolean;
+  expected?: { quarters: number; from: string | null; to: string | null; sales: number | null; profit: number | null; opm: number | null } | null;
+}
+export interface ThesisPage {
+  company: string; signal: CaseDetail; thesis: ThesisDoc | null; failed: { error: string; at: string } | null;
+  financials?: { target: CompanyFinancials; acquirer: CompanyFinancials };
+}
 export interface SignalList { company: string; status: SignalStatus; signals: SignalCard[]; counts: Record<SignalStatus, number> }
 
 /** How the rule-based opportunity score is built (services/scoring.py). */
@@ -162,14 +175,40 @@ export interface Overview {
 export interface MarketRow {
   name: string; own: boolean; role: string; nse_symbol: string | null; entity_id: number | null; market_cap: number | null;
   has_results?: boolean; has_prices?: boolean; quarter?: string | null; ttm_sales?: number | null; ttm_profit?: number | null;
-  sales_yoy?: number | null; profit_yoy?: number | null; opm?: number | null; opm_series?: number[]; quarters?: string[];
+  sales_yoy?: number | null; profit_yoy?: number | null; opm?: number | null; opm_series?: (number | null)[]; sales_series?: (number | null)[]; profit_series?: (number | null)[]; quarters?: string[];
   promoters?: number | null; fiis?: number | null; close?: number; close_date?: string; chg_30?: number | null; chg_period?: number | null;
   prices?: [string, number][];
+  debt_to_equity?: number | null; interest_cover?: number | null; roce?: number | null; sales_cagr_3y?: number | null;
+  health?: Health;
+}
+/** Balance-sheet health and market multiples from Fincrux's annual tables (services/market_data.health). */
+export interface Health {
+  year?: string; debt?: number | null; equity?: number | null; debt_to_equity?: number | null; interest_cover?: number | null;
+  cfo?: number | null; fcf?: number | null; roce?: number | null; sales_cagr_3y?: number | null; sales_cagr_5y?: number | null;
+  altman_z?: { z: number; zone: "safe" | "grey" | "distress"; year: string; parts: Record<string, number> };
+  market_cap?: number | null; pe?: number | null; pb?: number | null; ev?: number | null; ev_ebitda?: number | null; ev_sales?: number | null;
+  roe?: number | null; dividend_yield?: number | null;
 }
 export interface Market {
   company: string; listed: boolean; nse_symbol: string | null; own: MarketRow; peers: MarketRow[];
   standing: { measure: string; verdict: "ahead" | "behind" | "level" | "info"; text: string }[];
   pending: string[]; unlisted: string[]; budget: Record<string, { date: string; used: number }>;
+}
+
+/** What a Sector Scout run did (agents/sector_scout.py). */
+export interface ScoutResult { read: Record<string, number>; added: string[]; matched: string[]; too_big: string[]; not_sized?: string[]; signals: number; errors: string[] }
+
+/** M&A Signals → Candidates: a target the company could buy that has no public signals yet. */
+export interface Candidate {
+  entity_id: number; name: string; size: SizeFit; nse_symbol: string | null; why: string | null; sources: { title: string; url: string }[];
+  found_at: string | null; employees: string | null; clients: string | null; headquarters: string | null;
+}
+
+/** Ask Radar: a conversation and its turns, private to the user (agents/ask_agent.py). */
+export interface ChatThread { id: number; title: string; company: string; created_at: string; updated_at: string }
+export interface ChatSource { id: string; kind: "radar" | "web"; text: string; source: string; date: string | null; url: string | null }
+export interface ChatMessage {
+  id: number; role: "user" | "assistant"; content: string; company: string; sources: ChatSource[]; used_web: boolean; model: string; created_at: string;
 }
 
 export interface Deal extends Signal { company: string; type: string; case_id: string; for: string }
@@ -222,10 +261,15 @@ export const api = {
   caseDetail: (id: string) => call<CaseDetail>("GET", `/cases/${encodeURIComponent(id)}`),
   signals: (company: string, status: SignalStatus) => call<SignalList>("GET", "/signals" + q({ company, status })),
   setStatus: (id: string, status: SignalStatus) => call<CaseSummary>("POST", `/cases/${encodeURIComponent(id)}/status`, { status }),
-  thesis: (id: string, company?: string) => call<{ company: string; signal: CaseDetail; thesis: ThesisDoc | null; failed: { error: string; at: string } | null }>("GET", `/cases/${encodeURIComponent(id)}/thesis` + q({ company })),
+  thesis: (id: string, company?: string) => call<ThesisPage>("GET", `/cases/${encodeURIComponent(id)}/thesis` + q({ company })),
   writeThesis: (id: string, company?: string) => call<SignalJob>("POST", `/cases/${encodeURIComponent(id)}/thesis` + q({ company })),
   thesisJob: (id: string) => call<SignalJob>("GET", `/thesis-jobs/${id}`),
   competitors: (company: string) => call<{ company: string; rivals: Rival[] }>("GET", "/competitors" + q({ company })),
+  scout: (company: string) => call<SignalJob & { result: ScoutResult | null }>("POST", "/scout" + q({ company })),
+  scoutJob: (id: string) => call<SignalJob & { result: ScoutResult | null }>("GET", `/scout-jobs/${id}`),
+  candidates: (company: string) => call<{ company: string; candidates: Candidate[] }>("GET", "/candidates" + q({ company })),
+  discoverTargets: (company: string) => call<SignalJob>("POST", "/candidates/discover" + q({ company })),
+  targetJob: (id: string) => call<SignalJob>("GET", `/target-jobs/${id}`),
   overview: (id: number, company: string) => call<Overview>("GET", `/competitors/${id}/overview` + q({ company })),
   writeOverview: (id: number, company: string) => call<SignalJob>("POST", `/competitors/${id}/overview` + q({ company })),
   overviewJob: (id: string) => call<SignalJob>("GET", `/profile-jobs/${id}`),
@@ -233,8 +277,12 @@ export const api = {
   marketRefresh: (company: string) => call<SignalJob>("POST", "/market/refresh" + q({ company })),
   marketJob: (id: string) => call<SignalJob>("GET", `/market-jobs/${id}`),
   deals: (company: string) => call<{ deals: Deal[] }>("GET", "/deals" + q({ company })),
-  askStart: (company: string) => call<{ suggestions: string[] }>("GET", "/ask" + q({ company })),
-  ask: (company: string, question: string) => call<any>("POST", "/ask", { company, question }),
+  chats: () => call<ChatThread[]>("GET", "/chats"),
+  newChat: (company: string) => call<ChatThread>("POST", "/chats", { company }),
+  chat: (id: number) => call<ChatThread & { messages: ChatMessage[] }>("GET", `/chats/${id}`),
+  sendChat: (id: number, text: string, company: string) =>
+    call<{ thread: ChatThread; question: ChatMessage; answer: ChatMessage; errors: string[] }>("POST", `/chats/${id}/messages`, { text, company }),
+  deleteChat: (id: number) => call<void>("DELETE", `/chats/${id}`),
   theses: () => call<any[]>("GET", "/theses"),
   parseThesis: (text: string) => call<any>("POST", "/theses/parse", { text }),
   saveThesis: (desk: string, text: string, c: unknown) => call<any>("POST", "/theses", { desk, text, c }),

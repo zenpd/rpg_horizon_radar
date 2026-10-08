@@ -110,8 +110,8 @@ function LiveSources() {
       </p>
       <p className="sub" style={{ fontSize: 12.5, marginTop: 0 }}>
         {sch?.enabled
-          ? <>Kept current automatically: discovery runs every {sch.rivals_every_days} days (next {sch.next?.rivals}); live signals refresh daily at {sch.signals_at} (next {sch.next?.signals});
-              the Opportunity Analyst reads the news daily at {sch.opportunities_at} (next {sch.next?.opportunities}); the SWOT Analyst rebuilds every company's SWOT every {sch.swot_every_days} days (next {sch.next?.swot}).
+          ? <>Kept current automatically, once a day at {sch.signals_at} (next {sch.next?.signals}): the radar collects the news, then runs everything that searches from it and saves the results — the Opportunity Analyst, the Sector Scout, company sizes, and the theses and overviews the news changed.
+              Discovery runs with that daily run every {sch.rivals_every_days} days (next {sch.next?.rivals}), and the SWOT Analyst every {sch.swot_every_days} days (next {sch.next?.swot}). Restarting the app starts no searches.
               {sch.running ? ` Running now: ${sch.running}.` : ""}</>
           : "Automatic updates are off (SCHEDULER_ENABLED=false). Use the buttons below."}
         {sch?.last_error && <> Last error: {sch.last_error}</>}

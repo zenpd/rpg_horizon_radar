@@ -6,7 +6,7 @@ Thesis agent keeps on it (results, shareholding, web pages on six factors, news)
 - its SWOT, each item cited;
 - how it competes with the RPG company: where it is ahead, behind or head-to-head, linked to an item
   of the RPG company's current SWOT where one fits;
-- the threat it poses to the RPG company (high, medium, low) and why;
+- the competitive intensity with the RPG company (high, medium, low) and why;
 - what to watch next.
 
 The recent moves (patents, hiring, deals, results, news) and the financial snapshot are shown from
@@ -44,7 +44,7 @@ For one company the RPG company watches, you write an overview from numbered pub
 - summary: 2-3 sentences on what the company does and what it has been doing lately, from the evidence.
 - swot: its own strengths, weaknesses, opportunities and threats, 1-4 each, each citing the evidence it rests on.
 - versus: 2-6 points on how it competes with the RPG company: where it is ahead of it, behind it, or head-to-head. Name the item of the RPG company's SWOT the point relates to (swot_ref), or null. Cite the evidence about the company.
-- threat: how much of a threat it is to the RPG company (high, medium or low) and why, in one or two sentences. Judge from the overlap in products and markets and its recent moves; a company in a different business is low.
+- threat: the competitive intensity with the RPG company — how hard it competes with it (high, medium or low) — and why, in one or two sentences. Judge from the overlap in products and markets and its recent moves; a company in a different business is low.
 - watch: 1-4 short things the RPG company should watch for next (an expected result, a capacity start-up, a pending deal, a court case).
 Write short, plain sentences. Use only the evidence and SWOT given; no invented facts, numbers or names. Never write an id inside a text field."""
 
@@ -127,7 +127,7 @@ def check(draft: dict, ids: set[str]) -> list[str]:
         if not x["evidence"]:
             errs.append(f"Competition point {i} must cite the evidence about the company.")
     if not draft["threat"]["reason"].strip():
-        errs.append("Give the reason for the threat level.")
+        errs.append("Give the reason for the competitive intensity.")
     if not 1 <= len(draft["watch"]) <= 4:
         errs.append("List 1-4 things to watch.")
     texts = [draft["summary"], draft["threat"]["reason"], *draft["watch"], *(x["point"] for x in draft["versus"]),

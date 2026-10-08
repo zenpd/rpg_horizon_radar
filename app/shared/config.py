@@ -103,8 +103,10 @@ class Settings(BaseSettings):
     # described in its module docstring.
     live_connectors_enabled: bool = True
     gnews_api_key: str = ""
+    gdelt_enabled: bool = True            # GDELT news needs no key; one request every 5 seconds
     newsdata_api_key: str = ""
     tavily_api_key: str = ""
+    ddg_fallback: bool = True             # DuckDuckGo answers news and web searches when Tavily refuses (services/web_search.py)
     adzuna_app_id: str = ""
     adzuna_app_key: str = ""
     fetchlayer_api_key: str = ""          # Glassdoor employee ratings
@@ -145,7 +147,7 @@ class Settings(BaseSettings):
     ingest_daily_at: str = "17:00"        # local time
     discovery_every_days: int = 7
     swot_every_days: int = 7              # the SWOT Analyst re-analyses every subsidiary this often
-    opportunity_daily_at: str = "08:00"   # local time: the Opportunity Analyst reads the day's news
+    opportunity_daily_at: str = "08:00"   # no longer used: the Opportunity Analyst runs with the daily news run (INGEST_DAILY_AT)
 
     # ── Security validators ────────────────────────────────────────────────────
     @model_validator(mode="after")

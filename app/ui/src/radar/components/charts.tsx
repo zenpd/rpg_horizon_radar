@@ -136,3 +136,53 @@ export function ConnectionsGraph({ center, items }: { center: string; items: { n
     </div>
   );
 }
+
+/** One company's last year of quarterly results (Fincrux): sales and net profit as bars (₹ cr, left
+ *  axis), operating margin as a line (%, right axis). The last five quarters, so the latest quarter
+ *  and the same quarter a year earlier are both on the chart. */
+export function QuarterlyResults({ name, quarters, sales, profit, opm, own, n = 5 }: {
+  name: string; quarters: string[]; sales: (number | null)[]; profit: (number | null)[]; opm: (number | null)[]; own?: boolean; n?: number;
+}) {
+  const k = Math.min(n, quarters.length);
+  if (k < 2) return null;
+  const q = quarters.slice(-k), s = sales.slice(-k), p = profit.slice(-k), o = opm.slice(-k);
+  const W = 360, H = 210, L = 46, R = 318, T = 14, B = 172;
+  const vals = [...s, ...p].filter((v): v is number => v !== null);
+  const hi = Math.max(...vals, 0) * 1.1 || 1, lo = Math.min(...vals, 0) * 1.1;
+  const Y = (v: number) => B - ((B - T) * (v - lo)) / (hi - lo);
+  const ms = o.filter((v): v is number => v !== null);
+  const mhi = Math.max(...ms, 0) * 1.25 || 1, mlo = Math.min(...ms, 0) * 1.25;
+  const YM = (v: number) => B - ((B - T) * (v - mlo)) / (mhi - mlo);
+  const slot = (R - L) / k, bw = Math.min(22, slot * 0.32);
+  const X = (i: number) => L + slot * i + slot / 2;
+  const fmt = (v: number) => Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`;
+  const short = (x: string) => x.replace(/^([A-Za-z]{3})[a-z]* (\d{2})?(\d{2})$/, "$1 $3");
+  const ticks = [lo, (lo + hi) / 2, hi].filter((v, i, a) => a.indexOf(v) === i);
+  const line = o.map((v, i) => (v === null ? null : `${X(i)},${YM(v)}`)).filter(Boolean).join(" ");
+  const yoy = s[0] && s[k - 1] && k === 5 ? ((s[k - 1]! - s[0]!) / Math.abs(s[0]!)) * 100 : null;
+  return (
+    <div className={`qchart${own ? " own" : ""}`}>
+      <div className="qchart-h"><b>{name}</b>{yoy !== null && <span className={yoy >= 0 ? "up" : "down"}>sales {yoy >= 0 ? "+" : ""}{yoy.toFixed(0)}% on a year ago</span>}</div>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={`${name}: quarterly sales, net profit and operating margin, ${q[0]} to ${q[k - 1]}`}>
+        {ticks.map((t) => <g key={t}><line x1={L} x2={R} y1={Y(t)} y2={Y(t)} stroke="var(--rule)" /><text x={L - 5} y={Y(t) + 3.5} textAnchor="end" fontSize="9.5" fill="var(--faint)">{fmt(t)}</text></g>)}
+        {lo < 0 && <line x1={L} x2={R} y1={Y(0)} y2={Y(0)} stroke="var(--muted)" />}
+        {[mlo, mhi].map((t) => <text key={t} x={R + 5} y={YM(t) + 3.5} fontSize="9.5" fill="var(--high)">{t.toFixed(0)}%</text>)}
+        {q.map((label, i) => (
+          <g key={label}>
+            {s[i] !== null && <rect x={X(i) - bw - 1} y={Math.min(Y(s[i]!), Y(0))} width={bw} height={Math.abs(Y(s[i]!) - Y(0))} fill="var(--watch)" opacity="0.45" rx="2"><title>{`${label}: sales ₹${s[i]!.toLocaleString("en-IN")} cr`}</title></rect>}
+            {p[i] !== null && <rect x={X(i) + 1} y={Math.min(Y(p[i]!), Y(0))} width={bw} height={Math.max(1, Math.abs(Y(p[i]!) - Y(0)))} fill={p[i]! < 0 ? "var(--crit)" : "var(--opp)"} rx="2"><title>{`${label}: net profit ₹${p[i]!.toLocaleString("en-IN")} cr`}</title></rect>}
+            <text x={X(i)} y={B + 15} textAnchor="middle" fontSize="10" fill="var(--faint)">{short(label)}</text>
+          </g>
+        ))}
+        {line && <polyline points={line} fill="none" stroke="var(--high)" strokeWidth="2" />}
+        {o.map((v, i) => v === null ? null : <circle key={i} cx={X(i)} cy={YM(v)} r="3" fill="var(--high)"><title>{`${q[i]}: operating margin ${v}%`}</title></circle>)}
+        <text x={L} y={H - 4} fontSize="9.5" fill="var(--faint)">₹ cr</text>
+      </svg>
+      <div className="plegend" style={{ gap: "4px 12px", flexWrap: "wrap", fontSize: 11.5 }}>
+        <span><svg width="10" height="10" aria-hidden="true"><rect width="10" height="10" fill="var(--watch)" opacity="0.45" /></svg>Sales</span>
+        <span><svg width="10" height="10" aria-hidden="true"><rect width="10" height="10" fill="var(--opp)" /></svg>Net profit</span>
+        <span><svg width="16" height="10" aria-hidden="true"><line x1="0" x2="16" y1="5" y2="5" stroke="var(--high)" strokeWidth="2" /></svg>Operating margin</span>
+      </div>
+    </div>
+  );
+}
