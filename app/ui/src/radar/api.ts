@@ -62,6 +62,11 @@ export interface SwotSource { id: string; text: string; source: string; date: st
 export interface SwotItem { id: string; text: string; case_id?: string | null; reasoning: string | null; sources: SwotSource[] }
 export interface SwotMethod { built_by: "demo" | "agent"; summary: string; steps: string[]; model?: string; at?: string; rounds?: number; live_signals_available: number }
 export interface SwotView { company: string; S: SwotItem[]; W: SwotItem[]; O: SwotItem[]; T: SwotItem[]; moves: number; set_aside: number; source: { by: "mock" | "agent"; model?: string; at?: string }; method: SwotMethod }
+
+// The Executive Dashboard's data source — SWOT scoped to only the subsidiaries with a real
+// signal in one weekly digest (see app/radar/bridge.py:digest_swot_summary).
+export interface DigestSwotSubsidiary { co: string; code: string; signal_count: number; swot: SwotView }
+export interface DigestSwot { digest: { id: number; period_start: string; period_end: string } | null; subsidiaries: DigestSwotSubsidiary[] }
 export interface Position { id: string; q: "O" | "T"; text: string; case_id: string | null; impact: number; urgency: number; used: boolean; move: string | null }
 
 export interface Home {
@@ -178,6 +183,8 @@ export const api = {
   me: () => call<Me>("GET", "/me"),
   companies: () => call<{ name: string; rival: string; segment: string }[]>("GET", "/companies"),
   home: (company: string) => call<Home>("GET", "/home" + q({ company })),
+  digestSwot: (digestId?: number) =>
+    call<DigestSwot>("GET", "/digest-swot" + (digestId !== undefined ? q({ digest_id: String(digestId) }) : "")),
   rebuildSwot: (company: string) => call<SwotJob>("POST", `/swot/${encodeURIComponent(company)}/rebuild`),
   swotJob: (id: string) => call<SwotJob>("GET", `/swot-jobs/${id}`),
   signalsStatus: () => call<SignalsStatus>("GET", "/signals/status"),

@@ -6,6 +6,8 @@ import { AdminRoute, ProtectedRoute } from "./components/ProtectedRoute";
 import RadarApp from "./radar/RadarApp";
 
 import Login from "./pages/Login";
+import ExecutiveDashboard from "./pages/ExecutiveDashboard";
+import AnalysisWorkspace from "./pages/AnalysisWorkspace";
 import Dashboard from "./pages/Dashboard";
 import SignalDetail from "./pages/SignalDetail";
 import DigestArchive, { DigestDetail } from "./pages/DigestArchive";
@@ -28,6 +30,8 @@ export default function App() {
           }
         >
           <Route index element={null} />
+          <Route path="dashboard" element={<ExecutiveDashboard />} />
+          <Route path="analyze/:company" element={<AnalysisWorkspace />} />
           <Route path="board" element={<Dashboard />} />
           <Route path="signals/:id" element={<SignalDetail />} />
           <Route path="digests" element={<DigestArchive />} />

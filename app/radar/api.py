@@ -85,6 +85,16 @@ def home(company: str = Scope):
     return views.home(check_scope(company))
 
 
+@router.get("/digest-swot", tags=["swot"])
+async def digest_swot(digest_id: int | None = None):
+    """The Executive Dashboard's data source: per-subsidiary SWOT, scoped to
+    only the subsidiaries with a real signal in one weekly digest (defaults
+    to the latest). Returns {"digest": null, "subsidiaries": []} if no
+    digest exists yet anywhere — an honest empty state, not an error."""
+    out = await bridge.digest_swot_summary(digest_id)
+    return out or {"digest": None, "subsidiaries": []}
+
+
 @router.post("/swot/{company}/rebuild", status_code=202, tags=["swot"])
 async def rebuild_swot(company: str, response: Response, admin: Reviewer = Depends(admin_only)):
     """Start the SWOT Analyst agent for one company. Poll the returned job; on success /home shows the new SWOT."""

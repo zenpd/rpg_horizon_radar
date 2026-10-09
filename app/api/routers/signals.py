@@ -8,7 +8,7 @@ from api.auth import get_current_reviewer, require_role
 from api.dependencies import get_db
 from api.schemas.escalation_brief import EscalationBriefOut
 from api.schemas.signal import RawSignalOut, SignalClusterDetail, SignalClusterSummary
-from db.models import EscalationBrief, RawSignal, Reviewer, SignalCluster, Subsidiary
+from db.models import EscalationBrief, RawSignal, Reviewer, SignalCluster, Subsidiary, SubsidiaryDependency
 from services import visibility
 from services.audit import write_audit
 from services.escalation_brief import generate_escalation_brief
@@ -59,6 +59,7 @@ def _brief_out(brief: EscalationBrief) -> EscalationBriefOut:
         directional_considerations=brief.directional_considerations,
         deal_complexity=brief.deal_complexity,
         disclaimer=brief.disclaimer,
+        ripple_effects=brief.ripple_effects,
     )
 
 
@@ -158,9 +159,21 @@ async def mark_under_evaluation(
         routed_subsidiaries = [
             sub_map[link.subsidiary_code] for link in cluster.subsidiary_links if link.subsidiary_code in sub_map
         ]
+        dependency_rows_by_subsidiary: dict[str, list[SubsidiaryDependency]] = {}
+        if routed_subsidiaries:
+            dep_rows = (
+                await db.execute(
+                    select(SubsidiaryDependency).where(
+                        SubsidiaryDependency.subsidiary_code.in_([s.code for s in routed_subsidiaries])
+                    )
+                )
+            ).scalars().all()
+            for row in dep_rows:
+                dependency_rows_by_subsidiary.setdefault(row.subsidiary_code, []).append(row)
         db.add(
             generate_escalation_brief(
-                cluster, cluster.opportunity_score, cluster.entity, routed_subsidiaries, admin
+                cluster, cluster.opportunity_score, cluster.entity, routed_subsidiaries, admin,
+                dependency_rows_by_subsidiary,
             )
         )
 

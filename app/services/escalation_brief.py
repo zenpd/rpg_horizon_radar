@@ -7,12 +7,15 @@ never calls an external LLM. That is a deliberate boundary, not an
 implementation shortcut — public-signal data (even the quarterly figures the
 Fincrux connector reads) is no basis for a valuation, and fabricating numbers
 here would be actively misleading to whoever reads it. Pure function — no DB
-I/O, so it needs no async variant."""
+I/O, so it needs no async variant. The ripple-effect field is built the same
+way, via services/ripple.py — template-matched against hand-curated
+SubsidiaryDependency rows, never an LLM guess."""
 from __future__ import annotations
 
 from datetime import datetime
 
-from db.models import Entity, EscalationBrief, OpportunityScore, Reviewer, SignalCluster, Subsidiary
+from db.models import Entity, EscalationBrief, OpportunityScore, Reviewer, SignalCluster, Subsidiary, SubsidiaryDependency
+from services.ripple import compute_ripple_effects_for_subsidiaries
 
 DISCLAIMER = (
     "Generated from public-signal pattern-matching only. Contains no financial "
@@ -115,6 +118,7 @@ def generate_escalation_brief(
     entity: Entity,
     routed_subsidiaries: list[Subsidiary],
     escalated_by: Reviewer,
+    dependency_rows_by_subsidiary: dict[str, list[SubsidiaryDependency]] | None = None,
 ) -> EscalationBrief:
     distinct_types = set(score_row.signal_types_json or [])
     complexity = _deal_complexity(entity, len(distinct_types))
@@ -130,4 +134,7 @@ def generate_escalation_brief(
         ),
         deal_complexity=complexity,
         disclaimer=DISCLAIMER,
+        ripple_effects=compute_ripple_effects_for_subsidiaries(
+            dependency_rows_by_subsidiary or {}, routed_subsidiaries, entity
+        ),
     )

@@ -20,7 +20,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       await login(email, password);
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       const message =
         axios.isAxiosError(err) && err.response?.status === 401

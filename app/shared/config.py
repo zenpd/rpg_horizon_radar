@@ -137,6 +137,7 @@ class Settings(BaseSettings):
     scheduler_enabled: bool = True
     ingest_daily_at: str = "17:00"        # local time
     discovery_every_days: int = 7
+    digest_every_days: int = 7            # services/digest.py — weekly M&A-signal digest
     auto_swot: bool = True                # rebuild a subsidiary's SWOT after its signals change
 
     # ── Security validators ────────────────────────────────────────────────────

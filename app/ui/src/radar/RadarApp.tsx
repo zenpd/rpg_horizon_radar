@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import {
-  Archive, BellRing, BookOpen, Briefcase, ClipboardCheck, Eye, LayoutGrid, LineChart, LogOut,
-  MessageCircleQuestion, Radar, ShieldCheck, Target, Users, type LucideIcon,
-} from "lucide-react";
+import { LayoutGrid, LogOut, Radar, ShieldCheck, type LucideIcon } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { PageMetaProvider, usePageMetaContext } from "../context/PageMetaContext";
@@ -17,16 +14,19 @@ import { Theses, Watched, WatchRules } from "./pages/Settings";
 import { COMPANIES, Ctx, type AppState, type View } from "./state";
 import "./styles.css";
 
-const NAV: [string, [View, string, LucideIcon][]][] = [
-  ["Radar", [["home", "This week", LayoutGrid], ["book", "Deep-dive book", BookOpen], ["follow", "Follow-up", ClipboardCheck]]],
-  ["Explore", [["comp", "Competitors", Users], ["fin", "Market performance", LineChart], ["deals", "Rival deals", Briefcase], ["ask", "Ask Radar", MessageCircleQuestion]]],
-  ["Radar settings", [["thesis", "Acquisition theses", Target], ["trig", "Watch rules", BellRing], ["admin", "Watched companies", Eye]]],
+// Nav deliberately collapsed to two destinations: the Executive Dashboard
+// (the digest/SWOT/ripple story) and Admin (org-wide compliance config, not
+// subsidiary analysis). Every other screen — This week, Deep-dive book,
+// Follow-up, Competitors, Market, Rival deals, Ask Radar, Signal board,
+// Acquisition theses, Watch rules, Watched companies, Digest archive — is
+// still fully functional, just no longer a standing nav item: they're
+// reachable only via a subsidiary's "Deep dive to analyze" button on the
+// dashboard, which lands on /analyze/:company (AnalysisWorkspace.tsx).
+const TOP_LEVEL: [string, string, LucideIcon][] = [
+  ["/dashboard", "Executive Dashboard", LayoutGrid],
 ];
 
-// The repo's restricted M&A screens (Tailwind, rendered inside a .tw wrapper).
 const DESK: [string, string, boolean, LucideIcon][] = [
-  ["/board", "Signal board", false, Radar],
-  ["/digests", "Digest archive", false, Archive],
   ["/admin", "Admin", true, ShieldCheck],
 ];
 
@@ -74,7 +74,7 @@ export default function RadarApp() {
   const companies = me?.companies ?? [];
   const groupView = !!me?.group_view;
 
-  useEffect(() => { document.body.classList.toggle("guide-on", guideOn && !onDesk); }, [guideOn, onDesk]);
+  useEffect(() => { document.body.classList.toggle("guide-on", guideOn); }, [guideOn, onDesk]);
 
   const toast = useCallback((m: string) => {
     setToastMsg(m); window.clearTimeout(toastTimer.current);
@@ -141,17 +141,17 @@ export default function RadarApp() {
   else if (counts.book) g = { n: 5, title: "That's the full story", text: "From each company's SWOT to a shortlist, a book of decisions and follow-up. Restart to try it with other companies." };
   else g = { n: 1, title: "Start with the SWOT", text: "Each RPG company's SWOT is rebuilt from the signals. Only moves that link a strength or weakness to an opportunity or threat are recommended. Hover a move to see its SWOT items, then tick Shortlist on 2 or 3.", go: view !== "home" ? ["Go to This week", () => go("home")] : undefined };
 
+  const deskTip: { title: string; text: string } | null = location.pathname.startsWith("/dashboard")
+    ? { title: "This week, by subsidiary", text: "Pick a week above. Each card is a subsidiary that actually had an M&A-potential signal that week — not every subsidiary, every week. Click \"Deep dive to analyze\" to see everything on it." }
+    : location.pathname.startsWith("/analyze/")
+    ? { title: "Everything on this subsidiary", text: "Switch tabs above — SWOT, the deep-dive dossier, follow-up, research tools, Signal board and Ripple effect — all scoped to this one subsidiary." }
+    : null;
+
   const restart = async () => {
     try { await api.reset(); } catch (e) { toast((e as Error).message); return; }
     setShortlist([]); setJobId(null); setBookPage(0); setFollowSel(null); setScope(companies[0] || "CEAT"); go("home"); bump();
     toast("Demo reset to the start of the week.");
   };
-
-  const navCount: Partial<Record<View, number>> = { home: counts.home, book: counts.book, follow: counts.follow };
-  const NAV_COUNT_TITLE: Partial<Record<View, string>> = {
-    home: `${counts.home} recommended moves not yet escalated`, book: `${counts.book} pages in the book`, follow: `${counts.follow} follow-ups open`,
-  };
-  const active = onDesk ? null : view === "deep" ? "book" : view;
 
   return (
     <Ctx.Provider value={state}>
@@ -163,28 +163,33 @@ export default function RadarApp() {
               Horizon Radar
             </div>
             <nav className="side-nav" aria-label="Screens">
-              {NAV.map(([grp, items], gi) => (
-                <div key={grp} style={{ display: "contents" }}>
-                  {gi > 0 && <div className="navgrp">{grp}</div>}
-                  {items.map(([k, l, Icon]) => (
-                    <button key={k} className="navbtn" aria-current={k === active ? "page" : undefined} onClick={() => go(k)}>
-                      <Icon size={18} aria-hidden="true" />
-                      <span>{l}</span>
-                      {!!navCount[k] && <em title={NAV_COUNT_TITLE[k]}>{navCount[k]}</em>}
-                    </button>
-                  ))}
-                </div>
+              {TOP_LEVEL.map(([path, label, Icon]) => (
+                <button key={path} className="navbtn" aria-current={location.pathname.startsWith(path) ? "page" : undefined}
+                  onClick={() => navigate(path)}>
+                  <Icon size={18} aria-hidden="true" />
+                  <span>{label}</span>
+                </button>
               ))}
               <div className="navgrp">Restricted desk</div>
               {DESK.filter(([, , adminOnly]) => isAdmin || !adminOnly).map(([path, label, , Icon]) => (
-                <button key={path} className="navbtn" aria-current={location.pathname.startsWith(path) || (path === "/board" && location.pathname.startsWith("/signals")) ? "page" : undefined}
+                <button key={path} className="navbtn" aria-current={location.pathname.startsWith(path) ? "page" : undefined}
                   onClick={() => navigate(path)}>
                   <Icon size={18} aria-hidden="true" />
                   <span>{label}</span>
                 </button>
               ))}
             </nav>
-            {guideOn && !onDesk && me && (
+            {guideOn && me && (onDesk ? (
+              deskTip && (
+                <div className="guide" role="region" aria-label="Guided demo">
+                  <small>Guided demo</small>
+                  <b>{deskTip.title}</b><p>{deskTip.text}</p>
+                  <div className="gb">
+                    <button onClick={() => setGuideOn(false)}>Hide guide</button>
+                  </div>
+                </div>
+              )
+            ) : (
               <div className="guide" role="region" aria-label="Guided demo">
                 <small>Guided demo · step {g.n} of 5</small>
                 <div className="gdots">{[1, 2, 3, 4, 5].map((i) => <i key={i} className={i <= g.n ? "on" : ""} />)}</div>
@@ -195,7 +200,7 @@ export default function RadarApp() {
                   <button onClick={() => setGuideOn(false)}>Hide guide</button>
                 </div>
               </div>
-            )}
+            ))}
             <div className="side-foot">Powered by ZenLabs Agent Foundry</div>
           </aside>
           <div className="main-col">
@@ -215,7 +220,7 @@ export default function RadarApp() {
                   </div>
                 )}
                 <span className="hd-pill" title="Signals of approved real companies are live. Rival placeholders, deal targets and decisions are demo data.">Live and demo data</span>
-                {!onDesk && <button type="button" className="btnx" aria-pressed={guideOn} onClick={() => setGuideOn(!guideOn)}>Guided demo</button>}
+                <button type="button" className="btnx" aria-pressed={guideOn} onClick={() => setGuideOn(!guideOn)}>Guided demo</button>
                 <div className="userchip">
                   <b>{who}</b>
                   <span>{isAdmin ? "Compliance admin" : "Strategy reviewer"}</span>

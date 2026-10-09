@@ -22,10 +22,11 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, select
 
 from db.base import get_db_session
-from db.models import Entity, OpportunityScore, RawSignal, SignalCluster, Subsidiary, SwotBrief
+from db.models import DigestIssue, DigestItem, Entity, OpportunityScore, RawSignal, SignalCluster, Subsidiary, SwotBrief
 from services import routing
 from shared.logger import get_logger
 
+from . import views
 from .store import COMPANIES_ORDER, STORE
 
 log = get_logger("radar.bridge")
@@ -109,6 +110,48 @@ async def sync(force: bool = True) -> None:
         STORE.live_meta.update(watch=watch, primary=primary, gates={CODE_TO_CO[s.code]: s.compliance_gate for s in subs if s.code in CODE_TO_CO},
                                synced_at=datetime.now().isoformat(timespec="seconds"))
         _last_sync = time.monotonic()
+
+
+async def digest_swot_summary(digest_id: int | None = None) -> dict | None:
+    """Per-subsidiary SWOT, scoped to only the subsidiaries that actually had
+    an M&A-potential signal strong enough to reach one weekly digest — the
+    Executive Dashboard's data source. Defaults to the most recent digest
+    when no id is given. Returns None if no digest exists at all (a fresh
+    install before the scheduler or a manual trigger has ever run).
+
+    No new filtering logic needed: generate_digest() (services/digest.py)
+    already only writes a DigestItem for a subsidiary when it has a live
+    cluster scoring at or above DIGEST_THRESHOLD, so "has a DigestItem in
+    this digest" already means "had a real, digest-worthy signal this week" —
+    some weeks some subsidiaries will have none, which is the point."""
+    async with get_db_session() as db:
+        if digest_id is not None:
+            digest = (await db.execute(select(DigestIssue).where(DigestIssue.id == digest_id))).scalar_one_or_none()
+        else:
+            digest = (await db.execute(select(DigestIssue).order_by(DigestIssue.created_at.desc()).limit(1))).scalar_one_or_none()
+        if digest is None:
+            return None
+        items = (await db.execute(select(DigestItem).where(DigestItem.digest_id == digest.id))).scalars().all()
+
+    counts: dict[str, int] = {}
+    for item in items:
+        counts[item.subsidiary_code] = counts.get(item.subsidiary_code, 0) + 1
+
+    subsidiaries = []
+    for code, count in counts.items():
+        co = CODE_TO_CO.get(code)
+        if co:
+            subsidiaries.append({"co": co, "code": code, "signal_count": count, "swot": views.swot_view(co)})
+    subsidiaries.sort(key=lambda s: s["co"])
+
+    return {
+        "digest": {
+            "id": digest.id,
+            "period_start": digest.period_start.isoformat(),
+            "period_end": digest.period_end.isoformat(),
+        },
+        "subsidiaries": subsidiaries,
+    }
 
 
 async def load_agent_swots() -> None:

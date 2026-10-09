@@ -70,6 +70,31 @@ class Subsidiary(Base):
     signal_focus: Mapped[str] = mapped_column(Text, nullable=False, default="")
 
 
+class SubsidiaryDependency(Base):
+    """One hand-curated row of a subsidiary's known supply/support fabric —
+    a raw-material supplier, a byproduct consumer, or a shared service/vendor
+    (including another RPG subsidiary). Seeded in db/seed.py, same spirit as
+    ``Subsidiary`` itself: a strategy-team-authored fact, never discovered or
+    inferred. Powers the "ripple effect" section of the Escalation Brief
+    (services/ripple.py) — pure keyword/sector matching, never an LLM guess,
+    so every ripple claim traces back to one of these literal rows."""
+
+    __tablename__ = "subsidiary_dependencies"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    subsidiary_code: Mapped[str] = mapped_column(ForeignKey("subsidiaries.code"), nullable=False, index=True)
+    dependency_type: Mapped[str] = mapped_column(String(32), nullable=False)  # raw_material | byproduct | shared_service | shared_vendor
+    counterparty_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    counterparty_kind: Mapped[str] = mapped_column(String(16), nullable=False)  # rpg_subsidiary | external_vendor
+    # Set only when counterparty_kind="rpg_subsidiary" — lets ripple rows link
+    # programmatically to a sibling subsidiary rather than by name-matching.
+    counterparty_subsidiary_code: Mapped[str | None] = mapped_column(ForeignKey("subsidiaries.code"), nullable=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    # Hand-authored trigger words checked against a candidate entity's
+    # name/category/sectors to flag a "direct" vs. "routine" ripple relevance.
+    keywords: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+
+
 class Entity(Base):
     """A WATCHED company: a fictional demo company or a real listed one. See
     the module docstring.
@@ -275,6 +300,12 @@ class EscalationBrief(Base):
     directional_considerations: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
     deal_complexity: Mapped[str] = mapped_column(String(16), nullable=False)  # Low | Medium | High
     disclaimer: Mapped[str] = mapped_column(Text, nullable=False)
+    # Ripple effect on sibling RPG subsidiaries via shared raw materials/byproducts/
+    # services (services/ripple.py) — template-matched against SubsidiaryDependency
+    # rows, same "no fabrication" discipline as pros/cons/directional_considerations.
+    # [{subsidiary_code, counterparty_name, counterparty_kind, counterparty_subsidiary_code,
+    #   dependency_type, relevance, rationale}, ...]
+    ripple_effects: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
 
     cluster: Mapped["SignalCluster"] = relationship(back_populates="escalation_brief")
     # Traversed as brief.escalated_by.name in routers/signals.py.
