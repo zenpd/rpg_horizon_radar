@@ -128,8 +128,8 @@ export default function Dashboard() {
             <Activity size={18} className="text-blue-500" />
           </div>
           <div>
-            <p className="text-xl font-bold text-gray-900">{liveCount}</p>
-            <p className="text-xs text-gray-400">Live</p>
+            <p className="text-xl font-bold text-slate-900">{liveCount}</p>
+            <p className="text-xs text-slate-500">Live</p>
           </div>
         </div>
         <div className="card p-4 flex items-center gap-3">
@@ -137,8 +137,8 @@ export default function Dashboard() {
             <ShieldCheck size={18} className="text-amber-500" />
           </div>
           <div>
-            <p className="text-xl font-bold text-gray-900">{underEvalCount}</p>
-            <p className="text-xs text-gray-400">Under Evaluation</p>
+            <p className="text-xl font-bold text-slate-900">{underEvalCount}</p>
+            <p className="text-xs text-slate-500">Under Evaluation</p>
           </div>
         </div>
         <div className="card p-4 flex items-center gap-3">
@@ -146,8 +146,8 @@ export default function Dashboard() {
             <AlertTriangle size={18} className="text-rose-500" />
           </div>
           <div>
-            <p className="text-xl font-bold text-gray-900">{highSeverityCount}</p>
-            <p className="text-xs text-gray-400">High Severity</p>
+            <p className="text-xl font-bold text-slate-900">{highSeverityCount}</p>
+            <p className="text-xs text-slate-500">High Severity</p>
           </div>
         </div>
       </div>
@@ -170,7 +170,7 @@ export default function Dashboard() {
             key={opt.value}
             onClick={() => setStatus(opt.value)}
             className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-colors ${
-              status === opt.value ? "text-rose-700 border-b-2 border-rose-600" : "text-gray-400 hover:text-gray-600"
+              status === opt.value ? "text-zen-700 border-b-2 border-zen-600" : "text-slate-500 hover:text-slate-600"
             }`}
           >
             {opt.label}
@@ -179,9 +179,9 @@ export default function Dashboard() {
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-gray-400 py-10 justify-center">Loading signals…</div>
+        <div className="flex items-center gap-2 text-sm text-slate-500 py-10 justify-center">Loading signals…</div>
       ) : signals.length === 0 ? (
-        <div className="text-sm text-gray-400 py-10 text-center border border-dashed border-gray-200 rounded-2xl">
+        <div className="text-sm text-slate-500 py-10 text-center border border-dashed border-gray-200 rounded-2xl">
           No signals match the current filters.
         </div>
       ) : (

@@ -27,10 +27,10 @@ export function ToneChart({ t }: { t: Tone }) {
       <line x1="10" y1="56" x2="195" y2="56" stroke="var(--rule)" strokeWidth="1" />
       {t.v.map((x, i) => {
         const h = x * 0.5, xx = 22 + 45 * i;
-        const fill = x >= 65 ? "currentColor" : x >= 45 ? "var(--high)" : "var(--crit)";
+        const fill = x >= 65 ? "currentColor" : x >= 45 ? "var(--chart2)" : "var(--chart-neg)";
         return (
           <g key={i}>
-            <rect x={xx} y={56 - h} width="30" height={h} fill={fill} opacity={x >= 65 ? 0.55 : 1} />
+            <rect x={xx} y={56 - h} width="30" height={h} rx="3" fill={fill} />
             <text x={xx + 8} y={53 - h}>{x}</text><text x={xx + 4} y="67">{q[i]}</text>
           </g>
         );
@@ -162,12 +162,12 @@ export function MarketChart({ a, b, labels, event, listed }: { a: number[]; b: n
         </g>
       ))}
       {labels.map((t, i) => <text key={t} x={L + ((R - L) * i) / (labels.length - 1)} y={B + 18} textAnchor={i === 0 ? "start" : i === labels.length - 1 ? "end" : "middle"}>{t}</text>)}
-      <path d={path(b)} fill="none" stroke="var(--l2)" strokeWidth="2" />
-      <path d={path(a)} fill="none" stroke="var(--accent)" strokeWidth="2.4" strokeDasharray={listed ? undefined : "6 4"} />
-      <circle cx={X(a.length - 1)} cy={Y(a[a.length - 1])} r="4" fill="var(--accent)" />
-      <circle cx={X(b.length - 1)} cy={Y(b[b.length - 1])} r="4" fill="var(--l2)" />
-      <line x1={ex} x2={ex} y1={ey} y2={up ? ty + 4 : ty - 12} stroke="var(--l2)" strokeWidth="1" />
-      <circle cx={ex} cy={ey} r="3.5" fill="var(--surface)" stroke="var(--l2)" strokeWidth="1.5" />
+      <path d={path(b)} fill="none" stroke="var(--chart2)" strokeWidth="2" strokeLinejoin="round" />
+      <path d={path(a)} fill="none" stroke="var(--chart)" strokeWidth="2.4" strokeLinejoin="round" strokeDasharray={listed ? undefined : "6 4"} />
+      <circle cx={X(a.length - 1)} cy={Y(a[a.length - 1])} r="4" fill="var(--chart)" />
+      <circle cx={X(b.length - 1)} cy={Y(b[b.length - 1])} r="4" fill="var(--chart2)" />
+      <line x1={ex} x2={ex} y1={ey} y2={up ? ty + 4 : ty - 12} stroke="var(--chart2)" strokeWidth="1" />
+      <circle cx={ex} cy={ey} r="3.5" fill="var(--surface)" stroke="var(--chart2)" strokeWidth="1.5" />
       <text className="lbl-ev" x={Math.min(Math.max(ex, L + 60), R - 60)} y={ty} textAnchor="middle">{event.label}</text>
     </svg>
   );
@@ -176,7 +176,15 @@ export function MarketChart({ a, b, labels, event, listed }: { a: number[]; b: n
 /** Owners, directors (and their other boards) and subsidiaries around a target. */
 export function OwnershipGraph({ g }: { g: { name: string; score: number; owners: [string, number, string][]; directors: [string, string, string[]][]; subs: string[] } }) {
   const W0 = 1000, H0 = 470, cx = 430, cy = 250;
-  const col: Record<string, string> = { family: "#047857", pe: "#7C3AED", public: "#64748B", person: "#2563EB", link: "#BE123C", sub: "#EA580C" };
+  // Node styles of the Agent Registry's graph: a pastel fill with a coloured border per kind.
+  const col: Record<string, { bg: string; border: string; font: string }> = {
+    family: { bg: "#dcfce7", border: "#15803d", font: "#14532d" },
+    pe: { bg: "#ede9fe", border: "#7c3aed", font: "#4c1d95" },
+    public: { bg: "#f1f5f9", border: "#475569", font: "#334155" },
+    person: { bg: "#dbeafe", border: "#0891b2", font: "#1f2937" },
+    link: { bg: "#fee2e2", border: "#ef4444", font: "#7f1d1d" },
+    sub: { bg: "#fef3c7", border: "#c2410c", font: "#7c2d12" },
+  };
   const spread = (n: number, gap: number, c: number) => Array.from({ length: n }, (_, i) => c + (i - (n - 1) / 2) * gap);
   type N = { x: number; y: number; label: string; sub: string; kind: string; from?: number };
   const nodes: N[] = [], edges: [number, string][] = [];
@@ -187,7 +195,6 @@ export function OwnershipGraph({ g }: { g: { name: string; score: number; owners
     spread(d[2].length, 44, dys[i]).forEach((y, j) => nodes.push({ x: 890, y, label: d[2][j], sub: "also on this board", kind: "link", from: di }));
   });
   spread(g.subs.length, 240, cx).forEach((x, i) => { nodes.push({ x, y: 60, label: g.subs[i], sub: "subsidiary", kind: "sub" }); edges.push([nodes.length - 1, "owns"]); });
-  const F = "Arial,sans-serif";
   const links = g.directors.filter((d) => d[2].length);
   return (
     <>
@@ -197,24 +204,24 @@ export function OwnershipGraph({ g }: { g: { name: string; score: number; owners
             const n = nodes[i], mx = cx + (n.x - cx) * 0.62, my = cy + (n.y - cy) * 0.62;
             return (
               <g key={k}>
-                <line x1={cx} y1={cy} x2={n.x} y2={n.y} stroke="#64748B" strokeWidth="1.4" />
-                <rect x={mx - 30} y={my - 9} width="60" height="16" rx="6" fill="#FFFFFF" />
-                <text x={mx} y={my + 3} textAnchor="middle" fontSize="10.5" fill="#475569" fontFamily={F}>{l}</text>
+                <line x1={cx} y1={cy} x2={n.x} y2={n.y} stroke="#94a3b8" strokeWidth="1.4" />
+                <rect x={mx - 30} y={my - 9} width="60" height="16" rx="8" fill="var(--surface)" />
+                <text x={mx} y={my + 3} textAnchor="middle" fontSize="10" fill="var(--faint)">{l}</text>
               </g>
             );
           })}
           {nodes.map((n, k) => n.kind === "link" && n.from !== undefined
-            ? <line key={"l" + k} x1={nodes[n.from].x} y1={nodes[n.from].y} x2={n.x} y2={n.y} stroke="#BE123C" strokeWidth="1.5" strokeDasharray="5 4" /> : null)}
-          <rect x={cx - 115} y={cy - 27} width="230" height="54" rx="12" fill="#FFE4E6" stroke="#BE123C" strokeWidth="2" />
-          <text x={cx} y={cy - 4} textAnchor="middle" fontSize="13" fontWeight="700" fill="#0F172A" fontFamily={F}>{g.name.length > 32 ? g.name.slice(0, 30) + "…" : g.name}</text>
-          <text x={cx} y={cy + 14} textAnchor="middle" fontSize="11" fill="#475569" fontFamily={F}>Target · score {g.score}</text>
+            ? <line key={"l" + k} x1={nodes[n.from].x} y1={nodes[n.from].y} x2={n.x} y2={n.y} stroke="#ef4444" strokeWidth="1.5" strokeDasharray="5 4" /> : null)}
+          <rect x={cx - 115} y={cy - 27} width="230" height="54" rx="12" fill="#4f46e5" stroke="#4338ca" strokeWidth="2" />
+          <text x={cx} y={cy - 4} textAnchor="middle" fontSize="13" fontWeight="700" fill="#ffffff">{g.name.length > 32 ? g.name.slice(0, 30) + "…" : g.name}</text>
+          <text x={cx} y={cy + 14} textAnchor="middle" fontSize="11" fill="#e0eaff">Target · score {g.score}</text>
           {nodes.map((n, k) => {
             const w = n.kind === "link" ? 180 : 200, c = col[n.kind], lab = n.label.length > 28 ? n.label.slice(0, 26) + "…" : n.label;
             return (
               <g key={"n" + k}>
-                <rect x={n.x - w / 2} y={n.y - 20} width={w} height="40" rx={n.kind === "person" ? 20 : 10} fill="#FFFFFF" stroke={c} strokeWidth="1.8" />
-                <text x={n.x} y={n.y - 3} textAnchor="middle" fontSize="11.5" fontWeight="600" fill="#0F172A" fontFamily={F}>{lab}</text>
-                <text x={n.x} y={n.y + 12} textAnchor="middle" fontSize="10.5" fill={c} fontFamily={F}>{n.sub}</text>
+                <rect x={n.x - w / 2} y={n.y - 20} width={w} height="40" rx={n.kind === "person" ? 20 : 10} fill={c.bg} stroke={c.border} strokeWidth="1.8" />
+                <text x={n.x} y={n.y - 3} textAnchor="middle" fontSize="11.5" fontWeight="600" fill={c.font}>{lab}</text>
+                <text x={n.x} y={n.y + 12} textAnchor="middle" fontSize="10.5" fill={c.border}>{n.sub}</text>
               </g>
             );
           })}
@@ -222,9 +229,9 @@ export function OwnershipGraph({ g }: { g: { name: string; score: number; owners
       </div>
       {links.length > 0 && <div className="callout"><b>Links found</b><p>{links.map((d) => `${d[0]} (${d[1]}) also sits on: ${d[2].join(", ")}.`).join(" ")}</p></div>}
       <div className="gl">
-        <span><i style={{ background: "#047857" }} />Family / promoter</span><span><i style={{ background: "#7C3AED" }} />PE / investor</span>
-        <span><i style={{ background: "#64748B" }} />Public / others</span><span><i style={{ background: "#2563EB" }} />Director</span>
-        <span><i style={{ background: "#BE123C" }} />Other board (possible link)</span><span><i style={{ background: "#EA580C" }} />Subsidiary</span>
+        {([["family", "Family / promoter"], ["pe", "PE / investor"], ["public", "Public / others"], ["person", "Director"], ["link", "Other board (possible link)"], ["sub", "Subsidiary"]] as const).map(([k, l]) => (
+          <span key={k}><i style={{ background: col[k].bg, borderColor: col[k].border }} />{l}</span>
+        ))}
       </div>
       <p className="sub" style={{ fontSize: 12 }}>Built from MCA data, filings and annual reports. Links extracted by an LLM are confirmed by an analyst before use.</p>
     </>

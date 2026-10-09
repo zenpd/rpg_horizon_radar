@@ -47,7 +47,7 @@ export default function SourcesTab() {
     }
   };
 
-  if (!data) return <div className="text-sm text-gray-400 py-10 text-center">Loading sources…</div>;
+  if (!data) return <div className="text-sm text-slate-500 py-10 text-center">Loading sources…</div>;
   const s = data.scheduler;
 
   return (
@@ -58,7 +58,7 @@ export default function SourcesTab() {
             <CalendarClock size={12} /> Schedule
           </p>
           {s.enabled ? (
-            <ul className="text-xs text-gray-600 space-y-1.5">
+            <ul className="text-xs text-slate-600 space-y-1.5">
               <li>
                 Live ingestion daily at <strong>{s.ingest_daily_at}</strong> — next {formatDateTime(s.next.ingest)}, last{" "}
                 {formatDateTime(s.last.ingest)}.
@@ -72,17 +72,17 @@ export default function SourcesTab() {
               {s.last_error && <li className="text-rose-600">Last error: {s.last_error}</li>}
             </ul>
           ) : (
-            <p className="text-xs text-gray-500">The scheduler is off (SCHEDULER_ENABLED=false). Runs happen only on request.</p>
+            <p className="text-xs text-slate-600">The scheduler is off (SCHEDULER_ENABLED=false). Runs happen only on request.</p>
           )}
         </div>
         <div className="card p-5 flex flex-col">
           <p className="section-title">Last run</p>
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-slate-600">
             {data.last_run
               ? `${formatDateTime(data.last_run.at)} — ${data.last_run.new_raw_signals ?? 0} new signals, ${data.last_run.errors.length} source errors.`
               : "No live run yet."}
           </p>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-slate-500 mt-2">
             Reasoning model for discovery and SWOT: {data.llm_routes.length ? data.llm_routes.join(" → ") : "none configured"}.
             Scoring never uses it.
           </p>
@@ -98,7 +98,7 @@ export default function SourcesTab() {
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-[10px] uppercase tracking-widest text-gray-400 font-bold border-b border-gray-100">
+            <tr className="text-left text-[11px] uppercase tracking-widest text-slate-500 font-bold border-b border-gray-100">
               <th className="px-4 py-3">Source</th>
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Key</th>
@@ -111,19 +111,19 @@ export default function SourcesTab() {
           <tbody className="divide-y divide-gray-50">
             {data.connectors.map((c) => (
               <tr key={c.name} className="hover:bg-gray-50/80">
-                <td className="px-4 py-3 font-medium text-gray-900">{c.name}</td>
-                <td className="px-4 py-3 text-xs text-gray-500">{c.source_type}</td>
+                <td className="px-4 py-3 font-medium text-slate-900">{c.name}</td>
+                <td className="px-4 py-3 text-xs text-slate-600">{c.source_type}</td>
                 <td className="px-4 py-3">
                   {c.configured ? (
                     <span className="inline-flex items-center gap-1 text-xs text-emerald-600"><CheckCircle2 size={13} /> set</span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-xs text-gray-400"><CircleSlash size={13} /> not set</span>
+                    <span className="inline-flex items-center gap-1 text-xs text-slate-500"><CircleSlash size={13} /> not set</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-xs text-gray-500">{pace(c.min_days)}</td>
-                <td className="px-4 py-3 text-xs text-gray-500">{c.entities_pulled}</td>
-                <td className="px-4 py-3 text-xs text-gray-500">{formatDateTime(c.last_pull)}</td>
-                <td className="px-4 py-3 text-xs text-gray-500">
+                <td className="px-4 py-3 text-xs text-slate-600">{pace(c.min_days)}</td>
+                <td className="px-4 py-3 text-xs text-slate-600">{c.entities_pulled}</td>
+                <td className="px-4 py-3 text-xs text-slate-600">{formatDateTime(c.last_pull)}</td>
+                <td className="px-4 py-3 text-xs text-slate-600">
                   {c.budget && c.budget.date === new Date().toISOString().slice(0, 10) ? c.budget.used : "—"}
                 </td>
               </tr>
@@ -135,7 +135,7 @@ export default function SourcesTab() {
       {!!data.last_run?.errors.length && (
         <div className="card p-5">
           <p className="section-title">Source errors in the last run</p>
-          <ul className="text-xs text-gray-500 space-y-1 font-mono">
+          <ul className="text-xs text-slate-600 space-y-1 font-mono">
             {data.last_run.errors.map((e, i) => (
               <li key={i}>{e}</li>
             ))}

@@ -1,10 +1,8 @@
 /** @type {import('tailwindcss').Config} */
-// ZenLabs Agent Foundry design system (ported from digital-onboarding) so
-// RPG Horizon Radar looks and feels like the rest of the org's agentic apps.
-// The one deliberate addition is the `restricted` gradient/shadow pair,
-// standing in for `gradient-zen` on this app's own primary actions and logo
-// mark — a visual cue that this is the UPSI-adjacent, access-restricted app,
-// not a generic product surface.
+// ZenLabs design system, with the same tokens as the Agent Registry
+// (agentregistry/ui/tailwind.config.js): zen-indigo palette, card shadows,
+// gradients and animations. The `restricted` gradient and shadow are no
+// longer used by any screen: primary actions and the logo use `gradient-zen`.
 export default {
   // The radar screens (src/radar) use their own plain CSS; keep Tailwind out of them.
   content: ['./index.html', './src/**/*.{ts,tsx}', '!./src/radar/**'],

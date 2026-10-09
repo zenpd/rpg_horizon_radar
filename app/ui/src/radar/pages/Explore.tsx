@@ -28,8 +28,7 @@ export function Competitors() {
   return (
     <>
       <div className="top"><div>
-        <span className="crumb"><b>{co}</b> / Competitors</span>
-        <h4>{co}'s competitors · {list.length} tracked</h4>
+        <h1>{co}'s competitors · {list.length} tracked</h1>
         <p className="sub">Discovered and kept up to date by the Research Agent. Click a rival to see its moves.</p>
         <ScopeNote />
       </div></div>
@@ -47,7 +46,7 @@ export function Competitors() {
           </tbody>
         </table>
       </div>
-      <div className="top"><div><h4 style={{ fontSize: 17 }}>{s.name} · {s.segment}</h4></div></div>
+      <div className="top"><div><h2>{s.name} · {s.segment}</h2></div></div>
       {s.primary ? (
         <div className="cols">
           <div className="stack">
@@ -96,8 +95,7 @@ export function Market() {
   return (
     <>
       <div className="top"><div>
-        <span className="crumb"><b>{co}</b> / Market performance</span>
-        <h4>{co} vs competitors: market performance</h4>
+        <h1>{co} vs competitors: market performance</h1>
         <p className="sub">{d.listed ? "Share prices indexed to 100 at the start of the period · illustrative data" : `${co} is not listed, so rivals are compared with the listed sector index (dashed line) · illustrative data`}</p>
         <ScopeNote />
       </div><span style={{ flex: 1 }} /><span className="lock">Live feed · 15-min delay</span></div>
@@ -117,8 +115,8 @@ export function Market() {
       <div className="cols">
         <div className="panel">
           <div className="fin-legend">
-            <span><i style={{ background: "var(--accent)" }} />{d.base_name} <b className={d.base_return >= 0 ? "up" : "dn"}>{pct(d.base_return)}</b></span>
-            <span><i style={{ background: "var(--l2)" }} />{d.rival} <b className={d.rival_return >= 0 ? "up" : "dn"}>{pct(d.rival_return)}</b></span>
+            <span><i style={{ background: "var(--chart)" }} />{d.base_name} <b className={d.base_return >= 0 ? "up" : "dn"}>{pct(d.base_return)}</b></span>
+            <span><i style={{ background: "var(--chart2)" }} />{d.rival} <b className={d.rival_return >= 0 ? "up" : "dn"}>{pct(d.rival_return)}</b></span>
             <span style={{ color: "var(--faint)" }}>over {period}</span>
           </div>
           <MarketChart a={d.base_series} b={d.rival_series} labels={d.labels} event={d.event} listed={d.listed} />
@@ -153,7 +151,7 @@ export function RivalDeals() {
   return (
     <>
       <div className="top"><div>
-        <span className="crumb"><b>Explore</b> / Rival deals</span><h4>Who is buying what</h4>
+        <h1>Rival deals · who is buying what</h1>
         <p className="sub">From exchange filings, stake disclosures (SAST), CCI combination orders, deal databases and news.</p>
       </div></div>
       <div className="cols">
@@ -168,7 +166,7 @@ export function RivalDeals() {
                 <tr key={i}>
                   <td className="mono">{x.date.slice(5).split("-").reverse().join("/")}</td>
                   <td><b>{x.buyer}</b> → {x.case_id ? <a href="#" onClick={(e) => { e.preventDefault(); app.openRow(x.case_id); }}>{x.target}</a> : x.target}<br /><span className="sub" style={{ fontSize: 11.5 }}>{x.sector} · {x.for}</span></td>
-                  <td>{x.type}</td><td>{x.size}</td><td className="mono">{x.source}</td>
+                  <td>{x.type}</td><td>{x.size}</td><td>{x.source}</td>
                 </tr>
               ))}
             </tbody>
@@ -209,13 +207,14 @@ export function AskRadar() {
   };
   const src = [...list].reverse().find((t) => !t.fallback)?.sources || [];
   return (
+    <>
+    <div className="top"><div>
+      <h1>Ask Radar</h1>
+      <p className="sub">Ask about {co}'s competitors and M&amp;A signals in plain words. Each answer lists the sources it came from.</p>
+      <ScopeNote />
+    </div></div>
     <div className="cols">
       <div className="chat">
-        <div className="top" style={{ gap: 8 }}>
-          <span className="crumb"><b>{co}</b> / Ask Radar</span><span style={{ flex: 1 }} />
-          <span className="pill">Scope: {co}</span><span className="lock">Covers competitors and M&amp;A</span>
-        </div>
-        <ScopeNote />
         {list.map((t, i) => (
           <div key={i} style={{ display: "contents" }}>
             <div className="q">{t.question}</div>
@@ -239,7 +238,7 @@ export function AskRadar() {
         <div ref={endRef} />
         <form className="prompt" onSubmit={(e) => { e.preventDefault(); ask(text); setText(""); }}>
           <input type="text" id="askInput" placeholder={`Ask a follow-up about ${co}'s market…`} autoComplete="off" value={text} onChange={(e) => setText(e.target.value)} />
-          <button type="submit" className="rbtn" id="askSend">Send</button>
+          <button type="submit" className="rbtn pri" id="askSend">Send</button>
         </form>
       </div>
       <div className="panel">
@@ -248,5 +247,6 @@ export function AskRadar() {
         <div className="src">{sugg.map((s) => <button key={s} type="button" className="askSug" onClick={() => ask(s)}><span>→</span><span>{s}</span></button>)}</div>
       </div>
     </div>
+    </>
   );
 }

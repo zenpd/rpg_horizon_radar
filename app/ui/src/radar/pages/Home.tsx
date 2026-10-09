@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, type Home as HomeData, type RecCard, type SwotJob, type SwotView } from "../api";
 import { PositionChart } from "../components/charts";
-import { CaseBadge, Journey, QuickLookBody, SwotBox, SwotDetails } from "../components/ui";
+import { CaseBadge, Journey, Kpi, QuickLookBody, SwotBox, SwotDetails } from "../components/ui";
 import { slug, useApp } from "../state";
 
 export default function Home() {
@@ -31,9 +31,14 @@ export default function Home() {
   return (
     <>
       <div>
-        <span className="crumb"><b>This week</b> · {d.week} · {all ? "all companies" : app.scope}</span>
-        <h4>{all ? "Where each RPG company stands, and the moves that fit" : `${app.scope}: where it stands, and the moves that fit`}</h4>
-        <p className="sub">SWOT rebuilt from today's 17:00 run · {d.signal_count} signals · illustrative data</p>
+        <h1>{all ? "Where each RPG company stands, and the moves that fit" : `${app.scope}: where it stands, and the moves that fit`}</h1>
+        <p className="sub">{d.week} · SWOT rebuilt from today's 17:00 run · {d.signal_count} signals · illustrative data</p>
+      </div>
+      <div className="kpis">
+        <Kpi label="Signals" value={d.signal_count} sub={all ? "Behind the SWOTs of all companies" : `Behind ${app.scope}'s SWOT`} />
+        <Kpi label="Recommended moves" value={d.recommended.length} sub="Link a strength or weakness to an opportunity or threat" />
+        <Kpi label="Watched, not recommended" value={d.set_aside.length} sub="Companies with signals that do not fit the SWOT" />
+        <Kpi label="Shortlisted" value={`${app.shortlist.length} of 5`} sub="Moves picked for a deep dive" />
       </div>
       <Journey step={app.shortlist.length ? 1 : 0} />
       {all ? (
@@ -60,7 +65,7 @@ export default function Home() {
       <div className="homecols">
         <div className="stack" style={{ minWidth: 0 }}>
           <div className="intro">
-            <h5 style={{ margin: 0, fontFamily: "var(--display)", fontSize: 16 }}>Recommended moves · {d.recommended.length}</h5>
+            <h5 style={{ margin: 0 }}>Recommended moves · {d.recommended.length}</h5>
             <span className="sub" style={{ fontSize: 12 }}>{all ? "Pick a company above to see its full SWOT" : "Hover a move to see the SWOT items behind it"}</span>
           </div>
           <div className="digest">
@@ -92,7 +97,7 @@ export default function Home() {
           <p className="sub" style={{ fontSize: 11.5, marginTop: 8 }}>{d.signal_count} signals in total.</p>
         </aside>
       </div>
-      <ShortlistBar />
+      <ShortlistBar names={Object.fromEntries(d.recommended.map((r) => [r.case_id, r.case.who]))} />
     </>
   );
 }
@@ -163,17 +168,14 @@ function SwotAgentBar({ co, source }: { co: string; source: SwotView["source"] }
   );
 }
 
-function ShortlistBar() {
+// `names` maps a case id to its company, from the moves listed on this page.
+function ShortlistBar({ names }: { names: Record<string, string> }) {
   const app = useApp();
-  const [names, setNames] = useState<Record<string, string>>({});
-  useEffect(() => {
-    app.shortlist.forEach((id) => { if (!names[id]) api.caseDetail(id).then((c) => setNames((n) => ({ ...n, [id]: c.who }))); });
-  }, [app.shortlist]);
   return (
     <div className="slbar" id="slbar">
       {app.shortlist.length ? (
         <>
-          <span><b>{app.shortlist.length} shortlisted:</b> {app.shortlist.map((id) => names[id] || "…").join(", ")}</span>
+          <span><b>{app.shortlist.length} shortlisted:</b> {app.shortlist.map((id) => names[id] || id).join(", ")}</span>
           <span className="spacer" />
           <button className="btnx" onClick={app.clearShortlist}>Clear</button>
           <button className="btnx pri" onClick={() => app.escalate()}>Escalate {app.shortlist.length} for deep dive</button>

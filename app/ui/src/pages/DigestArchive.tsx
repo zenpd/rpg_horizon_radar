@@ -35,12 +35,12 @@ function DigestList() {
   }, []);
 
   if (loading) {
-    return <div className="text-sm text-gray-400 py-10 text-center">Loading digests…</div>;
+    return <div className="text-sm text-slate-500 py-10 text-center">Loading digests…</div>;
   }
 
   if (digests.length === 0) {
     return (
-      <div className="text-sm text-gray-400 py-10 text-center border border-dashed border-gray-200 rounded-2xl">
+      <div className="text-sm text-slate-500 py-10 text-center border border-dashed border-gray-200 rounded-2xl">
         No digests have been generated yet.
       </div>
     );
@@ -55,22 +55,22 @@ function DigestList() {
           onClick={() => navigate(`/digests/${d.id}`)}
           className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-gray-50/80 transition-colors"
         >
-          <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center flex-shrink-0">
-            <CalendarDays size={16} className="text-rose-500" />
+          <div className="w-9 h-9 rounded-xl bg-zen-50 flex items-center justify-center flex-shrink-0">
+            <CalendarDays size={16} className="text-zen-500" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-800">
+            <p className="text-sm font-medium text-slate-800">
               {formatDate(d.period_start)} – {formatDate(d.period_end)}
             </p>
             <div className="flex flex-wrap gap-1.5 mt-1.5">
               {Object.entries(d.subsidiary_breakdown || {}).map(([code, count]) => (
-                <span key={code} className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
+                <span key={code} className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
                   {code}: {count}
                 </span>
               ))}
             </div>
           </div>
-          <span className="text-[11px] font-mono text-gray-400 flex-shrink-0">
+          <span className="text-[11px] font-mono text-slate-500 flex-shrink-0">
             Generated {formatDate(d.created_at)}
           </span>
         </button>
@@ -100,11 +100,11 @@ function DigestDetail() {
   }, [id]);
 
   if (loading) {
-    return <div className="text-sm text-gray-400 py-10 text-center">Loading digest…</div>;
+    return <div className="text-sm text-slate-500 py-10 text-center">Loading digest…</div>;
   }
 
   if (!digest) {
-    return <div className="text-sm text-gray-400 py-10 text-center">Digest not found.</div>;
+    return <div className="text-sm text-slate-500 py-10 text-center">Digest not found.</div>;
   }
 
   // Each digest item is already scoped to a single subsidiary_code by the API
@@ -123,14 +123,14 @@ function DigestDetail() {
       <button
         type="button"
         onClick={() => navigate("/digests")}
-        className="flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-gray-700"
+        className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
       >
         <ArrowLeft size={14} />
         Back to archive
       </button>
 
       {Object.keys(groups).length === 0 ? (
-        <div className="text-sm text-gray-400 py-10 text-center border border-dashed border-gray-200 rounded-2xl">
+        <div className="text-sm text-slate-500 py-10 text-center border border-dashed border-gray-200 rounded-2xl">
           This digest has no items.
         </div>
       ) : (

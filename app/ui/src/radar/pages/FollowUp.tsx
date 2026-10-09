@@ -14,7 +14,7 @@ export default function FollowUp() {
   if (!list.length)
     return (
       <>
-        <div><span className="crumb"><b>Follow-up</b></span><h4>Nothing to follow up yet</h4></div>
+        <div><h1>Nothing to follow up yet</h1><p className="sub">Each approved company gets an owner, a 90-day plan and watch rules here.</p></div>
         <Journey step={4} />
         <div className="empty2" style={{ padding: 28 }}>Approve a page in the deep-dive book and it appears here with its plan and watch rules.</div>
       </>
@@ -26,8 +26,7 @@ export default function FollowUp() {
   return (
     <>
       <div>
-        <span className="crumb"><b>Follow-up</b> · {list.length} approved</span>
-        <h4>Plans, watch rules and outcomes</h4>
+        <h1>Follow-up · {list.length} approved</h1>
         <p className="sub">Each approved company has an owner, a 90-day plan and automatic watch rules. New signals land here after every daily run.</p>
       </div>
       <Journey step={4} />
@@ -35,7 +34,7 @@ export default function FollowUp() {
         {list.map((x) => <button key={x.id} type="button" role="tab" aria-pressed={x.id === c.id} onClick={() => setSel(x.id)}>{x.who}{x.stage === "closed" ? " · closed" : ""}</button>)}
       </div>
       <div className="top"><div>
-        <h4 style={{ fontSize: 17 }}>{c.who} · {c.title}</h4>
+        <h2>{c.who} · {c.title}</h2>
         <p className="sub">{c.kind === "deal" ? "Target · deal to consider" : "Rival · threat to answer"} · for {c.companies.join(" · ")} · {c.in_book
           ? <a href="#" onClick={(e) => { e.preventDefault(); app.openBookAt(c.id); }}>Read its book page</a> : "Approved from an earlier book"}</p>
       </div></div>

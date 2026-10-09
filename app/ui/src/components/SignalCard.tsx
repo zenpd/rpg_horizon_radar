@@ -38,14 +38,14 @@ export default function SignalCard({ signal, compact = false }: SignalCardProps)
         className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-gray-50/80 transition-colors group"
       >
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-800 truncate group-hover:text-rose-700 transition-colors">
+          <p className="text-sm font-medium text-slate-800 truncate group-hover:text-zen-700 transition-colors">
             {signal.entity_name}
           </p>
           <div className="flex flex-wrap items-center gap-1.5 mt-1">
             {(signal.signal_types || []).map((t) => (
               <span
                 key={t}
-                className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-500"
+                className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-600"
               >
                 {t.replace(/_/g, " ")}
               </span>
@@ -62,21 +62,21 @@ export default function SignalCard({ signal, compact = false }: SignalCardProps)
     <button type="button" onClick={() => navigate(`/signals/${signal.id}`)} className="w-full text-left p-4 card-hover">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-semibold text-gray-900 truncate text-base">{signal.entity_name}</p>
+          <p className="font-semibold text-slate-900 truncate text-base">{signal.entity_name}</p>
           {Array.isArray(signal.entity_sectors) && signal.entity_sectors.length > 0 && (
-            <p className="text-xs text-gray-400 mt-0.5">{signal.entity_sectors.join(" · ")}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{signal.entity_sectors.join(" · ")}</p>
           )}
         </div>
         <ScoreBadge score={signal.score} />
       </div>
 
-      {rationale && <p className="text-sm text-gray-500 mt-2.5 leading-relaxed">{truncated}</p>}
+      {rationale && <p className="text-sm text-slate-600 mt-2.5 leading-relaxed">{truncated}</p>}
 
       <div className="flex flex-wrap items-center gap-1.5 mt-3">
         {(signal.signal_types || []).map((t) => (
           <span
             key={t}
-            className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-500"
+            className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-600"
           >
             {t.replace(/_/g, " ")}
           </span>

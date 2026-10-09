@@ -32,13 +32,13 @@ export default function ConfirmModal({
         <div className="flex items-start justify-between border-b border-gray-100 px-5 py-4">
           <div className="flex items-center gap-2">
             {danger && <AlertTriangle size={18} className="text-rose-500" />}
-            <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
+            <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
           </div>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-700" aria-label="Close">
+          <button onClick={onCancel} className="text-slate-500 hover:text-slate-700" aria-label="Close">
             <X size={16} />
           </button>
         </div>
-        <div className="px-5 py-4 text-sm text-gray-600 leading-relaxed">{description}</div>
+        <div className="px-5 py-4 text-sm text-slate-600 leading-relaxed">{description}</div>
         <div className="flex justify-end gap-2 border-t border-gray-100 bg-gray-50/50 px-5 py-3">
           <button type="button" onClick={onCancel} disabled={busy} className="btn btn-secondary btn-sm">
             {cancelLabel}

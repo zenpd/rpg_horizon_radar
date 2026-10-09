@@ -44,10 +44,10 @@ export default function EscalationBrief({ brief, entityName }: EscalationBriefPr
     <div className="card overflow-hidden">
       <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
         <div>
-          <h2 className="text-sm font-semibold text-gray-900">Escalation Brief</h2>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <h2 className="text-sm font-semibold text-slate-900">Escalation Brief</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
             Generated at hand-off · deal complexity:{" "}
-            <span className="font-medium text-gray-600">{brief.deal_complexity}</span>
+            <span className="font-medium text-slate-600">{brief.deal_complexity}</span>
           </p>
         </div>
         <button type="button" onClick={handleCopy} className="btn btn-secondary btn-sm">
@@ -63,7 +63,7 @@ export default function EscalationBrief({ brief, entityName }: EscalationBriefPr
           </p>
           <ul className="space-y-1.5">
             {brief.pros.map((p, i) => (
-              <li key={i} className="text-xs text-gray-600 leading-relaxed">
+              <li key={i} className="text-xs text-slate-600 leading-relaxed">
                 • {p}
               </li>
             ))}
@@ -75,7 +75,7 @@ export default function EscalationBrief({ brief, entityName }: EscalationBriefPr
           </p>
           <ul className="space-y-1.5">
             {brief.cons.map((c, i) => (
-              <li key={i} className="text-xs text-gray-600 leading-relaxed">
+              <li key={i} className="text-xs text-slate-600 leading-relaxed">
                 • {c}
               </li>
             ))}
@@ -90,8 +90,8 @@ export default function EscalationBrief({ brief, entityName }: EscalationBriefPr
         <dl className="grid gap-2 sm:grid-cols-2">
           {brief.directional_considerations.map((d, i) => (
             <div key={i} className="rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2">
-              <dt className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{d.label}</dt>
-              <dd className="text-xs text-gray-700 mt-0.5">{d.value}</dd>
+              <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{d.label}</dt>
+              <dd className="text-xs text-slate-700 mt-0.5">{d.value}</dd>
             </div>
           ))}
         </dl>

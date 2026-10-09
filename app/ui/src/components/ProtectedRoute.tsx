@@ -10,8 +10,8 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50 text-gray-400 text-sm gap-2">
-        <div className="w-4 h-4 border-2 border-rose-200 border-t-rose-500 rounded-full animate-spin" />
+      <div className="flex h-screen items-center justify-center bg-gray-50 text-slate-500 text-sm gap-2">
+        <div className="w-4 h-4 border-2 border-zen-200 border-t-zen-500 rounded-full animate-spin" />
         Loading session…
       </div>
     );
@@ -35,8 +35,8 @@ export function AdminRoute({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50 text-gray-400 text-sm gap-2">
-        <div className="w-4 h-4 border-2 border-rose-200 border-t-rose-500 rounded-full animate-spin" />
+      <div className="flex h-screen items-center justify-center bg-gray-50 text-slate-500 text-sm gap-2">
+        <div className="w-4 h-4 border-2 border-zen-200 border-t-zen-500 rounded-full animate-spin" />
         Loading session…
       </div>
     );

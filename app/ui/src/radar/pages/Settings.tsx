@@ -23,7 +23,7 @@ export function Theses() {
   return (
     <>
       <div className="top"><div>
-        <span className="crumb"><b>Radar settings</b> / Acquisition theses</span><h4>Acquisition thesis screener</h4>
+        <h1>Acquisition thesis screener</h1>
         <p className="sub">Each RPG company writes what it wants to buy. Every company in the watched universe is checked against it each week.</p>
       </div></div>
       <div className="filters"><label>Thesis <select value={th.id} onChange={(e) => setSel(e.target.value)}>{list.map((x) => <option key={x.id} value={x.id}>{x.desk}: {x.text.slice(0, 60)}…</option>)}</select></label></div>
@@ -173,7 +173,7 @@ export function WatchRules() {
   return (
     <>
       <div className="top"><div>
-        <span className="crumb"><b>Radar settings</b> / Watch rules</span><h4>Alert me when…</h4>
+        <h1>Watch rules</h1>
         <p className="sub">Rules set by each strategy team. Checked after every daily run.</p>
       </div></div>
       <div className="panel">
@@ -226,14 +226,14 @@ export function Watched() {
   return (
     <>
       <div className="top"><div>
-        <span className="crumb"><b>Radar settings</b> / Watched companies</span><h4>Watched companies and activity</h4>
+        <h1>Watched companies and activity</h1>
         <p className="sub">The sector universe the radar scans every day, and a log of changes made in this demo.</p>
       </div></div>
       <div className="cols even">
         <div className="panel">
           <h5>Sector universe · {u.length} companies watched</h5>
           <table className="tbl"><thead><tr><th>Company</th><th>RPG company</th><th>Sector</th><th>How added</th></tr></thead>
-            <tbody>{u.map((x, i) => <tr key={i}><td>{x.company}</td><td>{x.desk}</td><td>{x.sector}</td><td className="mono">{x.added}</td></tr>)}</tbody></table>
+            <tbody>{u.map((x, i) => <tr key={i}><td>{x.company}</td><td>{x.desk}</td><td>{x.sector}</td><td>{x.added}</td></tr>)}</tbody></table>
           <form className="frm" style={{ marginTop: 10 }} onSubmit={add}>
             <label>Company<input id="uName" placeholder="Company name" required minLength={2} value={name} onChange={(e) => setName(e.target.value)} /></label>
             <label>RPG company<select id="uDesk" value={desk} onChange={(e) => setDesk(e.target.value)}>{app.companies.map((d) => <option key={d}>{d}</option>)}</select></label>
@@ -243,7 +243,7 @@ export function Watched() {
         {app.groupView && <div className="panel">
           <h5>Activity · {act.length} changes</h5>
           <table className="tbl"><thead><tr><th>Time</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead>
-            <tbody>{act.map((a, i) => <tr key={i}><td className="mono">{a.time}</td><td>{a.who}</td><td className="mono">{a.action}</td><td>{a.detail}</td></tr>)}</tbody></table>
+            <tbody>{act.map((a, i) => <tr key={i}><td className="mono">{a.time}</td><td>{a.who}</td><td>{a.action}</td><td>{a.detail}</td></tr>)}</tbody></table>
           <p className="sub" style={{ fontSize: 12, marginTop: 8 }}>Escalations, decisions, plans, theses, rules and universe changes appear here. Every view and change is also in the immutable audit log (Admin → Audit Log).</p>
         </div>}
       </div>

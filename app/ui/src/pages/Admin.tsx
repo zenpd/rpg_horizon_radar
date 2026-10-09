@@ -131,7 +131,7 @@ function ReviewersTab() {
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-[10px] uppercase tracking-widest text-gray-400 font-bold border-b border-gray-100">
+            <tr className="text-left text-[11px] uppercase tracking-widest text-slate-500 font-bold border-b border-gray-100">
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Email</th>
               <th className="px-4 py-3">Role</th>
@@ -143,39 +143,39 @@ function ReviewersTab() {
           <tbody className="divide-y divide-gray-50">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
                   Loading reviewers…
                 </td>
               </tr>
             ) : reviewers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
                   No reviewers yet.
                 </td>
               </tr>
             ) : (
               reviewers.map((r) => (
                 <tr key={r.id} className="hover:bg-gray-50/80 transition-colors">
-                  <td className="px-4 py-3 text-gray-900 font-medium">{r.name}</td>
-                  <td className="px-4 py-3 text-gray-500">{r.email}</td>
-                  <td className="px-4 py-3 text-gray-500">
+                  <td className="px-4 py-3 text-slate-900 font-medium">{r.name}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.email}</td>
+                  <td className="px-4 py-3 text-slate-600">
                     {r.role === "compliance_admin" ? "Compliance Admin" : "Corp Strategy Reviewer"}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {(r.subsidiary_scopes || []).map((c) => (
-                        <span key={c} className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
+                        <span key={c} className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
                           {c}
                         </span>
                       ))}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-gray-400 font-mono text-xs">{formatDateTime(r.created_at)}</td>
+                  <td className="px-4 py-3 text-slate-500 font-mono text-xs">{formatDateTime(r.created_at)}</td>
                   <td className="px-4 py-3 text-right">
                     <button
                       type="button"
                       onClick={() => setPendingDelete(r)}
-                      className="text-gray-400 hover:text-rose-600"
+                      className="text-slate-500 hover:text-rose-600"
                       aria-label={`Remove ${r.name}`}
                     >
                       <Trash2 size={15} />
@@ -189,7 +189,7 @@ function ReviewersTab() {
       </div>
 
       <div className="card p-5">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-1.5">
+        <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-1.5">
           <Plus size={15} />
           Add reviewer
         </h3>
@@ -233,7 +233,7 @@ function ReviewersTab() {
           </select>
 
           <div className="sm:col-span-2">
-            <p className="text-xs font-medium text-gray-500 mb-1.5">Subsidiary scopes</p>
+            <p className="text-xs font-medium text-slate-600 mb-1.5">Subsidiary scopes</p>
             <div className="flex flex-wrap gap-1.5">
               {subsidiaries.map((s) => (
                 <button
@@ -243,7 +243,7 @@ function ReviewersTab() {
                   className={
                     form.subsidiary_scopes.includes(s.code)
                       ? "chip-open"
-                      : "rounded-full px-2.5 py-1 text-xs font-semibold bg-gray-50 text-gray-500 ring-1 ring-gray-200 hover:ring-rose-200"
+                      : "rounded-full px-2.5 py-1 text-xs font-semibold bg-gray-50 text-slate-600 ring-1 ring-gray-200 hover:ring-zen-200"
                   }
                 >
                   {s.code}
@@ -310,14 +310,14 @@ function GatesTab() {
   };
 
   if (loading) {
-    return <div className="text-sm text-gray-400 py-10 text-center">Loading subsidiaries…</div>;
+    return <div className="text-sm text-slate-500 py-10 text-center">Loading subsidiaries…</div>;
   }
 
   return (
     <div className="card overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-[10px] uppercase tracking-widest text-gray-400 font-bold border-b border-gray-100">
+          <tr className="text-left text-[11px] uppercase tracking-widest text-slate-500 font-bold border-b border-gray-100">
             <th className="px-4 py-3">Subsidiary</th>
             <th className="px-4 py-3">Signal Focus</th>
             <th className="px-4 py-3">Sectors</th>
@@ -327,11 +327,11 @@ function GatesTab() {
         <tbody className="divide-y divide-gray-50">
           {subsidiaries.map((s) => (
             <tr key={s.code} className="hover:bg-gray-50/80 transition-colors">
-              <td className="px-4 py-3 text-gray-900 font-medium">
-                {s.name} <span className="text-gray-400 font-mono text-xs">({s.code})</span>
+              <td className="px-4 py-3 text-slate-900 font-medium">
+                {s.name} <span className="text-slate-500 font-mono text-xs">({s.code})</span>
               </td>
-              <td className="px-4 py-3 text-gray-500 max-w-xs">{s.signal_focus}</td>
-              <td className="px-4 py-3 text-gray-400 text-xs">{(s.sectors || []).join(", ")}</td>
+              <td className="px-4 py-3 text-slate-600 max-w-xs">{s.signal_focus}</td>
+              <td className="px-4 py-3 text-slate-500 text-xs">{(s.sectors || []).join(", ")}</td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
                   <button
@@ -349,7 +349,7 @@ function GatesTab() {
                       }`}
                     />
                   </button>
-                  <span className="text-[11px] text-gray-400">{s.compliance_gate ? "Open" : "Awaiting sign-off"}</span>
+                  <span className="text-[11px] text-slate-500">{s.compliance_gate ? "Open" : "Awaiting sign-off"}</span>
                 </div>
               </td>
             </tr>
@@ -409,7 +409,7 @@ function AuditTab() {
       <div className="card overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="text-left text-[10px] uppercase tracking-widest text-gray-400 font-bold border-b border-gray-100">
+            <tr className="text-left text-[11px] uppercase tracking-widest text-slate-500 font-bold border-b border-gray-100">
               <th className="px-4 py-3">Timestamp</th>
               <th className="px-4 py-3">Reviewer</th>
               <th className="px-4 py-3">Action</th>
@@ -420,28 +420,28 @@ function AuditTab() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
                   Loading audit log…
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
                   No matching entries.
                 </td>
               </tr>
             ) : (
               filtered.map((e) => (
                 <tr key={e.id} className="odd:bg-white even:bg-gray-50/50">
-                  <td className="px-4 py-2.5 text-gray-500 font-mono whitespace-nowrap">{formatDateTime(e.created_at)}</td>
-                  <td className="px-4 py-2.5 text-gray-700">{e.reviewer_name_snapshot}</td>
+                  <td className="px-4 py-2.5 text-slate-600 font-mono whitespace-nowrap">{formatDateTime(e.created_at)}</td>
+                  <td className="px-4 py-2.5 text-slate-700">{e.reviewer_name_snapshot}</td>
                   <td className="px-4 py-2.5">
                     <span className={actionBadgeClass(e.action)}>{e.action}</span>
                   </td>
-                  <td className="px-4 py-2.5 text-gray-400 font-mono">
+                  <td className="px-4 py-2.5 text-slate-500 font-mono">
                     {e.resource_type}#{e.resource_id}
                   </td>
-                  <td className="px-4 py-2.5 text-gray-500">{e.detail}</td>
+                  <td className="px-4 py-2.5 text-slate-600">{e.detail}</td>
                 </tr>
               ))
             )}
@@ -468,7 +468,7 @@ export default function Admin() {
               key={t.key}
               onClick={() => setTab(t.key)}
               className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold transition-all border ${
-                active ? "bg-rose-600 text-white border-rose-600" : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                active ? "bg-zen-600 text-white border-zen-600" : "bg-gray-50 text-slate-600 border-gray-200 hover:bg-gray-100"
               }`}
             >
               <Icon size={13} />

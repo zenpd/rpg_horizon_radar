@@ -79,8 +79,8 @@ Everything else on the screens is still the prototype's demo data. See DESIGN.md
     against `shared/llm_chat.py`.
   - [ ] Azure thesis parsing and Ask Radar fallbacks.
 - [ ] **Review the Escalation Brief wording** now that it can name real companies (DESIGN.md §14).
-- [ ] **Dark theme for the desk screens.** The Restricted desk screens (Signal board, Digests, Admin)
-  stay light in dark theme; theme them if needed.
+- [x] **Dark theme for the desk screens.** No longer applies: the dark theme was removed when the UI
+  took the Agent Registry's design (light only).
 - [ ] **One place to manage the watchlist.** Admin → Watchlist and Radar settings → Watched
   companies both show watchlist information. Decide which screen owns approvals.
 - [ ] **Archive the old prototype folder** (`Claude outputs/RPG_Horizon_Radar`) once the team is on

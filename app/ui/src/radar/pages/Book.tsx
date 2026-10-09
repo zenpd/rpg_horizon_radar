@@ -32,7 +32,7 @@ export default function Book() {
   if (!N)
     return (
       <>
-        <div><span className="crumb"><b>Deep-dive book</b></span><h4>No pages yet</h4></div>
+        <div><h1>No pages yet</h1><p className="sub">The deep-dive book holds one page for each escalated company.</p></div>
         <Journey step={3} />
         <div className="empty2" style={{ padding: 28 }}>
           Shortlist companies on <b>This week</b> and escalate them. Agents then write one page per company here.
@@ -46,7 +46,7 @@ export default function Book() {
 
   return (
     <>
-      <div><span className="crumb"><b>Deep-dive book</b> · Week 40</span><h4>{pages.length} compan{pages.length > 1 ? "ies" : "y"} · one page each</h4></div>
+      <div><h1>Deep-dive book · {pages.length} compan{pages.length > 1 ? "ies" : "y"}, one page each</h1><p className="sub">Week 40 · each page ends with a decision: approve with an owner, park or reject.</p></div>
       <Journey step={3} />
       <div className="booknav">
         <button className="btnx" disabled={p === 0} onClick={() => go(p - 1)}>← Previous</button>

@@ -7,10 +7,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── ZenLabs Design System (ported from digital-onboarding) ─────────────────
-   Plus Jakarta Sans / white cards on gray-50 / zen-indigo for platform chrome,
-   rose "restricted" gradient for Horizon Radar's own primary actions — see
-   tailwind.config.js for why. */
+/* ── ZenLabs Design System, as in the Agent Registry ───────────────────────
+   Plus Jakarta Sans / white cards on gray-50 / zen-indigo for the chrome and
+   for primary actions. Rose is kept for the restricted-access strip and for
+   danger states only. */
 
 @layer base {
   :root {
@@ -24,7 +24,7 @@
 
   .tw {
     font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
-    @apply text-gray-900;
+    @apply text-slate-900;
   }
 
   ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -49,18 +49,17 @@
     @apply btn bg-gradient-zen text-white shadow-sm hover:shadow-glow-zen hover:-translate-y-px
            active:translate-y-0 active:shadow-sm;
   }
-  /* Horizon Radar's own primary actions (login, mark-under-evaluation,
-     generate digest) use the rose "restricted" gradient instead of zen-indigo
-     — a visual cue that this app's actions carry compliance weight. */
+  /* Horizon Radar's own primary actions (sign in, mark under evaluation,
+     generate digest). Same look as .btn-primary. */
   .btn-restricted {
-    @apply btn bg-gradient-restricted text-white shadow-sm hover:shadow-glow-restricted hover:-translate-y-px
+    @apply btn bg-gradient-zen text-white shadow-sm hover:shadow-glow-zen hover:-translate-y-px
            active:translate-y-0 active:shadow-sm;
   }
   .btn-secondary {
-    @apply btn bg-white text-gray-700 border border-gray-200 hover:bg-gray-50
+    @apply btn bg-white text-slate-700 border border-gray-200 hover:bg-gray-50
            hover:border-gray-300 hover:shadow-sm shadow-sm;
   }
-  .btn-ghost { @apply btn text-gray-600 hover:bg-gray-100 hover:text-gray-900; }
+  .btn-ghost { @apply btn text-slate-700 hover:bg-gray-100 hover:text-slate-900; }
   .btn-danger { @apply btn bg-rose-600 text-white hover:bg-rose-700 shadow-sm hover:shadow-md; }
   .btn-sm { @apply px-3 py-1.5 text-xs rounded-lg; }
   .btn-lg { @apply px-6 py-3 text-base rounded-2xl; }
@@ -69,7 +68,7 @@
   .input {
     @apply w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl
            outline-none transition-all placeholder-gray-400
-           focus:border-rose-400 focus:ring-2 focus:ring-rose-500/15 focus:shadow-sm;
+           focus:border-zen-400 focus:ring-2 focus:ring-zen-500/15 focus:shadow-sm;
   }
 
   /* ── Opportunity/distress score badges ────────────────── */
@@ -82,20 +81,20 @@
   .status-under_evaluation { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-200; }
 
   /* ── Subsidiary chips ─────────────────────────────────── */
-  .chip-open   { @apply px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 ring-1 ring-rose-200; }
+  .chip-open   { @apply px-2.5 py-1 rounded-full text-xs font-semibold bg-zen-50 text-zen-700 ring-1 ring-zen-200; }
   .chip-locked { @apply px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-400 ring-1 ring-gray-200 cursor-not-allowed; }
 
   /* ── Audit-action badges (Admin → Audit Log) ──────────── */
-  .action-view    { @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100  text-gray-600; }
-  .action-write   { @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100  text-blue-700; }
-  .action-escalate{ @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700; }
-  .action-admin   { @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700; }
+  .action-view    { @apply inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100  text-gray-600; }
+  .action-write   { @apply inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100  text-blue-700; }
+  .action-escalate{ @apply inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700; }
+  .action-admin   { @apply inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-700; }
 
   /* ── Page section ────────────────────────────────────── */
   .page-header  { @apply flex items-center justify-between mb-6 gap-4; }
-  .page-title   { @apply text-xl font-bold text-gray-900; }
-  .page-subtitle{ @apply text-sm text-gray-400 mt-0.5; }
-  .section-title{ @apply text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3; }
+  .page-title   { @apply text-xl font-bold text-slate-900; }
+  .page-subtitle{ @apply text-sm text-slate-600 mt-0.5; }
+  .section-title{ @apply text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3; }
 
   /* ── Divider ─────────────────────────────────────────── */
   .divider { @apply border-t border-gray-100 my-4; }
@@ -118,21 +117,21 @@
   }
 
   /* ── Gradient text ───────────────────────────────────── */
-  .gradient-text { @apply bg-gradient-restricted bg-clip-text text-transparent; }
+  .gradient-text { @apply bg-gradient-zen bg-clip-text text-transparent; }
 }
 
 /* ── Sidebar ───────────────────────────────────────────────────────────────── */
 .sidebar-link {
   @apply relative flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium
-         text-gray-500 hover:bg-rose-50 hover:text-rose-700 transition-all duration-150;
+         text-slate-600 hover:bg-zen-50 hover:text-zen-700 transition-all duration-150;
 }
 .sidebar-link.active {
-  @apply bg-gradient-restricted-soft text-rose-700 font-semibold shadow-sm;
+  @apply bg-gradient-zen-soft text-zen-700 font-semibold shadow-sm;
 }
 .sidebar-link.active::before {
   content: '';
-  @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-gradient-restricted rounded-r-full;
+  @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-gradient-zen rounded-r-full;
 }
 .sidebar-link svg { @apply flex-shrink-0 opacity-60 transition-opacity; }
-.sidebar-link.active svg { @apply opacity-100 text-rose-600; }
+.sidebar-link.active svg { @apply opacity-100 text-zen-600; }
 .sidebar-link:hover svg { @apply opacity-90; }

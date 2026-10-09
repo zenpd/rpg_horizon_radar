@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+  Archive, BellRing, BookOpen, Briefcase, ClipboardCheck, Eye, LayoutGrid, LineChart, LogOut,
+  MessageCircleQuestion, Radar, ShieldCheck, Target, Users, type LucideIcon,
+} from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { PageMetaProvider, usePageMetaContext } from "../context/PageMetaContext";
@@ -13,25 +17,20 @@ import { Theses, Watched, WatchRules } from "./pages/Settings";
 import { COMPANIES, Ctx, type AppState, type View } from "./state";
 import "./styles.css";
 
-const NAV: [string, [View, string][]][] = [
-  ["Radar", [["home", "This week"], ["book", "Deep-dive book"], ["follow", "Follow-up"]]],
-  ["Explore", [["comp", "Competitors"], ["fin", "Market performance"], ["deals", "Rival deals"], ["ask", "Ask Radar"]]],
-  ["Radar settings", [["thesis", "Acquisition theses"], ["trig", "Watch rules"], ["admin", "Watched companies"]]],
+const NAV: [string, [View, string, LucideIcon][]][] = [
+  ["Radar", [["home", "This week", LayoutGrid], ["book", "Deep-dive book", BookOpen], ["follow", "Follow-up", ClipboardCheck]]],
+  ["Explore", [["comp", "Competitors", Users], ["fin", "Market performance", LineChart], ["deals", "Rival deals", Briefcase], ["ask", "Ask Radar", MessageCircleQuestion]]],
+  ["Radar settings", [["thesis", "Acquisition theses", Target], ["trig", "Watch rules", BellRing], ["admin", "Watched companies", Eye]]],
 ];
 
-// The repo's restricted M&A screens (ZenLabs design, rendered inside a .tw wrapper).
-const DESK: [string, string, boolean][] = [
-  ["/board", "Signal board", false],
-  ["/digests", "Digest archive", false],
-  ["/admin", "Admin", true],
+// The repo's restricted M&A screens (Tailwind, rendered inside a .tw wrapper).
+const DESK: [string, string, boolean, LucideIcon][] = [
+  ["/board", "Signal board", false, Radar],
+  ["/digests", "Digest archive", false, Archive],
+  ["/admin", "Admin", true, ShieldCheck],
 ];
 
-function initialTheme(): "light" | "dark" {
-  try { const t = localStorage.getItem("hr-theme"); if (t === "light" || t === "dark") return t; } catch { /* storage blocked */ }
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
-/** The page title the ZenLabs screens set with usePageMeta, shown above them. */
+/** The page title the desk screens set with usePageMeta, shown above them. */
 function DeskTitle() {
   const { meta } = usePageMetaContext();
   return (
@@ -61,7 +60,6 @@ export default function RadarApp() {
   const [version, setVersion] = useState(0);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [guideOn, setGuideOn] = useState(true);
-  const [theme, setTheme] = useState(initialTheme);
   const [counts, setCounts] = useState({ home: 0, book: 0, follow: 0, pending: 0, openFollow: 0, jobRunning: false });
   const toastTimer = useRef<number>();
 
@@ -77,10 +75,6 @@ export default function RadarApp() {
   const groupView = !!me?.group_view;
 
   useEffect(() => { document.body.classList.toggle("guide-on", guideOn && !onDesk); }, [guideOn, onDesk]);
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    try { localStorage.setItem("hr-theme", theme); } catch { /* storage blocked */ }
-  }, [theme]);
 
   const toast = useCallback((m: string) => {
     setToastMsg(m); window.clearTimeout(toastTimer.current);
@@ -154,57 +148,84 @@ export default function RadarApp() {
   };
 
   const navCount: Partial<Record<View, number>> = { home: counts.home, book: counts.book, follow: counts.follow };
+  const NAV_COUNT_TITLE: Partial<Record<View, string>> = {
+    home: `${counts.home} recommended moves not yet escalated`, book: `${counts.book} pages in the book`, follow: `${counts.follow} follow-ups open`,
+  };
   const active = onDesk ? null : view === "deep" ? "book" : view;
 
   return (
     <Ctx.Provider value={state}>
       <PageMetaProvider>
         <div className="radar-root">
-          <div className="shell-top">
-            <div className="brand">
-              <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.4" /><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" strokeWidth="1.4" /><path d="M8 8 L13 3" stroke="currentColor" strokeWidth="1.6" /></svg>
+          <aside className="side">
+            <div className="side-brand">
+              <span className="logo"><Radar size={18} aria-hidden="true" /></span>
               Horizon Radar
             </div>
-            {!onDesk && companies.length > 0 && (
-              <div className="topctl">
-                <label htmlFor="coSel">Company</label>
-                <select id="coSel" value={scope} onChange={(e) => setScope(e.target.value)}>
-                  {groupView && <option value="All">All companies</option>}
-                  {companies.map((c) => <option key={c}>{c}</option>)}
-                </select>
-              </div>
-            )}
-            <span className="spacer" />
-            {!onDesk && <button type="button" className="btnx" aria-pressed={guideOn} onClick={() => setGuideOn(!guideOn)}>Guided demo</button>}
-            <button type="button" className="btnx" id="themeBtn" aria-pressed={theme === "dark"} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-              title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>{theme === "dark" ? "☀︎" : "☾"}</button>
-            <span className="mock" title="Approved real companies' signals are live; rival placeholders, deal targets and decisions are demo data">Live + demo data</span>
-            <button type="button" className="btnx" onClick={logout}>Sign out</button>
-          </div>
-          <div className="restricted-bar" role="note">
-            <b>Restricted — UPSI-adjacent — do not forward.</b> A signal-flagging tool for named reviewers, not a valuation or due-diligence tool. Every view is logged.
-          </div>
-          <div className="shell">
-            <nav className="side" aria-label="Screens">
-              {NAV.map(([grp, items]) => (
+            <nav className="side-nav" aria-label="Screens">
+              {NAV.map(([grp, items], gi) => (
                 <div key={grp} style={{ display: "contents" }}>
-                  <div className="navgrp">{grp}</div>
-                  {items.map(([k, l]) => (
+                  {gi > 0 && <div className="navgrp">{grp}</div>}
+                  {items.map(([k, l, Icon]) => (
                     <button key={k} className="navbtn" aria-current={k === active ? "page" : undefined} onClick={() => go(k)}>
-                      <span>{l}</span>{navCount[k] !== undefined && <em>{navCount[k]}</em>}
+                      <Icon size={18} aria-hidden="true" />
+                      <span>{l}</span>
+                      {!!navCount[k] && <em title={NAV_COUNT_TITLE[k]}>{navCount[k]}</em>}
                     </button>
                   ))}
                 </div>
               ))}
               <div className="navgrp">Restricted desk</div>
-              {DESK.filter(([, , adminOnly]) => isAdmin || !adminOnly).map(([path, label]) => (
+              {DESK.filter(([, , adminOnly]) => isAdmin || !adminOnly).map(([path, label, , Icon]) => (
                 <button key={path} className="navbtn" aria-current={location.pathname.startsWith(path) || (path === "/board" && location.pathname.startsWith("/signals")) ? "page" : undefined}
                   onClick={() => navigate(path)}>
+                  <Icon size={18} aria-hidden="true" />
                   <span>{label}</span>
                 </button>
               ))}
-              <div className="sep">Signed in: {who}{isAdmin ? " · compliance admin" : ""}</div>
             </nav>
+            {guideOn && !onDesk && me && (
+              <div className="guide" role="region" aria-label="Guided demo">
+                <small>Guided demo · step {g.n} of 5</small>
+                <div className="gdots">{[1, 2, 3, 4, 5].map((i) => <i key={i} className={i <= g.n ? "on" : ""} />)}</div>
+                <b>{g.title}</b><p>{g.text}</p>
+                <div className="gb">
+                  {g.go && <button className="pri" onClick={g.go[1]}>{g.go[0]}</button>}
+                  {isAdmin && <button onClick={restart}>Restart</button>}
+                  <button onClick={() => setGuideOn(false)}>Hide guide</button>
+                </div>
+              </div>
+            )}
+            <div className="side-foot">Powered by ZenLabs Agent Foundry</div>
+          </aside>
+          <div className="main-col">
+            <header className="shell-top">
+              <div className="hd-title">
+                <div className="eyebrow"><i aria-hidden="true" />RPG Corporate Strategy</div>
+                <div className="hd-name gradient-text">Competitor and M&amp;A Signals</div>
+              </div>
+              <div className="hd-right">
+                {!onDesk && companies.length > 0 && (
+                  <div className="topctl">
+                    <label htmlFor="coSel">Company</label>
+                    <select id="coSel" value={scope} onChange={(e) => setScope(e.target.value)}>
+                      {groupView && <option value="All">All companies</option>}
+                      {companies.map((c) => <option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+                )}
+                <span className="hd-pill" title="Signals of approved real companies are live. Rival placeholders, deal targets and decisions are demo data.">Live and demo data</span>
+                {!onDesk && <button type="button" className="btnx" aria-pressed={guideOn} onClick={() => setGuideOn(!guideOn)}>Guided demo</button>}
+                <div className="userchip">
+                  <b>{who}</b>
+                  <span>{isAdmin ? "Compliance admin" : "Strategy reviewer"}</span>
+                </div>
+                <button type="button" className="iconbtn" onClick={logout} title="Sign out" aria-label="Sign out"><LogOut size={17} /></button>
+              </div>
+            </header>
+            <div className="restricted-bar" role="note">
+              <b>Restricted — UPSI-adjacent — do not forward.</b> A signal-flagging tool for named reviewers, not a valuation or due-diligence tool. Every view is logged.
+            </div>
             <main className="am" id="main">
               {onDesk ? (
                 <section className="view desk tw">
@@ -216,7 +237,7 @@ export default function RadarApp() {
               ) : !me ? (
                 <section className="view"><p className="sub">Loading…</p></section>
               ) : (
-                <section className="view">
+                <section className="view" key={view}>
                   {view === "home" && <Home />}
                   {view === "deep" && <DeepDive />}
                   {view === "book" && <Book />}
@@ -232,18 +253,6 @@ export default function RadarApp() {
               )}
             </main>
           </div>
-          {guideOn && !onDesk && me && (
-            <div className="guide" role="region" aria-label="Guided demo">
-              <small>Guided demo · step {g.n} of 5</small>
-              <div className="gdots">{[1, 2, 3, 4, 5].map((i) => <i key={i} className={i <= g.n ? "on" : ""} />)}</div>
-              <b>{g.title}</b><p>{g.text}</p>
-              <div className="gb">
-                {g.go && <button className="pri" onClick={g.go[1]}>{g.go[0]}</button>}
-                {isAdmin && <button onClick={restart}>Restart</button>}
-                <button onClick={() => setGuideOn(false)}>Hide guide</button>
-              </div>
-            </div>
-          )}
           {toastMsg && <div className="toast" role="status" aria-live="polite">{toastMsg}</div>}
         </div>
       </PageMetaProvider>

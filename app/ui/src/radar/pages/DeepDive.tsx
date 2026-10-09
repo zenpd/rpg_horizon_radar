@@ -28,8 +28,7 @@ export default function DeepDive() {
   return (
     <>
       <div>
-        <span className="crumb"><b>Deep dive</b> · {n} compan{n === 1 ? "y" : "ies"}</span>
-        <h4>Agents are preparing one page per company</h4>
+        <h1>Deep dive · agents are preparing {n} page{n === 1 ? "" : "s"}, one per company</h1>
         <p className="sub">This is the expensive work only shortlisted companies get: paid financial data, ownership trees, rival deals and what-if scenarios. About 2 hours in production, a few seconds here.</p>
       </div>
       <Journey step={2} />

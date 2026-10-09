@@ -34,7 +34,7 @@ export default function SubsidiaryFilterChip({
       className={
         active
           ? "chip-open inline-flex items-center gap-1.5"
-          : "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold bg-gray-50 text-gray-500 ring-1 ring-gray-200 hover:ring-rose-200 hover:text-rose-600 transition-colors"
+          : "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold bg-gray-50 text-slate-600 ring-1 ring-gray-200 hover:ring-zen-200 hover:text-zen-600 transition-colors"
       }
     >
       {code}

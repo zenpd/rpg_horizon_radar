@@ -117,7 +117,7 @@ export default function WatchlistTab() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-gray-500 max-w-2xl leading-relaxed">
+        <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
           Real, publicly listed companies the live connectors track. Discovery proposes companies for subsidiaries whose
           compliance gate is open ({openGates.join(", ") || "none open"}); nothing is fetched about a company until you approve it.
         </p>
@@ -133,7 +133,7 @@ export default function WatchlistTab() {
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-colors ${
-              tab === t.key ? "text-rose-700 border-b-2 border-rose-600" : "text-gray-400 hover:text-gray-600"
+              tab === t.key ? "text-zen-700 border-b-2 border-zen-600" : "text-slate-500 hover:text-slate-600"
             }`}
           >
             {t.label} <span className="text-gray-300">({rows.filter((r) => r.status === t.key).length})</span>
@@ -142,9 +142,9 @@ export default function WatchlistTab() {
       </div>
 
       {loading ? (
-        <div className="text-sm text-gray-400 py-10 text-center">Loading watchlist…</div>
+        <div className="text-sm text-slate-500 py-10 text-center">Loading watchlist…</div>
       ) : shown.length === 0 ? (
-        <div className="text-sm text-gray-400 py-10 text-center border border-dashed border-gray-200 rounded-2xl">
+        <div className="text-sm text-slate-500 py-10 text-center border border-dashed border-gray-200 rounded-2xl">
           {tab === "proposed" ? "No proposals waiting. Run discovery or add a company below." : `No ${tab} companies.`}
         </div>
       ) : (
@@ -153,26 +153,26 @@ export default function WatchlistTab() {
             <div key={r.id} className="px-5 py-4 flex flex-col gap-3 lg:flex-row lg:items-start">
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-semibold text-gray-900">{r.name}</p>
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
+                  <p className="text-sm font-semibold text-slate-900">{r.name}</p>
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
                     {r.discovery?.for ? `for ${r.discovery.for}` : r.sectors.join(", ")}
                   </span>
                   {r.discovery?.kind && (
-                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-600">{r.discovery.kind}</span>
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600">{r.discovery.kind}</span>
                   )}
-                  <span className="text-[10px] text-gray-400">{r.origin === "manual" ? "added by hand" : "found by discovery"}</span>
+                  <span className="text-[11px] text-slate-500">{r.origin === "manual" ? "added by hand" : "found by discovery"}</span>
                 </div>
-                {r.discovery?.why && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{r.discovery.why}</p>}
+                {r.discovery?.why && <p className="text-xs text-slate-600 mt-1 leading-relaxed">{r.discovery.why}</p>}
                 {!!r.discovery?.sources?.length && (
                   <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
                     {r.discovery.sources.map((s) => (
-                      <a key={s.url} href={s.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-rose-600 hover:underline max-w-xs truncate">
+                      <a key={s.url} href={s.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-zen-600 hover:underline max-w-xs truncate">
                         {s.title} <ExternalLink size={10} />
                       </a>
                     ))}
                   </div>
                 )}
-                <p className="text-[10px] text-gray-400 mt-1.5">
+                <p className="text-[11px] text-slate-500 mt-1.5">
                   {r.discovery?.last_seen_at && `Last confirmed by discovery ${formatDate(r.discovery.last_seen_at)}. `}
                   {r.approved_by && `Approved by ${r.approved_by} on ${formatDate(r.approved_at)}. `}
                   {r.status === "watching" && `${r.raw_signal_count} signals${r.score != null ? `, score ${Math.round(r.score)}` : ""}.`}
@@ -203,7 +203,7 @@ export default function WatchlistTab() {
       )}
 
       <div className="card p-5">
-        <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5 mb-4">
+        <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5 mb-4">
           <Plus size={15} /> Add a company by hand
         </h3>
         <form onSubmit={add} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -214,7 +214,7 @@ export default function WatchlistTab() {
           <input className="input" placeholder="Name in headlines (optional)" value={form.query_name}
                  onChange={(e) => setForm((f) => ({ ...f, query_name: e.target.value }))} />
           <div className="sm:col-span-3">
-            <p className="text-xs font-medium text-gray-500 mb-1.5">Sectors (routes its signals to the matching subsidiaries)</p>
+            <p className="text-xs font-medium text-slate-600 mb-1.5">Sectors (routes its signals to the matching subsidiaries)</p>
             <div className="flex flex-wrap gap-1.5">
               {sectors.map((s) => (
                 <button
@@ -226,7 +226,7 @@ export default function WatchlistTab() {
                   className={
                     form.sectors.includes(s)
                       ? "chip-open"
-                      : "rounded-full px-2.5 py-1 text-xs font-semibold bg-gray-50 text-gray-500 ring-1 ring-gray-200 hover:ring-rose-200"
+                      : "rounded-full px-2.5 py-1 text-xs font-semibold bg-gray-50 text-slate-600 ring-1 ring-gray-200 hover:ring-zen-200"
                   }
                 >
                   {s}

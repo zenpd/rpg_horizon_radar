@@ -33,58 +33,65 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-restricted flex items-center justify-center shadow-glow-restricted mb-3">
-            <Radar size={26} className="text-white" />
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-8 w-full max-w-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-lg bg-gradient-zen flex items-center justify-center text-white flex-shrink-0">
+            <Radar size={22} />
           </div>
-          <h1 className="text-lg font-extrabold text-gray-900 tracking-tight">RPG Horizon Radar</h1>
-          <p className="text-xs text-gray-400 mt-2 max-w-xs leading-relaxed">
-            Restricted — Corporate Strategy. Named-reviewer access only. Contact Compliance to be
-            added to the reviewer list.
-          </p>
+          <div>
+            <div className="font-bold text-slate-900">Horizon Radar</div>
+            <div className="text-xs text-slate-600">RPG Corporate Strategy</div>
+          </div>
         </div>
 
-        <div className="card p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5" htmlFor="email">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="input"
-                placeholder="you@rpgroup.com"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5" htmlFor="password">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="input"
-                placeholder="••••••••"
-              />
-            </div>
-            <button type="submit" disabled={submitting} className="btn btn-restricted w-full justify-center">
-              {submitting ? "Signing in…" : "Sign in"}
-            </button>
-          </form>
-        </div>
+        <h2 className="text-lg font-semibold text-slate-900">Sign in to continue</h2>
+        <p className="text-xs text-slate-600 mt-1 mb-4 leading-relaxed">
+          Restricted — Corporate Strategy. Named-reviewer access only. Contact Compliance to be
+          added to the reviewer list.
+        </p>
 
-        <p className="text-center text-[11px] text-gray-400 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="text-xs text-slate-600" htmlFor="email">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="username"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zen-400"
+              placeholder="you@rpgroup.com"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-slate-600" htmlFor="password">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zen-400"
+              placeholder="••••••••"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-gradient-zen text-white py-2 rounded-lg text-sm font-medium disabled:opacity-50 hover:opacity-90"
+          >
+            {submitting ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+
+        <p className="text-xs text-slate-500 mt-4">
           This is a signal-flagging tool, not a valuation or due-diligence tool.
         </p>
       </div>

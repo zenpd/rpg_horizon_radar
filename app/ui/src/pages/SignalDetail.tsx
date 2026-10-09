@@ -38,7 +38,7 @@ function configFor(sourceType: string | undefined) {
   for (const prefix of Object.keys(SOURCE_CONFIG)) {
     if (key.includes(prefix)) return SOURCE_CONFIG[prefix];
   }
-  return { icon: FileText, bg: "bg-gray-100", text: "text-gray-500", border: "border-gray-200" };
+  return { icon: FileText, bg: "bg-gray-100", text: "text-slate-600", border: "border-gray-200" };
 }
 
 function formatDate(value?: string | null) {
@@ -121,7 +121,7 @@ export default function SignalDetail() {
   };
 
   if (loading) {
-    return <div className="text-sm text-gray-400 py-10 text-center">Loading signal…</div>;
+    return <div className="text-sm text-slate-500 py-10 text-center">Loading signal…</div>;
   }
 
   if (!signal) {
@@ -135,7 +135,7 @@ export default function SignalDetail() {
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-gray-700"
+        className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
       >
         <ArrowLeft size={14} />
         Back
@@ -144,14 +144,14 @@ export default function SignalDetail() {
       <div className="card p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{signal.entity_name}</h1>
-            <p className="text-xs text-gray-400 mt-1">
+            <h1 className="text-xl font-bold text-slate-900">{signal.entity_name}</h1>
+            <p className="text-xs text-slate-500 mt-1">
               {(signal.entity_sectors || []).join(" · ")}
               {signal.entity_category ? ` — ${signal.entity_category}` : ""}
             </p>
             <div className="flex flex-wrap items-center gap-1.5 mt-3">
               {(signal.subsidiaries || []).map((code) => (
-                <span key={code} className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-semibold text-gray-500">
+                <span key={code} className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">
                   Routed → {code}
                 </span>
               ))}
@@ -162,14 +162,14 @@ export default function SignalDetail() {
 
         <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
           <p className="section-title mb-1.5">Rationale</p>
-          <p className="text-sm text-gray-600 leading-relaxed">{signal.rationale}</p>
+          <p className="text-sm text-slate-600 leading-relaxed">{signal.rationale}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 mt-4">
           {(signal.signal_types || []).map((t) => (
             <span
               key={t}
-              className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-500"
+              className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-600"
             >
               {t.replace(/_/g, " ")}
             </span>
@@ -217,20 +217,20 @@ export default function SignalDetail() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
+                    <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
                       {rs.signal_type?.replace(/_/g, " ")} · {rs.source_type?.replace(/_/g, " ")}
                       {rs.provider && rs.provider !== "mock" ? ` · ${rs.provider}` : " · demo data"}
                     </span>
-                    <span className="text-[10px] font-mono text-gray-400">{formatDate(rs.observed_at)}</span>
+                    <span className="text-[11px] font-mono text-slate-500">{formatDate(rs.observed_at)}</span>
                   </div>
-                  <p className="text-sm font-medium text-gray-800 mt-1">{rs.headline}</p>
-                  {rs.source_excerpt && <p className="text-xs text-gray-500 mt-1 leading-relaxed">{rs.source_excerpt}</p>}
+                  <p className="text-sm font-medium text-slate-800 mt-1">{rs.headline}</p>
+                  {rs.source_excerpt && <p className="text-xs text-slate-600 mt-1 leading-relaxed">{rs.source_excerpt}</p>}
                   {rs.source_url && (
                     <a
                       href={rs.source_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-rose-600 hover:underline mt-2"
+                      className="inline-flex items-center gap-1 text-xs text-zen-600 hover:underline mt-2"
                     >
                       Source <ExternalLink size={11} />
                     </a>

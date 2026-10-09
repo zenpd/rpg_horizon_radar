@@ -20,6 +20,11 @@ export function Journey({ step }: { step: number }) {
   );
 }
 
+/** One headline number: label, value and what is counted. */
+export function Kpi({ label, value, sub }: { label: string; value: string | number; sub: string }) {
+  return <div className="kpi"><small>{label}</small><b>{value}</b><span>{sub}</span></div>;
+}
+
 export const sCls = (s: number) => (s >= 70 ? "s-hi" : s >= 40 ? "s-md" : "s-lo");
 
 export function CaseBadge({ c }: { c: CaseSummary }) {
