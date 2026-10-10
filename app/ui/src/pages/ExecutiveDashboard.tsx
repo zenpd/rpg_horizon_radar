@@ -6,6 +6,8 @@ import { usePageMeta } from "../context/PageMetaContext";
 import { getDigests, getSignals } from "../services/api";
 import { api as radarApi, type DigestSwot, type DigestSwotSubsidiary } from "../radar/api";
 import type { DigestSummary, SignalClusterSummary } from "../types";
+import WeeklyTrendChart from "../components/WeeklyTrendChart";
+import SeverityDonut from "../components/SeverityDonut";
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -114,7 +116,38 @@ export default function ExecutiveDashboard() {
     [digests, year, month]
   );
 
+  // Keep the three cascading dropdowns self-consistent: whenever the year
+  // changes (or the current month no longer exists in it), fall back to the
+  // most recent month in that year — same idea one level down for the week.
+  useEffect(() => {
+    if (monthsInYear.length && (month === "" || !monthsInYear.includes(Number(month)))) {
+      setMonth(String(monthsInYear[monthsInYear.length - 1]));
+    }
+  }, [monthsInYear]);
+  useEffect(() => {
+    if (weeksInMonth.length && !weeksInMonth.some((d) => d.id === selectedId)) {
+      setSelectedId(weeksInMonth[0].id);
+    }
+  }, [weeksInMonth]);
+
   const highSeverity = liveSignals.filter((s) => s.score >= 75).length;
+
+  const trendPoints = useMemo(
+    () => [...digests]
+      .sort((a, b) => new Date(a.period_end).getTime() - new Date(b.period_end).getTime())
+      .map((d) => ({
+        label: new Date(d.period_end).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+        value: Object.values(d.subsidiary_breakdown).reduce((a, b) => a + b, 0),
+        highlighted: d.id === selectedId,
+      })),
+    [digests, selectedId]
+  );
+
+  const severityCounts = useMemo(() => ({
+    low: liveSignals.filter((s) => s.score < 50).length,
+    elevated: liveSignals.filter((s) => s.score >= 50 && s.score < 75).length,
+    high: liveSignals.filter((s) => s.score >= 75).length,
+  }), [liveSignals]);
 
   return (
     <div className="space-y-6">
@@ -138,6 +171,17 @@ export default function ExecutiveDashboard() {
         <KpiTile icon={<Activity size={18} className="text-blue-500" />} chip="bg-blue-50" value={data?.subsidiaries.reduce((a, s) => a + s.signal_count, 0) ?? 0} label="Signals in this digest" sub="selected week" />
         <KpiTile icon={<AlertTriangle size={18} className="text-rose-500" />} chip="bg-rose-50" value={highSeverity} label="High severity" sub="live, right now" />
         <KpiTile icon={<Share2 size={18} className="text-violet-500" />} chip="bg-violet-50" value={underEval.length} label="Escalations under evaluation" sub="right now" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="card p-5">
+          <h2 className="font-semibold text-gray-900 mb-3 text-sm">Signal volume by week</h2>
+          <WeeklyTrendChart points={trendPoints} />
+        </div>
+        <div className="card p-5">
+          <h2 className="font-semibold text-gray-900 mb-3 text-sm">Live signals by severity</h2>
+          <SeverityDonut counts={severityCounts} />
+        </div>
       </div>
 
       {data && data.subsidiaries.length > 0 ? (

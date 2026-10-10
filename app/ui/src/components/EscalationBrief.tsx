@@ -1,7 +1,17 @@
 import toast from "react-hot-toast";
 import { AlertTriangle, Clipboard, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
 
-import type { EscalationBrief as EscalationBriefType } from "../types";
+import RippleGraph from "./RippleGraph";
+import type { EscalationBrief as EscalationBriefType, RippleEffect } from "../types";
+
+function groupBySubsidiary(effects: RippleEffect[]): [string, RippleEffect[]][] {
+  const groups = new Map<string, RippleEffect[]>();
+  for (const e of effects) {
+    const list = groups.get(e.subsidiary_code);
+    if (list) list.push(e); else groups.set(e.subsidiary_code, [e]);
+  }
+  return Array.from(groups.entries());
+}
 
 const DEPENDENCY_LABEL: Record<string, string> = {
   raw_material: "Raw material",
@@ -15,6 +25,14 @@ const DEPENDENCY_CHIP: Record<string, string> = {
   byproduct: "bg-teal-50 text-teal-700 ring-1 ring-teal-200",
   shared_service: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
   shared_vendor: "bg-violet-50 text-violet-700 ring-1 ring-violet-200",
+};
+
+// Matches RippleGraph.tsx's node-fill colors, for the legend under the graph.
+const DEPENDENCY_DOT: Record<string, string> = {
+  raw_material: "#f59e0b",
+  byproduct: "#14b8a6",
+  shared_service: "#3b82f6",
+  shared_vendor: "#8b5cf6",
 };
 
 function asPlainText(brief: EscalationBriefType, entityName?: string) {
@@ -120,6 +138,19 @@ export default function EscalationBrief({ brief, entityName }: EscalationBriefPr
             <Share2 size={12} />
             Ripple effect on RPG Group <span className="normal-case text-gray-300">(directional, not a valuation)</span>
           </p>
+          {groupBySubsidiary(brief.ripple_effects).map(([code, effects]) => (
+            <div key={code} className="rounded-xl border border-gray-100 bg-gray-50/40 mb-3">
+              <RippleGraph center={code} effects={effects} />
+              <div className="flex flex-wrap gap-3 justify-center pb-3 text-[10px] text-gray-500">
+                {Object.entries(DEPENDENCY_DOT).map(([type, color]) => (
+                  <span key={type} className="flex items-center gap-1">
+                    <span className="inline-block w-2 h-2 rounded-full" style={{ background: color }} />
+                    {DEPENDENCY_LABEL[type]}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
           <ul className="space-y-2">
             {brief.ripple_effects.map((r, i) => (
               <li key={i} className="rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2">
