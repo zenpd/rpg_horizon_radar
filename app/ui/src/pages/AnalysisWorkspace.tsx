@@ -16,15 +16,7 @@ import { getEscalationBrief, getSignals } from "../services/api";
 import SignalCard from "../components/SignalCard";
 import EscalationBriefView from "../components/EscalationBrief";
 import type { EscalationBrief, SignalClusterSummary } from "../types";
-
-// Radar company display name -> governed-backend subsidiary code (inverse of
-// app/radar/bridge.py's CODE_TO_CO) — needed for the two tabs (Signal board,
-// Ripple Effect) that read the governed-DB signal/escalation system rather
-// than the radar in-memory STORE.
-const CO_TO_CODE: Record<string, string> = {
-  CEAT: "CEAT", KEC: "KEC", Zensar: "ZENSAR", "RPG Life Sciences": "RPGLS",
-  "Raychem RPG": "RAYCHEM", Harrisons: "HARRISONS",
-};
+import { CO_TO_CODE } from "../radar/companyCodes";
 
 type TabKey = "swot" | "book" | "follow" | "board" | "ripple" | "comp" | "fin" | "deals" | "ask" | "thesis" | "trig" | "watched";
 

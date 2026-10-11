@@ -1,16 +1,18 @@
 import { useMemo } from "react";
 import * as d3 from "d3";
 
-export interface TrendPoint { label: string; value: number; highlighted?: boolean }
+export interface TrendPoint { label: string; value: number; highlighted?: boolean; id?: number }
 
 interface WeeklyTrendChartProps {
   points: TrendPoint[];
   height?: number;
+  onSelect?: (id: number) => void;
 }
 
 /** A small bar chart of signal volume per digest week — D3 for scales/shape, React for the SVG.
- * No continuous simulation here, so there's no DOM-ownership conflict to avoid. */
-export default function WeeklyTrendChart({ points, height = 180 }: WeeklyTrendChartProps) {
+ * No continuous simulation here, so there's no DOM-ownership conflict to avoid. Bars are
+ * clickable (when an `id` is attached) so an exec can jump straight to that week's digest. */
+export default function WeeklyTrendChart({ points, height = 180, onSelect }: WeeklyTrendChartProps) {
   const width = 480;
   const margin = { top: 10, right: 10, bottom: 28, left: 28 };
 
@@ -44,10 +46,16 @@ export default function WeeklyTrendChart({ points, height = 180 }: WeeklyTrendCh
             <text x={-6} y={y(t)} dy={3} textAnchor="end" fontSize={9} fill="#94a3b8">{t}</text>
           </g>
         ))}
-        {bars.map((b) => (
-          <g key={b.label}>
+        {bars.map((b, i) => (
+          <g
+            key={b.id ?? i}
+            onClick={() => b.id !== undefined && onSelect?.(b.id)}
+            style={{ cursor: b.id !== undefined && onSelect ? "pointer" : "default" }}
+          >
+            <title>{`Week of ${b.label}: ${b.value} signal${b.value === 1 ? "" : "s"} reached the digest`}</title>
             <rect x={b.bx} y={b.by} width={b.bw} height={Math.max(b.bh, 1)} rx={3}
               fill={b.highlighted ? "#4f46e5" : "#c7d2fe"} />
+            <rect x={b.bx} y={0} width={b.bw} height={innerH} fill="transparent" />
             <text x={b.bx + b.bw / 2} y={innerH + 16} textAnchor="middle" fontSize={9} fill="#64748b">{b.label}</text>
             {b.value > 0 && <text x={b.bx + b.bw / 2} y={b.by - 4} textAnchor="middle" fontSize={10} fontWeight={600} fill="#4338ca">{b.value}</text>}
           </g>

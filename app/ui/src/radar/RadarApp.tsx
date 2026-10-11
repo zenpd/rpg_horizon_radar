@@ -37,6 +37,7 @@ function DeskTitle() {
     <div className="desk-head">
       <h1>{meta.title}</h1>
       {meta.subtitle && <p className="sub">{meta.subtitle}</p>}
+      <p className="desk-byline">Powered by ZenLabs Agent Foundry</p>
     </div>
   );
 }

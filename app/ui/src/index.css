@@ -135,3 +135,6 @@
 .sidebar-link svg { @apply flex-shrink-0 opacity-60 transition-opacity; }
 .sidebar-link.active svg { @apply opacity-100 text-zen-600; }
 .sidebar-link:hover svg { @apply opacity-90; }
+
+/* ── Detail drawer slide-in (Executive Dashboard drill-downs) ───────────── */
+@keyframes slideIn { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }

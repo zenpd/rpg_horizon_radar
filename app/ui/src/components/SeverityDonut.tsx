@@ -7,7 +7,7 @@ const COLOR = { low: "#10b981", elevated: "#f59e0b", high: "#f43f5e" }; // match
 const LABEL = { low: "Low", elevated: "Elevated", high: "High" };
 
 /** Donut of live signals by severity band (same 0/50/75 thresholds as ScoreBadge.tsx). */
-export default function SeverityDonut({ counts, size = 150 }: { counts: SeverityCounts; size?: number }) {
+export default function SeverityDonut({ counts, size = 150, onSelect }: { counts: SeverityCounts; size?: number; onSelect?: (band: keyof SeverityCounts) => void }) {
   const total = counts.low + counts.elevated + counts.high;
   const radius = size / 2;
 
@@ -25,7 +25,17 @@ export default function SeverityDonut({ counts, size = 150 }: { counts: Severity
           {total === 0 ? (
             <circle r={radius - 2} fill="none" stroke="#e5e7eb" strokeWidth={2} strokeDasharray="4 4" />
           ) : (
-            arcs.map((a) => a.data.value > 0 && <path key={a.data.key} d={a.path} fill={COLOR[a.data.key as keyof typeof COLOR]} />)
+            arcs.map((a) => a.data.value > 0 && (
+              <path
+                key={a.data.key}
+                d={a.path}
+                fill={COLOR[a.data.key as keyof typeof COLOR]}
+                style={{ cursor: onSelect ? "pointer" : "default" }}
+                onClick={() => onSelect?.(a.data.key as keyof SeverityCounts)}
+              >
+                <title>{`${LABEL[a.data.key as keyof typeof LABEL]} severity: ${a.data.value} live signal${a.data.value === 1 ? "" : "s"}`}</title>
+              </path>
+            ))
           )}
           <text textAnchor="middle" dy={-2} fontSize={20} fontWeight={700} fill="#111827">{total}</text>
           <text textAnchor="middle" dy={14} fontSize={9} fill="#9ca3af">live signals</text>
@@ -33,11 +43,17 @@ export default function SeverityDonut({ counts, size = 150 }: { counts: Severity
       </svg>
       <div className="space-y-1.5">
         {(["high", "elevated", "low"] as const).map((k) => (
-          <div key={k} className="flex items-center gap-2 text-xs">
+          <button
+            key={k}
+            type="button"
+            onClick={() => onSelect?.(k)}
+            disabled={!onSelect}
+            className="flex items-center gap-2 text-xs w-full text-left disabled:cursor-default enabled:hover:opacity-70"
+          >
             <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: COLOR[k] }} />
             <span className="text-gray-600">{LABEL[k]}</span>
             <span className="font-semibold text-gray-900">{counts[k]}</span>
-          </div>
+          </button>
         ))}
       </div>
     </div>
