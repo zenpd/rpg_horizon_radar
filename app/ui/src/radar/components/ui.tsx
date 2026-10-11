@@ -124,7 +124,7 @@ export function SwotDetails({ s }: { s: SwotView }) {
           <h5>{label}</h5>
           {s[k].map((x) => (
             <div key={x.id} className="swd-item">
-              <div><span className="mono">{x.id}</span> <b>{x.text}</b></div>
+              <div><span className="mono">{x.id}</span> <b>{x.text}</b> <span className="mini" title="SWOT dimension">{x.dimension}</span></div>
               {x.reasoning ? <p className="swd-why"><b>Why:</b> {x.reasoning}</p> : <p className="swd-why sub">No reasoning: written by hand for the demo.</p>}
               {x.sources.length ? (
                 <ul className="swd-src">{x.sources.map((y) => (

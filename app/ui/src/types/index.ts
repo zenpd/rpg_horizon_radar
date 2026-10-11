@@ -100,6 +100,18 @@ export interface EscalationBrief {
   ripple_effects: RippleEffect[];
 }
 
+// ---- Company profile (services/company_profile.py) ----
+export interface CompanyProfile {
+  listing_status: "public" | "private";
+  listing_label: string;
+  listing_detail: string;
+  market_reaction: string;
+  integration_stance: string;
+  deal_structure_hint: string;
+  regulatory_note: string;
+  disclaimer: string;
+}
+
 // ---- Digests ----
 export interface DigestSummary {
   id: number;

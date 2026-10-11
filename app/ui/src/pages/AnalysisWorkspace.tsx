@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  Archive, BellRing, BookOpen, Briefcase, ClipboardCheck, Eye,
-  LayoutGrid, LineChart, MessageCircleQuestion, Share2, Target, Users,
+  AlertTriangle, Archive, BellRing, BookOpen, Briefcase, ClipboardCheck, Eye,
+  Landmark, LayoutGrid, LineChart, MessageCircleQuestion, Share2, Target, Users,
 } from "lucide-react";
 
 import { usePageMeta } from "../context/PageMetaContext";
@@ -12,16 +12,18 @@ import Book from "../radar/pages/Book";
 import FollowUp from "../radar/pages/FollowUp";
 import { AskRadar, Competitors, Market, RivalDeals } from "../radar/pages/Explore";
 import { Theses, Watched, WatchRules } from "../radar/pages/Settings";
-import { getEscalationBrief, getSignals } from "../services/api";
+import { getCompanyProfile, getEscalationBrief, getSignals } from "../services/api";
 import SignalCard from "../components/SignalCard";
 import EscalationBriefView from "../components/EscalationBrief";
-import type { EscalationBrief, SignalClusterSummary } from "../types";
+import ScoreBadge from "../components/ScoreBadge";
+import type { CompanyProfile, EscalationBrief, SignalClusterSummary } from "../types";
 import { CO_TO_CODE } from "../radar/companyCodes";
 
-type TabKey = "swot" | "book" | "follow" | "board" | "ripple" | "comp" | "fin" | "deals" | "ask" | "thesis" | "trig" | "watched";
+type TabKey = "swot" | "profile" | "book" | "follow" | "board" | "ripple" | "comp" | "fin" | "deals" | "ask" | "thesis" | "trig" | "watched";
 
 const TABS: { key: TabKey; label: string; icon: typeof LayoutGrid }[] = [
   { key: "swot", label: "SWOT", icon: LayoutGrid },
+  { key: "profile", label: "Company Profile", icon: Landmark },
   { key: "book", label: "Deep-dive book", icon: BookOpen },
   { key: "follow", label: "Follow-up", icon: ClipboardCheck },
   { key: "board", label: "Signal board", icon: Archive },
@@ -60,6 +62,87 @@ function SignalBoardTab({ code }: { code: string }) {
           {signals.map((s) => <SignalCard key={s.id} signal={s} />)}
         </div>
       )}
+    </div>
+  );
+}
+
+function CompanyProfileCard({ profile }: { profile: CompanyProfile }) {
+  const FIELDS: { label: string; value: string }[] = [
+    { label: "Market reaction (heuristic, directional only)", value: profile.market_reaction },
+    { label: "Brand / integration stance (heuristic)", value: profile.integration_stance },
+    { label: "Likely deal structure (heuristic)", value: profile.deal_structure_hint },
+    { label: "Regulatory note", value: profile.regulatory_note },
+  ];
+  return (
+    <div className="p-5 space-y-4">
+      <div>
+        <span
+          className={`text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 ${
+            profile.listing_status === "public"
+              ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+              : "bg-gray-100 text-gray-600 ring-1 ring-gray-200"
+          }`}
+        >
+          {profile.listing_label}
+        </span>
+        <p className="text-xs text-slate-500 leading-relaxed mt-1.5">{profile.listing_detail}</p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {FIELDS.map((f) => (
+          <div key={f.label} className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">{f.label}</p>
+            <p className="text-xs text-slate-700 leading-relaxed">{f.value}</p>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-start gap-2 border-t border-amber-200 bg-amber-50 -mx-5 -mb-5 px-5 py-3 mt-2">
+        <AlertTriangle size={14} className="text-amber-700 shrink-0 mt-0.5" />
+        <p className="text-[11px] text-amber-700 leading-relaxed">{profile.disclaimer}</p>
+      </div>
+    </div>
+  );
+}
+
+function CompanyProfileTab({ code }: { code: string }) {
+  const [signals, setSignals] = useState<SignalClusterSummary[]>([]);
+  const [profiles, setProfiles] = useState<Record<number, CompanyProfile>>({});
+
+  useEffect(() => {
+    Promise.all([
+      getSignals({ subsidiary: code, status: "under_evaluation" }),
+      getSignals({ subsidiary: code, status: "live" }),
+    ]).then(async ([underEval, live]) => {
+      const all = [...underEval, ...live];
+      setSignals(all);
+      const entries = await Promise.all(
+        all.map(async (s) => [s.id, await getCompanyProfile(s.id).catch(() => null)] as const)
+      );
+      setProfiles(Object.fromEntries(entries.filter(([, p]) => p) as [number, CompanyProfile][]));
+    }).catch(() => setSignals([]));
+  }, [code]);
+
+  if (signals.length === 0) {
+    return (
+      <div className="card p-8 text-center text-sm text-gray-500">
+        No signals for this subsidiary yet — a company profile appears for every live or under-evaluation signal.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {signals.map((s) => (
+        <div key={s.id} className="card overflow-hidden">
+          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">{s.entity_name}</h3>
+              <p className="text-xs text-slate-500 mt-0.5">{s.entity_sectors.join(" · ") || "Sector not tagged"}</p>
+            </div>
+            <ScoreBadge score={s.score} />
+          </div>
+          {profiles[s.id] ? <CompanyProfileCard profile={profiles[s.id]} /> : <p className="text-xs text-gray-400 px-5 py-4">Loading…</p>}
+        </div>
+      ))}
     </div>
   );
 }
@@ -131,6 +214,7 @@ export default function AnalysisWorkspace() {
 
       <div>
         {tab === "swot" && <Home />}
+        {tab === "profile" && <CompanyProfileTab code={code} />}
         {tab === "book" && <Book />}
         {tab === "follow" && <FollowUp />}
         {tab === "board" && <SignalBoardTab code={code} />}

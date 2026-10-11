@@ -3,11 +3,21 @@ from __future__ import annotations
 
 from . import evidence as ev
 from . import rules
-from .reference import REF
+from .reference import REF, load
 from .store import COMPANIES_ORDER, STORE
 
 MON = {m: i + 1 for i, m in enumerate(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"])}
 THREAT_PRIO = {"High": 85, "Medium": 60, "Low": 35}
+
+# Hand-authored tags classifying each of the demo SWOT's items under one of
+# technology/business/brand/marketing/sales (same spirit as swot.json, just
+# split into its own file so the positional S1/W2/O3/T1 ids swot.json's
+# "rec" moves and positions.json rely on never have to change). Keyed by
+# company -> item id. Falls back to "business" for anything not in the map —
+# notably, an agent-rebuilt SWOT (see swot_agent.py) generates fresh item
+# text under the same positional ids, which this static map was never
+# written against, so its items read as "business" until re-tagged by hand.
+SWOT_DIMENSIONS: dict = load("swot_dimensions")
 
 
 def dnum(d: str) -> int:
@@ -84,11 +94,13 @@ def swot_view(co: str) -> dict:
     detail = STORE.swot_detail.get(co) if src["by"] == "agent" else None
     detail = detail or ev.demo_detail(co)
     d = lambda q, i: detail[q][i] if i < len(detail[q]) else {"reasoning": None, "sources": []}
+    dims = SWOT_DIMENSIONS.get(co, {})
+    dim = lambda item_id: dims.get(item_id, "business")
     return {"company": co,
-            "S": [{"id": f"S{i + 1}", "text": x, **d("S", i)} for i, x in enumerate(s["S"])],
-            "W": [{"id": f"W{i + 1}", "text": x, **d("W", i)} for i, x in enumerate(s["W"])],
-            "O": [{"id": f"O{i + 1}", "text": x[0], "case_id": x[1], **d("O", i)} for i, x in enumerate(s["O"])],
-            "T": [{"id": f"T{i + 1}", "text": x[0], "case_id": x[1], **d("T", i)} for i, x in enumerate(s["T"])],
+            "S": [{"id": f"S{i + 1}", "text": x, "dimension": dim(f"S{i + 1}"), **d("S", i)} for i, x in enumerate(s["S"])],
+            "W": [{"id": f"W{i + 1}", "text": x, "dimension": dim(f"W{i + 1}"), **d("W", i)} for i, x in enumerate(s["W"])],
+            "O": [{"id": f"O{i + 1}", "text": x[0], "case_id": x[1], "dimension": dim(f"O{i + 1}"), **d("O", i)} for i, x in enumerate(s["O"])],
+            "T": [{"id": f"T{i + 1}", "text": x[0], "case_id": x[1], "dimension": dim(f"T{i + 1}"), **d("T", i)} for i, x in enumerate(s["T"])],
             "moves": len(s["rec"]), "set_aside": len(s["skip"]), "source": src, "method": method(co)}
 
 

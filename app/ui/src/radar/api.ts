@@ -59,7 +59,8 @@ export interface RecCard {
 }
 
 export interface SwotSource { id: string; text: string; source: string; date: string | null; url: string | null; origin: "live" | "demo" | "team"; origin_label: string }
-export interface SwotItem { id: string; text: string; case_id?: string | null; reasoning: string | null; sources: SwotSource[] }
+export type SwotDimension = "technology" | "business" | "brand" | "marketing" | "sales";
+export interface SwotItem { id: string; text: string; case_id?: string | null; reasoning: string | null; sources: SwotSource[]; dimension: SwotDimension }
 export interface SwotMethod { built_by: "demo" | "agent"; summary: string; steps: string[]; model?: string; at?: string; rounds?: number; live_signals_available: number }
 export interface SwotView { company: string; S: SwotItem[]; W: SwotItem[]; O: SwotItem[]; T: SwotItem[]; moves: number; set_aside: number; source: { by: "mock" | "agent"; model?: string; at?: string }; method: SwotMethod }
 

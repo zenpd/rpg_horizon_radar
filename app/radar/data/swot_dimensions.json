@@ -1,0 +1,38 @@
+{
+ "CEAT": {
+  "S1": "brand", "S2": "sales", "S3": "business",
+  "W1": "technology", "W2": "business", "W3": "technology",
+  "O1": "business", "O2": "technology", "O3": "sales", "O4": "business",
+  "T1": "technology", "T2": "business", "T3": "sales"
+ },
+ "KEC": {
+  "S1": "business", "S2": "sales", "S3": "technology",
+  "W1": "business", "W2": "business", "W3": "sales",
+  "O1": "business", "O2": "sales", "O3": "technology",
+  "T1": "sales", "T2": "business", "T3": "business"
+ },
+ "Zensar": {
+  "S1": "sales", "S2": "technology", "S3": "business",
+  "W1": "technology", "W2": "sales", "W3": "technology",
+  "O1": "technology", "O2": "business",
+  "T1": "technology", "T2": "sales"
+ },
+ "RPG Life Sciences": {
+  "S1": "brand", "S2": "sales", "S3": "business",
+  "W1": "business", "W2": "business",
+  "O1": "business", "O2": "sales",
+  "T1": "sales", "T2": "business"
+ },
+ "Raychem RPG": {
+  "S1": "brand", "S2": "business", "S3": "sales",
+  "W1": "business", "W2": "business",
+  "O1": "business", "O2": "sales", "O3": "technology",
+  "T1": "business", "T2": "business"
+ },
+ "Harrisons": {
+  "S1": "business", "S2": "brand",
+  "W1": "marketing", "W2": "business",
+  "O1": "business", "O2": "marketing",
+  "T1": "marketing", "T2": "business"
+ }
+}

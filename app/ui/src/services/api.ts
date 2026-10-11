@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 
 import type {
   AuditLogEntry,
+  CompanyProfile,
   DigestDetail,
   DigestSummary,
   EntityOut,
@@ -96,6 +97,8 @@ export const markUnderEvaluation = (id: number | string) =>
   api.post<SignalClusterDetail>(`/signals/${id}/mark-under-evaluation`).then((r) => r.data);
 export const getEscalationBrief = (id: number | string) =>
   api.get<EscalationBrief>(`/signals/${id}/escalation-brief`).then((r) => r.data);
+export const getCompanyProfile = (id: number | string) =>
+  api.get<CompanyProfile>(`/signals/${id}/company-profile`).then((r) => r.data);
 
 // ---- Digests ----
 export const getDigests = () => api.get<DigestSummary[]>("/digests").then((r) => r.data);

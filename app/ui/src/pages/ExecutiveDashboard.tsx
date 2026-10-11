@@ -4,7 +4,7 @@ import { Activity, AlertTriangle, ArrowRight, CalendarDays, ChevronRight, Share2
 
 import { usePageMeta } from "../context/PageMetaContext";
 import { getDigest, getDigests, getSignals } from "../services/api";
-import { api as radarApi, type DigestSwot, type DigestSwotSubsidiary, type SwotItem } from "../radar/api";
+import { api as radarApi, type DigestSwot, type DigestSwotSubsidiary, type SwotDimension, type SwotItem } from "../radar/api";
 import { CODE_TO_CO } from "../radar/companyCodes";
 import type { DigestDetail, DigestSummary, SignalClusterSummary } from "../types";
 import WeeklyTrendChart from "../components/WeeklyTrendChart";
@@ -17,6 +17,14 @@ const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "Ju
 const SUBSIDIARY_COUNT = Object.keys(CODE_TO_CO).length;
 
 const QUADRANT_LABEL: Record<keyof SwotCounts, string> = { S: "Strengths", O: "Opportunities", W: "Weaknesses", T: "Threats" };
+const DIMENSIONS: (SwotDimension | "all")[] = ["all", "technology", "business", "brand", "marketing", "sales"];
+const DIMENSION_LABEL: Record<SwotDimension | "all", string> = {
+  all: "All", technology: "Technology", business: "Business", brand: "Brand", marketing: "Marketing", sales: "Sales",
+};
+
+function filterByDimension(items: SwotItem[], lens: SwotDimension | "all"): SwotItem[] {
+  return lens === "all" ? items : items.filter((x) => x.dimension === lens);
+}
 
 type Drawer =
   | { kind: "subsidiaries" }
@@ -75,9 +83,13 @@ function MiniSwotQuadrant({ title, accent, items, onOpen }: { title: string; acc
   );
 }
 
-function SubsidiarySwotCard({ sub, onOpenQuadrant }: { sub: DigestSwotSubsidiary; onOpenQuadrant: (co: string, quadrant: keyof SwotCounts, items: SwotItem[]) => void }) {
+function SubsidiarySwotCard({ sub, lens, onOpenQuadrant }: { sub: DigestSwotSubsidiary; lens: SwotDimension | "all"; onOpenQuadrant: (co: string, quadrant: keyof SwotCounts, items: SwotItem[]) => void }) {
   const navigate = useNavigate();
-  const counts: SwotCounts = { S: sub.swot.S.length, O: sub.swot.O.length, W: sub.swot.W.length, T: sub.swot.T.length };
+  const filtered = {
+    S: filterByDimension(sub.swot.S, lens), O: filterByDimension(sub.swot.O, lens),
+    W: filterByDimension(sub.swot.W, lens), T: filterByDimension(sub.swot.T, lens),
+  };
+  const counts: SwotCounts = { S: filtered.S.length, O: filtered.O.length, W: filtered.W.length, T: filtered.T.length };
   return (
     <div className="card p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -86,13 +98,16 @@ function SubsidiarySwotCard({ sub, onOpenQuadrant }: { sub: DigestSwotSubsidiary
           {sub.signal_count} signal{sub.signal_count === 1 ? "" : "s"}
         </span>
       </div>
+      {lens !== "all" && counts.S + counts.O + counts.W + counts.T === 0 && (
+        <p className="text-[11px] text-gray-400 -mt-2">No {DIMENSION_LABEL[lens].toLowerCase()}-tagged items for {sub.co} this week.</p>
+      )}
       <div className="flex gap-3 items-center">
-        <SwotRadarChart counts={counts} onAxisClick={(q) => onOpenQuadrant(sub.co, q, sub.swot[q])} />
+        <SwotRadarChart counts={counts} onAxisClick={(q) => onOpenQuadrant(sub.co, q, filtered[q])} />
         <div className="grid grid-cols-2 gap-2 flex-1">
-          <MiniSwotQuadrant title="Strengths" accent="bg-emerald-50 text-emerald-900" items={sub.swot.S} onOpen={() => onOpenQuadrant(sub.co, "S", sub.swot.S)} />
-          <MiniSwotQuadrant title="Weaknesses" accent="bg-amber-50 text-amber-900" items={sub.swot.W} onOpen={() => onOpenQuadrant(sub.co, "W", sub.swot.W)} />
-          <MiniSwotQuadrant title="Opportunities" accent="bg-blue-50 text-blue-900" items={sub.swot.O} onOpen={() => onOpenQuadrant(sub.co, "O", sub.swot.O)} />
-          <MiniSwotQuadrant title="Threats" accent="bg-rose-50 text-rose-900" items={sub.swot.T} onOpen={() => onOpenQuadrant(sub.co, "T", sub.swot.T)} />
+          <MiniSwotQuadrant title="Strengths" accent="bg-emerald-50 text-emerald-900" items={filtered.S} onOpen={() => onOpenQuadrant(sub.co, "S", filtered.S)} />
+          <MiniSwotQuadrant title="Weaknesses" accent="bg-amber-50 text-amber-900" items={filtered.W} onOpen={() => onOpenQuadrant(sub.co, "W", filtered.W)} />
+          <MiniSwotQuadrant title="Opportunities" accent="bg-blue-50 text-blue-900" items={filtered.O} onOpen={() => onOpenQuadrant(sub.co, "O", filtered.O)} />
+          <MiniSwotQuadrant title="Threats" accent="bg-rose-50 text-rose-900" items={filtered.T} onOpen={() => onOpenQuadrant(sub.co, "T", filtered.T)} />
         </div>
       </div>
       <button
@@ -144,6 +159,7 @@ export default function ExecutiveDashboard() {
   const [year, setYear] = useState<string>("");
   const [month, setMonth] = useState<string>("");
   const [drawer, setDrawer] = useState<Drawer | null>(null);
+  const [lens, setLens] = useState<SwotDimension | "all">("all");
   const [digestDetail, setDigestDetail] = useState<DigestDetail | null>(null);
   const [digestDetailLoading, setDigestDetailLoading] = useState(false);
 
@@ -289,15 +305,33 @@ export default function ExecutiveDashboard() {
       </div>
 
       {data && data.subsidiaries.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-          {data.subsidiaries.map((sub) => (
-            <SubsidiarySwotCard
-              key={sub.co}
-              sub={sub}
-              onOpenQuadrant={(co, quadrant, items) => setDrawer({ kind: "swot-item", co, quadrant, items })}
-            />
-          ))}
-        </div>
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-gray-500">SWOT lens:</span>
+            {DIMENSIONS.map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setLens(d)}
+                className={`text-xs font-medium px-3 py-1 rounded-full transition-colors ${
+                  lens === d ? "bg-zen-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {DIMENSION_LABEL[d]}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            {data.subsidiaries.map((sub) => (
+              <SubsidiarySwotCard
+                key={sub.co}
+                sub={sub}
+                lens={lens}
+                onOpenQuadrant={(co, quadrant, items) => setDrawer({ kind: "swot-item", co, quadrant, items })}
+              />
+            ))}
+          </div>
+        </>
       ) : (
         <div className="card p-8 text-center">
           <p className="text-sm text-gray-500">
@@ -379,7 +413,7 @@ export default function ExecutiveDashboard() {
         <DetailDrawer
           open
           onClose={() => setDrawer(null)}
-          title={`${drawer.co} — ${QUADRANT_LABEL[drawer.quadrant]}`}
+          title={`${drawer.co} — ${QUADRANT_LABEL[drawer.quadrant]}${lens !== "all" ? ` · ${DIMENSION_LABEL[lens]}` : ""}`}
           basis="Each item below is evidence-cited: the reasoning and sources are exactly what the SWOT was built from, nothing inferred beyond it."
         >
           <div className="space-y-3">

@@ -10,8 +10,10 @@ import { useAuth } from "../context/AuthContext";
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // Prefilled with the demo reviewer's credentials — this is a demo
+  // environment, not a production login.
+  const [email, setEmail] = useState("compliance.admin@rpg-demo.local");
+  const [password, setPassword] = useState("ChangeMe123!");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {

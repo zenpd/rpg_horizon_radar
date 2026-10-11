@@ -6,11 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth import get_current_reviewer, require_role
 from api.dependencies import get_db
+from api.schemas.company_profile import CompanyProfileOut
 from api.schemas.escalation_brief import EscalationBriefOut
 from api.schemas.signal import RawSignalOut, SignalClusterDetail, SignalClusterSummary
 from db.models import EscalationBrief, RawSignal, Reviewer, SignalCluster, Subsidiary, SubsidiaryDependency
 from services import visibility
 from services.audit import write_audit
+from services.company_profile import build_company_profile
 from services.escalation_brief import generate_escalation_brief
 
 router = APIRouter()
@@ -134,6 +136,28 @@ async def get_signal(
         evaluated_by=cluster.evaluated_by.name if cluster.evaluated_by else None,
         evaluated_at=cluster.evaluated_at,
     )
+
+
+@router.get("/{cluster_id}/company-profile", response_model=CompanyProfileOut)
+async def get_company_profile(
+    cluster_id: int,
+    reviewer: Reviewer = Depends(get_current_reviewer),
+    db: AsyncSession = Depends(get_db),
+):
+    sub_map = await _subsidiary_map(db)
+    cluster = (await db.execute(select(SignalCluster).where(SignalCluster.id == cluster_id))).scalar_one_or_none()
+
+    # 404 (not 403) when invisible, so the response never confirms existence.
+    if cluster is None or not _is_visible(cluster, reviewer, sub_map):
+        raise HTTPException(status_code=404, detail="Signal cluster not found")
+
+    routed_subsidiaries = [
+        sub_map[code] for code in _visible_codes_for(cluster, reviewer, sub_map) if code in sub_map
+    ]
+    distinct_types = set(cluster.opportunity_score.signal_types_json if cluster.opportunity_score else [])
+
+    await write_audit(db, reviewer, "view_company_profile", "signal_cluster", resource_id=cluster_id)
+    return CompanyProfileOut(**build_company_profile(cluster.entity, distinct_types, routed_subsidiaries))
 
 
 @router.post("/{cluster_id}/mark-under-evaluation", response_model=SignalClusterDetail)
