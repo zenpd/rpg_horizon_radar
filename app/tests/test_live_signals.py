@@ -429,3 +429,104 @@ def test_duckduckgo_answers_searches_when_tavily_refuses_but_never_sizes(setting
     monkeypatch.setattr(web_search, "_down", None)
     settings.ddg_fallback = False
     assert DuckDuckGo({}).configured is False, "off with DDG_FALLBACK=false"
+
+
+def test_currents_stands_in_for_gnews_once_it_refuses(settings, monkeypatch):
+    from ingestion.connectors.live import news
+
+    monkeypatch.setattr(news, "_down", {})
+    settings.gnews_api_key, settings.currents_api_key = "gn", "cu"
+    hosts: list[str] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        hosts.append(req.url.host)
+        if req.url.host == "gnews.io":
+            return httpx.Response(403, json={"errors": ["You have reached your request limit for today."]})
+        assert req.url.params["keywords"] == '"Omega Infotech"' and req.url.params["country"] == "IN"
+        return httpx.Response(200, json={"status": "ok", "news": [
+            {"title": "Omega Infotech wins Rs 40 crore order from a bank", "description": "The Pune firm...",
+             "url": "https://www.livemint.com/x", "published": "2026-10-08 10:22:49 +0000"}]})
+
+    t = httpx.MockTransport(handler)
+    assert news.gnews_up() and not news.currents_up(), "Currents waits while GNews answers"
+    facts = company_research.headlines("Omega Infotech", t)
+    assert hosts == ["gnews.io", "api.currentsapi.services"], "a GNews refusal hands the same search to Currents"
+    assert facts[0]["source"] == "livemint.com" and facts[0]["observed_at"] == "2026-10-08T10:22:49"
+    assert news.down("GNews") and news.currents_up(), "GNews is skipped for the rest of the day"
+    hosts.clear()
+    company_research.headlines("Omega Infotech", t)
+    assert hosts == ["api.currentsapi.services"]
+
+    e = _entity(id=995, name="Omega Infotech", sectors=["it"], status="watching")
+    out = news.Currents({}, t).pull(e, "Omega Infotech")
+    assert [(s["signal_type"], s["provider"]) for s in out] == [("press_opportunity", "Currents")]
+
+
+def test_marketstack_fills_prices_when_alpha_vantage_is_used_up(settings, monkeypatch):
+    settings.alpha_vantage_api_key, settings.marketstack_api_key = "", "ms"
+    asked: list[str] = []
+    days = [(datetime(2026, 10, 9) - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(40)]
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        asked.append(req.url.params["symbols"])
+        return httpx.Response(200, json={"data": [{"symbol": s, "date": f"{d}T00:00:00+0000", "close": 100.0 + i}
+                                                   for s in ("CEATLTD.XNSE", "KEC.XNSE") for i, d in enumerate(days)]})
+
+    state: dict = {}
+    res = market_data._fill(state, [("CEATLTD", "CEATLTD.BSE"), ("KEC", "KEC.BSE"), ("RPGLIFE", "RPGLIFE.BSE")], httpx.MockTransport(handler))
+    assert asked == ["CEATLTD.XNSE,KEC.XNSE,RPGLIFE.XNSE"], "one call for every company Alpha Vantage could not serve"
+    assert res["prices"] == ["CEATLTD", "KEC"] and any("RPGLIFE" in e for e in res["errors"])
+    px = state["market"]["px"]["CEATLTD"]["closes"]
+    assert px[0][0] == days[-1] and px[-1] == [days[0], 100.0] and len(px) == 40, "oldest first, like Alpha Vantage's"
+    assert state["budget"]["Marketstack"]["used"] == 1
+    assert market_data.company("CEATLTD", state)["chg_30"] is not None
+
+
+def test_jina_answers_web_searches_before_duckduckgo(settings, monkeypatch):
+    from services import web_search
+
+    monkeypatch.setattr(web_search, "_jina_down", None)
+    settings.ddg_fallback, settings.jina_api_key = True, "ji"
+    monkeypatch.setattr(web_search, "_call", lambda fn: [{"title": "From DuckDuckGo", "href": "https://d.example", "body": "snippet"}])
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        assert req.headers["Authorization"] == "Bearer ji" and req.url.params["q"] == "Omega Infotech"
+        return httpx.Response(200, json={"code": 200, "data": [{"title": "Omega Infotech", "url": "https://o.example", "description": "IT services, Pune"}]})
+
+    real = web_search.jina
+    monkeypatch.setattr(web_search, "jina", lambda q, n=6: real(q, n, httpx.MockTransport(handler)))
+    assert web_search.text("Omega Infotech") == [{"title": "Omega Infotech", "url": "https://o.example", "content": "IT services, Pune"}]
+
+    refused = httpx.MockTransport(lambda req: httpx.Response(401, json={"code": 401}))
+    monkeypatch.setattr(web_search, "jina", lambda q, n=6: real(q, n, refused))
+    assert web_search.text("Omega Infotech")[0]["title"] == "From DuckDuckGo", "a Jina refusal falls through to DuckDuckGo"
+    assert not web_search.jina_up(), "and Jina is skipped for the rest of the day"
+    settings.ddg_fallback = False
+    assert web_search.news("Omega Infotech") == [], "news stays with DuckDuckGo (Jina has no dates)"
+    assert not web_search.enabled()
+
+
+def test_slump_and_symbols_work_without_alpha_vantage(settings, monkeypatch):
+    from ingestion.connectors.live.filings import KeptPrices, resolve_nse_symbol
+
+    settings.alpha_vantage_api_key, settings.marketstack_api_key = "", "ms"
+    days = [(datetime(2026, 10, 9) - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(40)][::-1]
+    closes = [[d, 100.0 if i < 10 else 70.0] for i, d in enumerate(days)]  # down 30%
+    state = {"market": {"px": {"OMEGA": {"at": datetime.now().isoformat(timespec="seconds"), "source": "Marketstack", "closes": closes}}}}
+    e = _entity(id=994, name="Omega Infotech", sectors=["it"], status="watching", nse_symbol="OMEGA")
+    src = KeptPrices(state)
+    out = src.pull(e, src.query(e))
+    assert [(s["signal_type"], s["provider"]) for s in out] == [("share_price_slump", "Share prices")]
+    assert "down 30%" in out[0]["headline"] and "Source: Marketstack daily prices" in out[0]["source_excerpt"]
+    state["pulled"] = {"Alpha Vantage": {"994": {"at": datetime.now().isoformat(timespec="seconds")}}}
+    assert src.pull(e, "OMEGA") == [], "Alpha Vantage priced it today and raised the slump itself"
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        assert req.url.path == "/v1/tickers" and req.url.params["search"] == "Omega Infotech"
+        return httpx.Response(200, json={"data": [{"symbol": "OMEGA", "name": "OMEGA INFOTECH", "stock_exchange": {"acronym": "IEX"}},
+                                                  {"symbol": "OMEGA.XNSE", "name": "OMEGA INFOTECH LTD"}]})
+
+    state = {}
+    e2 = _entity(id=993, name="Omega Infotech Ltd", sectors=["it"], status="watching")
+    assert resolve_nse_symbol(e2, state, httpx.MockTransport(handler)) == "OMEGA"
+    assert state["budget"]["Marketstack"]["used"] == 1

@@ -633,3 +633,39 @@ body.guide-on .shell .am{padding-bottom:230px}
 .chat-src li { margin: 3px 0; }
 .pill2.src-web { background: var(--watchs); color: var(--watch); } .pill2.src-radar { background: var(--accent-soft); color: var(--accent-700); }
 .a.typing { opacity: .8; }
+
+/* Executive dashboard: one validated colour per RPG company (light / dark steps of the same hues) */
+:root{--co-1:#2a78d6;--co-2:#eb6834;--co-3:#1baf7a;--co-4:#eda100;--co-5:#e87ba4;--co-6:#008300}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--co-1:#3987e5;--co-2:#d95926;--co-3:#199e70;--co-4:#c98500;--co-5:#d55181;--co-6:#008300}}
+:root[data-theme="dark"]{--co-1:#3987e5;--co-2:#d95926;--co-3:#199e70;--co-4:#c98500;--co-5:#d55181;--co-6:#008300}
+.ov-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 12px 0; }
+.ov-kpi { text-align: left; border: 1px solid var(--rule); background: var(--surface); border-radius: 14px; padding: 12px 14px; cursor: pointer;
+  display: flex; flex-direction: column; gap: 2px; font: inherit; color: var(--ink); }
+.ov-kpi:hover, .ov-kpi.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.ov-kpi b { font-family: var(--display); font-size: 28px; line-height: 1.1; }
+.ov-kpi span { font-weight: 600; font-size: 13px; } .ov-kpi small { color: var(--faint); font-size: 11.5px; }
+.ov-cards { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.ov-card { gap: 8px; }
+.ov-swot { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.ov-swot button { border: 0; border-radius: 10px; padding: 6px 4px; cursor: pointer; font: inherit; display: flex; flex-direction: column; align-items: center; }
+.ov-swot b { font-family: var(--display); font-size: 18px; } .ov-swot small { font-size: 10.5px; color: var(--muted); }
+.ov-news { list-style: none; padding: 0; margin: 0; font-size: 13px; }
+.ov-news li { padding: 6px 0; border-top: 1px solid var(--rule); display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.ov-drill { border-color: var(--accent); }
+.viz-tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 4px 8px;
+  font-size: 12px; color: var(--ink); box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; }
+
+/* Executive dashboard charts (components/exec.tsx) */
+.exec-donut { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.exec-legend { display: flex; flex-direction: column; gap: 6px; }
+.exec-legend button { display: flex; align-items: center; gap: 8px; border: 0; background: transparent; font: inherit; font-size: 12.5px; cursor: pointer; color: var(--ink); padding: 0; }
+.exec-legend button:disabled { cursor: default; } .exec-legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.ov-swotrow { display: flex; align-items: center; gap: 8px; }
+.ov-swotrow .ov-swot { flex: 1; grid-template-columns: repeat(2, 1fr); }
+.exec-drawer { position: fixed; inset: 0; z-index: 60; display: flex; justify-content: flex-end; }
+.exec-drawer-back { position: absolute; inset: 0; background: rgba(15, 23, 42, .3); }
+.exec-drawer-panel { position: relative; width: min(460px, 100%); height: 100%; background: var(--surface); box-shadow: -8px 0 30px rgba(0,0,0,.18);
+  display: flex; flex-direction: column; animation: exec-slide .18s ease-out; }
+@keyframes exec-slide { from { transform: translateX(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+.exec-drawer-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; padding: 16px 18px; border-bottom: 1px solid var(--rule); }
+.exec-drawer-body { flex: 1; overflow-y: auto; padding: 14px 18px; }

@@ -62,7 +62,7 @@ class DiscoveryError(Exception):
 
 
 def _search(query: str, key: str, transport=None) -> list[dict]:
-    """A Tavily search; DuckDuckGo answers it when Tavily refuses or has no key (services/web_search.py)."""
+    """A Tavily search; Jina or DuckDuckGo answers it when Tavily refuses or has no key (services/web_search.py)."""
     from services import web_search
 
     body = {"query": query, "topic": "general", "max_results": 6, "search_depth": "advanced", "chunks_per_source": 3}

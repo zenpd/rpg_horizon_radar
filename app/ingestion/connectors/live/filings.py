@@ -176,7 +176,6 @@ class AlphaVantage(LiveConnector):
     URL = "https://www.alphavantage.co/query"
     DAILY_LIMIT = 25
     min_days = 1
-    SLUMP = -20.0
     GAP = 1.5
     _last = 0.0
 
@@ -209,34 +208,65 @@ class AlphaVantage(LiveConnector):
     def pull(self, entity: Entity, query: str) -> list[dict]:
         from services.market_data import keep_prices
 
+        from services import market_data
+
         series = self.call({"function": "TIME_SERIES_DAILY", "symbol": query, "outputsize": "compact"}).get("Time Series (Daily)") or {}
-        keep_prices(self.state, entity.nse_symbol or query.split(".")[0], series)  # for The financial market
-        days = sorted(series)
-        if len(days) < 31:
-            return []
-        now, then = num(series[days[-1]]["4. close"]), num(series[days[-31]]["4. close"])
-        move = (now - then) / then * 100 if then else 0
-        if move > self.SLUMP:
-            return []
-        return [self.signal("share_price_slump", f"{entity.name} shares down {abs(move):.0f}% in 30 trading days",
-                            datetime.fromisoformat(days[-1]),
-                            excerpt=f"Close ₹{now:,.2f} on {days[-1]} vs ₹{then:,.2f} on {days[-31]} ({query}). Source: Alpha Vantage daily prices.")]
+        symbol = (entity.nse_symbol or query.split(".")[0]).upper()
+        keep_prices(self.state, symbol, series)  # for The financial market
+        return slump_signal(self, entity, market_data.slump(self.state.get("market", {}).get("px", {}).get(symbol)), query)
 
     def symbol_search(self, name: str) -> str | None:
         matches = self.call({"function": "SYMBOL_SEARCH", "keywords": name}).get("bestMatches") or []
         return next((m["1. symbol"] for m in matches if m.get("1. symbol", "").endswith(".BSE")), None)
 
 
+def slump_signal(src: LiveConnector, entity: Entity, s: dict | None, symbol: str) -> list[dict]:
+    if not s:
+        return []
+    return [src.signal("share_price_slump", f"{entity.name} shares down {abs(s['move']):.0f}% in 30 trading days",
+                       datetime.fromisoformat(s["now_date"]),
+                       excerpt=f"Close ₹{s['now']:,.2f} on {s['now_date']} vs ₹{s['then']:,.2f} on {s['then_date']} ({symbol}). "
+                               f"Source: {s['source']} daily prices.")]
+
+
+class KeptPrices(LiveConnector):
+    """The share-price slump from the prices the daily refresh kept (services/market_data.py: Alpha
+    Vantage, or Marketstack when Alpha Vantage is used up), for a company Alpha Vantage did not price today."""
+    name, source_type, needs_symbol = "Share prices", "news", True
+    min_days = 1
+    FRESH_DAYS = 4  # Marketstack refreshes a company every 3 days
+
+    @property
+    def configured(self) -> bool:
+        return True
+
+    def pull(self, entity: Entity, query: str) -> list[dict]:
+        from services import market_data
+
+        av = (self.state.get("pulled", {}).get(AlphaVantage.name) or {}).get(str(entity.id))
+        if av and datetime.now() - datetime.fromisoformat(av["at"]) < timedelta(hours=20):
+            return []  # Alpha Vantage priced it today and raised any slump itself
+        px = self.state.get("market", {}).get("px", {}).get(query.upper())
+        if not px or datetime.now() - datetime.fromisoformat(px["at"]) > timedelta(days=self.FRESH_DAYS):
+            return []
+        return slump_signal(self, entity, market_data.slump(px), query.upper())
+
+
 def resolve_nse_symbol(entity: Entity, state: dict, transport=None) -> str | None:
     """The entity's NSE symbol: the BSE ticker's stem (Alpha Vantage search) when
-    NSE confirms the same company, otherwise a Fincrux name search. Both lookups
-    count against their daily budgets; a miss is retried after a week (ingest.py)."""
+    NSE confirms the same company; when Alpha Vantage is used up or has no key, a Marketstack
+    ticker search; otherwise a Fincrux name search. Each lookup counts against its budget; a miss
+    is retried after a week (ingest.py)."""
+    from services import market_data
+
     name = short_name(entity.name)
     nse = NSE(state, transport)
     av = AlphaVantage(state, transport)
+    av_answered = False
     if av.configured:
         try:
             bse = av.symbol_search(name)
+            av_answered = True
         except (SourceError, httpx.HTTPError):
             bse = None
         if bse:
@@ -249,6 +279,13 @@ def resolve_nse_symbol(entity: Entity, state: dict, transport=None) -> str | Non
                         return stem
                 except (SourceError, httpx.HTTPError):
                     pass
+    if not av_answered and get_settings().marketstack_api_key:
+        try:
+            found = market_data.marketstack_symbol(state, name, transport)
+            if found:
+                return found
+        except (SourceError, httpx.HTTPError):
+            pass
     fx = Fincrux(state, transport)
     if fx.configured:
         try:

@@ -2,7 +2,11 @@
 its listed watched companies'. Rule-based, no model.
 
 The figures come from the two quota-limited feeds the radar already calls: Fincrux (quarterly results
-and shareholding, 5 calls a day) and Alpha Vantage (daily BSE closing prices, 25 calls a day). Every
+and shareholding, 5 calls a day) and Alpha Vantage (daily BSE closing prices, 25 calls a day). When
+Alpha Vantage is used up or has no key, Marketstack fills the missing NSE closing prices (its v1 API,
+up to MARKETSTACK_BATCH companies a call; the free plan allows about 100 calls a month), at most every
+MARKETSTACK_HOURS per company. The daily refresh also keeps every listed watched company's prices,
+so the share-price slump signal (``slump``) works whichever feed supplied them. Every
 call the ingestion connectors and the company research make keeps a compact copy of the figures in
 the shared ``live`` state (``keep_financials`` / ``keep_prices``), so the comparison costs no extra
 calls. From Fincrux's annual tables it also works out balance-sheet health (``health``: debt to equity,
@@ -148,13 +152,96 @@ def health_text(name: str, h: dict) -> str | None:
     return f"{name} balance sheet, {h['year']}: " + "; ".join(bits) + "." if bits else None
 
 
-def keep_prices(state: dict, symbol: str, series: dict) -> None:
-    """Keep the last PRICE_DAYS daily closes from an Alpha Vantage TIME_SERIES_DAILY reply."""
+def keep_prices(state: dict, symbol: str, series: dict, source: str = "Alpha Vantage") -> None:
+    """Keep the last PRICE_DAYS daily closes from an Alpha Vantage TIME_SERIES_DAILY reply (or one shaped like it)."""
     if not symbol or not series:
         return
     days = sorted(series)[-PRICE_DAYS:]
     state.setdefault("market", {}).setdefault("px", {})[symbol.upper()] = {
-        "at": datetime.now().isoformat(timespec="seconds"), "closes": [[d, round(num(series[d]["4. close"]), 2)] for d in days]}
+        "at": datetime.now().isoformat(timespec="seconds"), "source": source,
+        "closes": [[d, round(num(series[d]["4. close"]), 2)] for d in days]}
+
+
+SLUMP = -20.0  # a share_price_slump: down this much or more over SLUMP_DAYS trading days
+SLUMP_DAYS = 30
+
+
+def slump(px: dict | None) -> dict | None:
+    """The fall over the last SLUMP_DAYS trading days in kept closes, when it is SLUMP or worse."""
+    c = (px or {}).get("closes") or []
+    if len(c) < SLUMP_DAYS + 1:
+        return None
+    (then_d, then), (now_d, now) = c[-SLUMP_DAYS - 1], c[-1]
+    move = (now - then) / then * 100 if then else 0
+    return {"move": move, "now": now, "now_date": now_d, "then": then, "then_date": then_d,
+            "source": px.get("source") or "Alpha Vantage"} if move <= SLUMP else None
+
+
+# Marketstack: v1 API (v2 rejects NSE symbols)
+MARKETSTACK_MONTHLY = 90  # calls a month we allow ourselves (the free plan allows about 100)
+MARKETSTACK_BATCH = 9  # companies a call: 9 x ~100 trading days stays within its 1,000 rows
+MARKETSTACK_HOURS = 72  # a company's prices are fetched from it at most this often, to stay within the month
+
+
+def _marketstack(state: dict, path: str, params: dict, transport=None) -> dict:
+    """One Marketstack v1 call, counted against MARKETSTACK_MONTHLY."""
+    from ingestion.connectors.live.common import get_json
+    from shared.config import get_settings
+    from shared.http import client
+
+    month = datetime.now().strftime("%Y-%m")
+    b = state.setdefault("budget", {}).get("Marketstack")
+    if not b or b.get("month") != month:
+        b = {"month": month, "used": 0}
+    if b["used"] >= MARKETSTACK_MONTHLY:
+        raise SourceError(f"Marketstack: monthly limit of {MARKETSTACK_MONTHLY} calls reached; it continues next month.")
+    b["used"] += 1
+    state["budget"]["Marketstack"] = b
+    with client(transport) as c:
+        return get_json(c.get(f"https://api.marketstack.com/v1/{path}",
+                              params={**params, "access_key": get_settings().marketstack_api_key}), "Marketstack")
+
+
+def marketstack_symbol(state: dict, name: str, transport=None) -> str | None:
+    """Blocking: the NSE symbol of the listed company called ``name`` (Marketstack ticker search), if one matches."""
+    from ingestion.connectors.live.common import about
+
+    for t in _marketstack(state, "tickers", {"search": name, "limit": 10}, transport).get("data") or []:
+        if str(t.get("symbol", "")).endswith(".XNSE") and about(name, t.get("name") or ""):
+            return t["symbol"].rsplit(".", 1)[0]
+    return None
+
+
+def marketstack_prices(state: dict, symbols: list[str], transport=None) -> tuple[list[str], list[str]]:
+    """Blocking: the last PRICE_DAYS NSE closes for each symbol whose kept prices are older than
+    MARKETSTACK_HOURS, kept like Alpha Vantage's. Returns (symbols kept, errors)."""
+    from shared.config import get_settings
+
+    done, errors = [], []
+    px = state.get("market", {}).get("px", {})
+    symbols = [s for s in symbols if not _fresh(px.get(s.upper()), timedelta(hours=MARKETSTACK_HOURS))]
+    if not get_settings().marketstack_api_key or not symbols:
+        return done, errors
+    for i in range(0, len(symbols), MARKETSTACK_BATCH):
+        batch = symbols[i:i + MARKETSTACK_BATCH]
+        params = {"symbols": ",".join(f"{s.upper()}.XNSE" for s in batch), "limit": 1000,
+                  "date_from": (datetime.now() - timedelta(days=PRICE_DAYS * 3 // 2)).strftime("%Y-%m-%d")}
+        try:
+            body = _marketstack(state, "eod", params, transport)
+        except (SourceError, httpx.HTTPError) as e:
+            errors.append(str(e) if str(e).startswith("Marketstack") else f"Marketstack: {e}")
+            break
+        series: dict[str, dict] = {}
+        for row in body.get("data") or []:
+            if row.get("close") is not None and row.get("date"):
+                series.setdefault(row["symbol"].split(".")[0].upper(), {})[row["date"][:10]] = {"4. close": row["close"]}
+        for s in batch:
+            if series.get(s.upper()):
+                keep_prices(state, s, series[s.upper()], "Marketstack")
+                done.append(s)
+            else:
+                errors.append(f"Marketstack · {s}: no NSE prices")
+    return done, errors
 
 
 def _fresh(entry: dict | None, delta: timedelta) -> bool:
@@ -162,27 +249,33 @@ def _fresh(entry: dict | None, delta: timedelta) -> bool:
 
 
 # ---------- refresh ----------
-def _fill(state: dict, symbols: list[tuple[str, str]], transport=None) -> dict:
+def _fill(state: dict, symbols: list[tuple[str, str]], transport=None, prices_only: set[str] = frozenset()) -> dict:
     """Blocking: prices and results for (NSE symbol, BSE symbol) pairs that are missing or stale, in order,
-    until a budget runs out."""
+    until a budget runs out; only prices for the symbols in ``prices_only``."""
     from ingestion.connectors.live.filings import AlphaVantage, Fincrux
 
     av, fx = AlphaVantage(state, transport), Fincrux(state, transport)
     m = state.setdefault("market", {})
     done, errors = {"prices": [], "results": []}, []
     av_ok, fx_ok = av.configured, fx.configured
+    no_prices = []  # left for Marketstack
     for nse, bse in symbols:
-        if av_ok and not _fresh(m.get("px", {}).get(nse), timedelta(hours=PRICE_HOURS)):
-            try:
-                keep_prices(state, nse, av.call({"function": "TIME_SERIES_DAILY", "symbol": bse, "outputsize": "compact"}).get("Time Series (Daily)") or {})
-                done["prices"].append(nse)
-            except SourceError as e:
-                errors.append(str(e))
-                av_ok = "daily limit" not in str(e) and "Information" not in str(e)
-            except httpx.HTTPError as e:
-                errors.append(f"Alpha Vantage · {nse}: {e}")
+        if not _fresh(m.get("px", {}).get(nse), timedelta(hours=PRICE_HOURS)):
+            if not av_ok:
+                no_prices.append(nse)
+            else:
+                try:
+                    keep_prices(state, nse, av.call({"function": "TIME_SERIES_DAILY", "symbol": bse, "outputsize": "compact"}).get("Time Series (Daily)") or {})
+                    done["prices"].append(nse)
+                except SourceError as e:
+                    errors.append(str(e))
+                    av_ok = "daily limit" not in str(e) and "Information" not in str(e)
+                    no_prices.append(nse)
+                except httpx.HTTPError as e:
+                    errors.append(f"Alpha Vantage · {nse}: {e}")
+                    no_prices.append(nse)
         kept = m.get("fin", {}).get(nse)
-        if fx_ok and not (_fresh(kept, timedelta(days=RESULTS_DAYS)) and "balance" in kept):  # kept before the annual tables were: fetch again
+        if fx_ok and nse not in prices_only and not (_fresh(kept, timedelta(days=RESULTS_DAYS)) and "balance" in kept):  # kept before the annual tables were: fetch again
             try:
                 keep_financials(state, nse, fx.get(f"financials/{nse}")["data"])
                 done["results"].append(nse)
@@ -191,23 +284,32 @@ def _fill(state: dict, symbols: list[tuple[str, str]], transport=None) -> dict:
                 fx_ok = "daily limit" not in str(e)
             except (httpx.HTTPError, KeyError) as e:
                 errors.append(f"Fincrux · {nse}: {e}")
-    return {**done, "errors": errors}
+    kept, ms_errors = marketstack_prices(state, list(dict.fromkeys(no_prices)), transport)
+    return {**done, "prices": done["prices"] + kept, "errors": errors + ms_errors}
 
 
-async def refresh(db: AsyncSession, co: str | None = None, transport=None) -> dict:
+async def refresh(db: AsyncSession, co: str | None = None, transport=None, watched_prices: bool = False) -> dict:
     """The RPG companies' own figures (all of them, or ``co``), then — when ``co`` is given — its listed
-    peers that have none or stale ones."""
+    peers that have none or stale ones. ``watched_prices`` (the daily run): also every listed watched
+    company's share prices, for the slump signal — free when the news run's Alpha Vantage calls kept them."""
     from radar.bridge import CO_TO_CODE
     from services.company_research import PROFILES
     from services.ingest import RUN_LOCK
 
     codes = [CO_TO_CODE[co]] if co else list(PROFILES)
     symbols = [(PROFILES[c][2], f"{PROFILES[c][2]}.BSE") for c in codes if PROFILES[c][2]]
-    if co:
-        symbols += [(p["nse_symbol"], p["bse"]) for p in peers(co, {})]
     async with RUN_LOCK:  # the budgets live in the shared ``live`` state
         live = await state_store.load(db, "live")
-        res = await asyncio.to_thread(_fill, live, symbols, transport)
+        only: set[str] = set()
+        if co:
+            symbols += [(p["nse_symbol"], p["bse"]) for p in peers(co, live)]
+        elif watched_prices:
+            own = {s for s, _ in symbols}
+            extra = list(dict.fromkeys((p["nse_symbol"].upper(), p["bse"]) for c in CO_TO_CODE for p in peers(c, live)
+                                       if p["nse_symbol"].upper() not in own))
+            symbols += extra
+            only = {s for s, _ in extra}
+        res = await asyncio.to_thread(_fill, live, symbols, transport, only)
         await state_store.save(db, "live", live)
         await db.commit()
     return res

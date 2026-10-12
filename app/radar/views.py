@@ -251,3 +251,69 @@ def deals(scope: str) -> list[dict]:
     out = list({(d["case_id"], d["observed_at"], d["text"]): d for d in out}.values())
     out.sort(key=lambda d: d["observed_at"], reverse=True)
     return out
+
+
+# ---------- Executive dashboard: every subsidiary at once ----------
+NEWS_TYPES = {"deal_activity", "fund_raise", "stake_selldown", "press_distress", "balance_sheet_stress", "promoter_pledge",
+              "legal_action", "credit_downgrade", "earnings_decline", "leadership_churn"}
+WEEKS = 8
+
+
+def _ago(iso: str | None, days: int) -> bool:
+    from datetime import datetime, timedelta
+
+    return bool(iso) and datetime.fromisoformat(iso[:19]) >= datetime.utcnow() - timedelta(days=days)
+
+
+def overview(findings: dict[str, list[dict]], markets: dict[str, dict]) -> dict:
+    """The executive dashboard: headline numbers across the six RPG companies, public signals per week,
+    a card per company, and the M&A-related news across every opportunity. ``findings``: the last week's
+    Opportunity Analyst findings per company; ``markets``: each company's own market figures."""
+    from datetime import date, datetime, timedelta
+
+    cards, lists = [], {"open": [], "shortlisted": [], "targets": [], "findings": []}
+    monday = date.today() - timedelta(days=date.today().weekday())
+    weeks = [monday - timedelta(weeks=i) for i in range(WEEKS - 1, -1, -1)]
+    per_week = {w.isoformat(): {co: 0 for co in COMPANIES_ORDER} for w in weeks}
+    signals_week = 0
+    for co in COMPANIES_ORDER:
+        mine = [c for c in STORE.cases.values() if in_scope(c, co) and acquirable(c, co)["signal"]]
+        open_ = sorted((c for c in mine if c["status"] == "open"), key=lambda c: -(c["score"] or 0))
+        short = [c for c in mine if c["status"] == "shortlisted"]
+        targets = [w for w in (STORE.live_meta.get("watch") or {}).get(co, [])
+                   if w["status"] == "watching" and w.get("role") == "target" and _ago(w.get("found_at"), 7)]
+        seen: set = set()
+        for x in STORE.live.get(co, []):
+            d = datetime.fromisoformat(x["observed_at"][:19]).date()
+            wk = (d - timedelta(days=d.weekday())).isoformat()
+            key = (x["entity_id"], x["text"])
+            if wk in per_week and key not in seen:
+                seen.add(key)
+                per_week[wk][co] += 1
+                signals_week += _ago(x["observed_at"], 7)  # the last 7 days, not the calendar week
+        swot = STORE.swot.get(co) or {}
+        f = findings.get(co, [])
+        lists["open"] += [{**summary(c), "for": co} for c in open_]
+        lists["shortlisted"] += [{**summary(c), "for": co} for c in short]
+        lists["targets"] += [{"name": w["name"], "for": co, "why": w.get("why"), "found_at": (w.get("found_at") or "")[:10],
+                              "found_via": w.get("found_via") or "discovery", "entity_id": w["id"]} for w in targets]
+        lists["findings"] += [{**x, "for": co} for x in f]
+        cards.append({"company": co, "swot": {q: len(swot.get(q) or []) for q in "SWOT"}, "swot_at": (STORE.swot_source.get(co) or {}).get("at"),
+                      "open": len(open_), "shortlisted": len(short), "new_targets": len(targets),
+                      "top": {"id": open_[0]["id"], "who": open_[0]["who"], "score": open_[0]["score"]} if open_ else None,
+                      "competitors": sum(1 for w in (STORE.live_meta.get("watch") or {}).get(co, []) if w["status"] == "watching" and w.get("role") != "target"),
+                      "findings": len(f), "latest_finding": f[0] if f else None, "market": markets.get(co) or {}})
+    news, seen_news = [], set()
+    for co in COMPANIES_ORDER:
+        for x in STORE.live.get(co, []):
+            if x["signal_type"] in NEWS_TYPES and (x["entity_id"], x["text"]) not in seen_news:
+                seen_news.add((x["entity_id"], x["text"]))
+                case = f"r{x['entity_id']}"
+                c = STORE.cases.get(case)
+                news.append({**_signal(x), "company": x["company"], "for": co, "observed_at": x["observed_at"], "entity_id": x["entity_id"],
+                             "case_id": case if c and acquirable(c, co)["signal"] else None})
+    news.sort(key=lambda n: n["observed_at"], reverse=True)
+    return {"kpis": {"open": len(lists["open"]), "shortlisted": len(lists["shortlisted"]), "targets": len(lists["targets"]),
+                     "signals_week": signals_week, "findings": len(lists["findings"])},
+            "weeks": [{"week": w.isoformat(), "counts": per_week[w.isoformat()]} for w in weeks],
+            "companies": cards, "news": news[:25], "lists": lists}

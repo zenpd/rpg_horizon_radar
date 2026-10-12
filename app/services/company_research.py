@@ -34,6 +34,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ingestion.connectors.live.common import SourceError, about, clip, get_json, naive_utc, num
 from ingestion.connectors.live.filings import Fincrux
+from ingestion.connectors.live import news as news_sources
 from ingestion.connectors.live.news import GNews
 from services import state as state_store
 from services import swot_settings, web_search
@@ -131,7 +132,7 @@ def results(name: str, symbol: str, live_state: dict, transport=None) -> list[di
 
 
 def _tavily(body: dict, transport=None) -> list[dict]:
-    """A Tavily search; DuckDuckGo answers it instead when Tavily refuses or has no key (services/web_search.py).
+    """A Tavily search; Jina or DuckDuckGo answers it instead when Tavily refuses or has no key (services/web_search.py).
     A test transport always goes to Tavily."""
     if web_search.use_tavily() or transport is not None:
         try:
@@ -191,11 +192,27 @@ def tavily_news(query: str, transport=None, days: int = 30, must_name: str | Non
 
 
 def headlines(query: str, transport=None, since: datetime | None = None, exact: bool = True, kind: str = "news") -> list[dict]:
-    """GNews headlines. exact: the query is a company name that must appear in the headline;
-    otherwise it is a topic search (sector news)."""
+    """GNews headlines (Currents on a day GNews refuses, or has no key). exact: the query is a company
+    name that must appear in the headline; otherwise it is a topic search (sector news)."""
+    if not news_sources.gnews_up():
+        return _currents(query, transport, since, exact, kind) if news_sources.currents_up() else []
+    try:
+        return _gnews(query, transport, since, exact, kind)
+    except SourceError as e:
+        news_sources.failed("GNews", e)
+        if news_sources.currents_up():
+            return _currents(query, transport, since, exact, kind)
+        raise
+
+
+def _currents(query: str, transport, since, exact: bool, kind: str) -> list[dict]:
+    return [_fact(kind, a["title"] + (f": {a['description']}" if a["description"] else ""), a["outlet"],
+                  a["observed_at"], a["url"], a["title"])
+            for a in news_sources.currents(query, transport, since, exact) if a["title"] and (not exact or about(query, a["title"]))]
+
+
+def _gnews(query: str, transport, since, exact: bool, kind: str) -> list[dict]:
     k = get_settings().gnews_api_key
-    if not k:
-        return []
     params = {"q": f'"{query}"' if exact else query, "lang": "en", "country": "in", "max": 10, "sortby": "publishedAt", "apikey": k}
     if since:
         params["from"] = since.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -256,7 +273,7 @@ def daily_news(code: str, settings: dict, watched: list[str], transport=None) ->
     GNews first, paced; Tavily news when GNews has no key, refuses a call or finds nothing."""
     full, query, _ = PROFILES[code]
     since = datetime.utcnow() - timedelta(hours=DAILY_HOURS)
-    gnews = bool(get_settings().gnews_api_key)
+    gnews = news_sources.gnews_up() or news_sources.currents_up()
 
     def read(q: str, exact: bool, kind: str) -> list[dict]:
         if gnews:

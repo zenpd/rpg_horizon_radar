@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { PageMetaProvider, usePageMetaContext } from "../context/PageMetaContext";
 import { api, type Me } from "./api";
 import { AskRadar } from "./pages/Ask";
+import Overview from "./pages/Overview";
 import Competitors from "./pages/Competitors";
 import Digest from "./pages/Digest";
 import Finance from "./pages/Finance";
@@ -16,6 +17,7 @@ import { Ctx, type AppState, type View } from "./state";
 import "./styles.css";
 
 const NAV: [string, [View, string][]][] = [
+  ["Overview", [["overview", "Executive dashboard"]]],
   ["Radar", [["signals", "M&A Signals"], ["competitors", "Competitor Analysis"], ["ask", "Ask Radar"], ["shortlist", "Shortlisted signals"], ["settings", "Radar settings"]]],
   ["Self reflection", [["self", "Self analysis"], ["digest", "Weekly digest"], ["finance", "The financial market"]]],
 ];
@@ -50,7 +52,7 @@ export default function RadarApp() {
 
   const [me, setMe] = useState<Me | null>(null);
   const [meError, setMeError] = useState<string | null>(null);
-  const [view, setView] = useState<View>("signals");
+  const [view, setView] = useState<View>("overview");  // the executive dashboard is the landing page
   const [scope, setScopeRaw] = useState("CEAT");
   const [cur, setCur] = useState("CEAT");
   const [signalSel, setSignalSel] = useState<string | null>(null);
@@ -125,15 +127,15 @@ export default function RadarApp() {
               <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.4" /><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" strokeWidth="1.4" /><path d="M8 8 L13 3" stroke="currentColor" strokeWidth="1.6" /></svg>
               Horizon Radar
             </div>
-            {!onDesk && companies.length > 0 && (
+            {!onDesk && companies.length > 0 && view !== "overview" && (
               <div className="topctl">
                 <label htmlFor="coSel">Company</label>
-                <select id="coSel" value={scope} onChange={(e) => setScope(e.target.value)}>
-                  <option value="All">All companies</option>
+                <select id="coSel" value={scope === "All" ? cur : scope} onChange={(e) => setScope(e.target.value)}>
                   {companies.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
             )}
+            {!onDesk && view === "overview" && <div className="topctl"><span className="sub">All subsidiaries</span></div>}
             <span className="spacer" />
             <button type="button" className="btnx" id="themeBtn" aria-pressed={theme === "dark"} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
               title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>{theme === "dark" ? "☀︎" : "☾"}</button>
@@ -175,6 +177,7 @@ export default function RadarApp() {
                 <section className="view"><p className="sub">Loading…</p></section>
               ) : (
                 <section className="view">
+                  {view === "overview" && <Overview />}
                   {view === "signals" && <Signals />}
                   {view === "competitors" && <Competitors />}
                   {view === "ask" && <AskRadar />}

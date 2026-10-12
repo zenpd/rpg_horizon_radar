@@ -192,7 +192,7 @@ export interface Health {
 export interface Market {
   company: string; listed: boolean; nse_symbol: string | null; own: MarketRow; peers: MarketRow[];
   standing: { measure: string; verdict: "ahead" | "behind" | "level" | "info"; text: string }[];
-  pending: string[]; unlisted: string[]; budget: Record<string, { date: string; used: number }>;
+  pending: string[]; unlisted: string[]; budget: Record<string, { date?: string; month?: string; used: number }>;
 }
 
 /** What a Sector Scout run did (agents/sector_scout.py). */
@@ -209,6 +209,27 @@ export interface ChatThread { id: number; title: string; company: string; create
 export interface ChatSource { id: string; kind: "radar" | "web"; text: string; source: string; date: string | null; url: string | null }
 export interface ChatMessage {
   id: number; role: "user" | "assistant"; content: string; company: string; sources: ChatSource[]; used_web: boolean; model: string; created_at: string;
+}
+
+/** The executive dashboard (radar/views.overview). */
+export interface DashboardCard {
+  company: string; swot: Record<"S" | "W" | "O" | "T", number>; swot_at: string | null; open: number; shortlisted: number; new_targets: number;
+  top: { id: string; who: string; score: number | null } | null; competitors: number; findings: number;
+  latest_finding: { id: number; kind: "opportunity" | "threat"; title: string; date: string } | null;
+  market: { listed?: boolean; close?: number | null; chg_30?: number | null; market_cap?: number | null; sales_yoy?: number | null };
+}
+export interface Dashboard {
+  kpis: { open: number; shortlisted: number; targets: number; signals_week: number; findings: number };
+  weeks: { week: string; counts: Record<string, number> }[];
+  companies: DashboardCard[];
+  ripples: { case_id: string; who: string; for: string; score: number | null; headline: string; at: string;
+             ripple: { company: string; effect: "opportunity" | "neutral" | "risk"; reasoning: string }[] }[];
+  news: (Signal & { company: string; for: string; observed_at: string; entity_id: number; case_id: string | null })[];
+  lists: {
+    open: (SignalCard & { for: string })[]; shortlisted: (SignalCard & { for: string })[];
+    targets: { name: string; for: string; why: string | null; found_at: string; found_via: string; entity_id: number }[];
+    findings: { id: number; kind: "opportunity" | "threat"; title: string; date: string; for: string }[];
+  };
 }
 
 export interface Deal extends Signal { company: string; type: string; case_id: string; for: string }
@@ -277,6 +298,7 @@ export const api = {
   marketRefresh: (company: string) => call<SignalJob>("POST", "/market/refresh" + q({ company })),
   marketJob: (id: string) => call<SignalJob>("GET", `/market-jobs/${id}`),
   deals: (company: string) => call<{ deals: Deal[] }>("GET", "/deals" + q({ company })),
+  dashboard: () => call<Dashboard>("GET", "/overview"),
   chats: () => call<ChatThread[]>("GET", "/chats"),
   newChat: (company: string) => call<ChatThread>("POST", "/chats", { company }),
   chat: (id: number) => call<ChatThread & { messages: ChatMessage[] }>("GET", `/chats/${id}`),

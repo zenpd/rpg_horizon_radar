@@ -92,18 +92,19 @@ export default function Finance() {
     const b = d.budget[k];
     return b && b.date === new Date().toISOString().slice(0, 10) ? `${b.used} of ${limit}` : `0 of ${limit}`;
   };
+  const ms = d.budget["Marketstack"], msUsed = ms && ms.month === new Date().toISOString().slice(0, 7) ? ms.used : 0;
 
   return (
     <>
       <div>
         <span className="crumb"><b>Self reflection</b> / The financial market · {co}</span>
         <h4>{co}'s finances and share price against its competitors</h4>
-        <p className="sub">Quarterly results and shareholding (Fincrux), daily BSE closing prices (Alpha Vantage) and market cap, for {co} and its listed watched companies. Rule-based, no AI.
+        <p className="sub">Quarterly results and shareholding (Fincrux), daily BSE closing prices (Alpha Vantage; NSE prices from Marketstack when it is used up) and market cap, for {co} and its listed watched companies. Rule-based, no AI.
           {app.scope === "All" && <> Showing {co} — pick a company above to change.</>}</p>
       </div>
       <div className="btnrow" style={{ alignItems: "center" }}>
         <button className="btnx" disabled={running} onClick={() => api.marketRefresh(co).then(setJob).catch((e) => app.toast(e.message))}>{running ? "Fetching figures…" : "Fetch missing figures"}</button>
-        <span className="sub" style={{ fontSize: 12 }}>Calls used today: Alpha Vantage {used("Alpha Vantage", 25)}, Fincrux {used("Fincrux", 5)}. {co}'s own figures refresh daily after the news run; its competitors' with their news checks.</span>
+        <span className="sub" style={{ fontSize: 12 }}>Calls used today: Alpha Vantage {used("Alpha Vantage", 25)}, Fincrux {used("Fincrux", 5)}; Marketstack {msUsed} of 90 this month. {co}'s own figures refresh daily after the news run; its competitors' with their news checks.</span>
       </div>
 
       {!d.listed ? (

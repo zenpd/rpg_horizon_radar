@@ -44,7 +44,7 @@ WINDOW_DAYS = 120
 KEPT_DAYS = 7  # kept daily findings feed the weekly SWOT for this long
 MAX_LIVE = 40
 SYNC_EVERY = 300  # seconds
-NEWS_PROVIDERS = {"GNews", "GDELT", "NewsData.io", "Tavily", "DuckDuckGo", "YouTube", "Sector news"}
+NEWS_PROVIDERS = {"GNews", "Currents", "GDELT", "NewsData.io", "Tavily", "DuckDuckGo", "YouTube", "Sector news"}
 LABEL = {"leadership_churn": "Leadership", "delayed_filing": "Filing delay", "credit_downgrade": "Rating",
          "patent_shift": "Patents", "hiring_scaledown": "Hiring", "hiring_scaleup": "Hiring", "press_distress": "News",
          "press_opportunity": "News", "promoter_pledge": "Pledge", "auditor_change": "Auditor change",

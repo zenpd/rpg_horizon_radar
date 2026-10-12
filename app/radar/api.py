@@ -59,6 +59,39 @@ def me(reviewer: Reviewer = Depends(get_current_reviewer)):
     return {"name": reviewer.name, "companies": COMPANIES_ORDER}
 
 
+@router.get("/overview", tags=["reference"])
+async def overview(db: AsyncSession = Depends(get_db)):
+    """The executive dashboard across all six RPG companies (radar/views.overview)."""
+    from services import market_data
+    from services.company_research import PROFILES
+
+    since = datetime.utcnow() - timedelta(days=7)
+    rows = (await db.execute(select(OpportunityFinding).where(OpportunityFinding.found_on >= since, OpportunityFinding.status != "dismissed")
+                             .order_by(OpportunityFinding.found_on.desc()))).scalars().all()
+    findings: dict[str, list[dict]] = {}
+    for f in rows:
+        co = bridge.CODE_TO_CO.get(f.subsidiary_code)
+        if co:
+            findings.setdefault(co, []).append({"id": f.id, "kind": f.kind, "title": f.title, "date": f"{f.found_on:%d %b}",
+                                                "impact": f.impact, "urgency": f.urgency})
+    live = await state_store.load(db, "live")
+    markets = {}
+    for co in COMPANIES_ORDER:
+        m = market_data.company(PROFILES[bridge.CO_TO_CODE[co]][2], live)
+        markets[co] = {"listed": m.get("listed"), "close": m.get("close"), "chg_30": m.get("chg_30"),
+                       "market_cap": (m.get("health") or {}).get("market_cap"), "sales_yoy": m.get("sales_yoy")}
+    out = views.overview(findings, markets)
+    # each signal's ripple effect on the other RPG companies, from its acquisition thesis (the ripple network)
+    ripples = []
+    for s in out["lists"]["open"] + out["lists"]["shortlisted"]:
+        t = await acquisition_thesis.load(db, s["id"], s["for"])
+        if t and t["draft"].get("ripple"):
+            ripples.append({"case_id": s["id"], "who": s["who"], "for": s["for"], "score": s["score"],
+                            "headline": t["draft"]["headline"], "ripple": t["draft"]["ripple"], "at": t["at"]})
+    out["ripples"] = ripples
+    return out
+
+
 @router.get("/companies", tags=["reference"])
 def companies():
     return [{"name": co, "watching": [r["name"] for r in STORE.rivals.get(co, [])]} for co in COMPANIES_ORDER]
@@ -532,7 +565,7 @@ async def market(company: str = Query(...), db: AsyncSession = Depends(get_db)):
     co = check_company(company)
     live = await state_store.load(db, "live")
     return {**market_data.view(co, live, STORE.sizes), "budget": {k: v for k, v in (live.get("budget") or {}).items()
-                                                                  if k in ("Fincrux", "Alpha Vantage")}}
+                                                                  if k in ("Fincrux", "Alpha Vantage", "Marketstack")}}
 
 
 @router.post("/market/refresh", status_code=202, tags=["explore"])

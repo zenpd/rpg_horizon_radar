@@ -1,11 +1,12 @@
-"""News and press: GNews, NewsData.io, Tavily (web search, news topic) and
-YouTube video titles. A story becomes a signal only when the watched company
+"""News and press: GNews (Currents on a day GNews refuses), NewsData.io, Tavily (web search, news
+topic) and YouTube video titles. A story becomes a signal only when the watched company
 is named in its headline and the headline reports something the scoring rules
 weigh (common.classify_headline): a rating cut, a resignation, a deal, an
 order win ...
 
 Quotas: GNews free plan ~100 requests a day, about one a second, 12-hour
-delay. GDELT (no key) asks for one request every 5 seconds from a network; it
+delay; once it refuses (the day's calls used up, or the key rejected) it is skipped for the rest
+of the day and Currents (about 250 calls a day; thinner Indian coverage) answers instead. GDELT (no key) asks for one request every 5 seconds from a network; it
 refuses more, and may refuse a shared office or VPN address used by others. NewsData free plan covers the last 48 hours. Tavily 1,000 credits a
 month. YouTube: one search costs 100 of the 10,000 daily units."""
 from __future__ import annotations
@@ -13,7 +14,7 @@ from __future__ import annotations
 import html
 import re
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
 import httpx
@@ -40,6 +41,59 @@ class _Headlines(LiveConnector):
         return out
 
 
+# GNews' daily allowance is shared by every caller (the connector, company research, the Sector Scout).
+_down: dict[str, date] = {}
+
+
+def failed(provider: str, error: Exception) -> None:
+    """Note a refusal that lasts the day: the key rejected, or the day's calls used up."""
+    text = str(error)
+    if any(f"HTTP {code}" in text for code in (401, 403)) or "limit" in text.lower():
+        _down[provider] = date.today()
+
+
+def down(provider: str) -> bool:
+    return _down.get(provider) == date.today()
+
+
+def gnews_up() -> bool:
+    return bool(get_settings().gnews_api_key) and not down("GNews")
+
+
+def currents_up() -> bool:
+    """Currents answers when GNews cannot: no GNews key, or GNews has refused today."""
+    return bool(get_settings().currents_api_key) and not down("Currents") and not gnews_up()
+
+
+CURRENTS_URL = "https://api.currentsapi.services/v1/search"
+
+
+def currents(query: str, transport=None, since: datetime | None = None, exact: bool = True) -> list[dict]:
+    """Currents news search, Indian English-language outlets: [{title, description, observed_at, url, outlet}]."""
+    params = {"keywords": f'"{query}"' if exact else query, "language": "en", "country": "IN",
+              "apiKey": get_settings().currents_api_key}
+    if since:  # Currents searches at most 7 days back
+        params["start_date"] = max(since, datetime.utcnow() - timedelta(days=6)).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    try:
+        with client(transport) as c:
+            body = get_json(c.get(CURRENTS_URL, params=params), "Currents")
+    except SourceError as e:
+        failed("Currents", e)
+        raise
+    if body.get("status") != "ok":
+        raise SourceError(f"Currents: {body.get('msg') or body.get('status')}")
+    out = []
+    for a in body.get("news") or []:
+        try:
+            when = datetime.strptime(a.get("published", ""), "%Y-%m-%d %H:%M:%S %z").astimezone(timezone.utc).replace(tzinfo=None)
+        except ValueError:
+            continue
+        host = re.sub(r"^www\.", "", httpx.URL(a["url"]).host) if a.get("url") else "news"
+        out.append({"title": a.get("title") or "", "description": a.get("description") or "", "observed_at": when,
+                    "url": a.get("url"), "outlet": host})
+    return out
+
+
 class GNews(_Headlines):
     name = "GNews"
     URL = "https://gnews.io/api/v4/search"
@@ -52,10 +106,17 @@ class GNews(_Headlines):
         self.sleep = sleep
 
     @property
-    def configured(self) -> bool:
-        return bool(self.key)
+    def configured(self) -> bool:  # skipped for the day once it has refused (Currents stands in)
+        return bool(self.key) and (self.transport is not None or not down(self.name))
 
     def pull(self, entity: Entity, query: str) -> list[dict]:
+        try:
+            return self._pull(query)
+        except SourceError as e:
+            failed(self.name, e)
+            raise
+
+    def _pull(self, query: str) -> list[dict]:
         params = {"q": f'"{query}"', "lang": "en", "country": "in", "max": 10, "sortby": "publishedAt", "apikey": self.key}
         with client(self.transport) as c:
             for _ in range(2):
@@ -73,6 +134,19 @@ class GNews(_Headlines):
         return self.headlines_to_signals(query, [
             (a.get("title"), naive_utc(a["publishedAt"]), a.get("url"), (a.get("source") or {}).get("name") or "news")
             for a in body.get("articles") or []])
+
+
+class Currents(_Headlines):
+    """Currents news search: stands in for GNews on a day GNews has refused, or when GNews has no key."""
+    name = "Currents"
+
+    @property
+    def configured(self) -> bool:
+        return currents_up() if self.transport is None else bool(get_settings().currents_api_key)
+
+    def pull(self, entity: Entity, query: str) -> list[dict]:
+        return self.headlines_to_signals(query, [(a["title"], a["observed_at"], a["url"], a["outlet"])
+                                                 for a in currents(query, self.transport)])
 
 
 class GDELT(_Headlines):
@@ -189,7 +263,7 @@ class DuckDuckGo(_Headlines):
     def configured(self) -> bool:
         from services import web_search
 
-        return self.transport is None and web_search.enabled() and not web_search.use_tavily()
+        return self.transport is None and web_search.ddg_on() and not web_search.use_tavily()
 
     def pull(self, entity: Entity, query: str) -> list[dict]:
         from services import web_search

@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-export type View = "signals" | "competitors" | "ask" | "shortlist" | "settings" | "self" | "digest" | "finance";
+export type View = "overview" | "signals" | "competitors" | "ask" | "shortlist" | "settings" | "self" | "digest" | "finance";
 
 export interface AppState {
   view: View;

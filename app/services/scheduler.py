@@ -157,7 +157,7 @@ async def run_due(now: datetime | None = None) -> list[str]:
                 from services import market_data  # the RPG companies' own prices and results, for The financial market
 
                 async with get_db_session() as db:
-                    res["market"] = await market_data.refresh(db)
+                    res["market"] = await market_data.refresh(db, watched_prices=True)
             state[job] = now.isoformat(timespec="seconds")
             state[f"{job}_result"] = {k: v for k, v in res.items() if k != "errors"} | {"errors": (res.get("errors") or [])[:20]}
             ran.append(job)

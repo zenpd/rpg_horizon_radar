@@ -1082,3 +1082,35 @@ def test_ask_radar_drops_citations_to_sources_it_was_not_given():
             return json.dumps({"answer": "Revenue rose 40% [R9].", "needs_web": False, "web_query": None})
     reply, _ = ask_agent.draft("q", [], "CEAT", [{"id": "R1", "kind": "radar", "text": "x", "source": "s"}], Bad())
     assert "[R9]" not in reply["answer"], "after one retry an unknown citation is removed, never shown as a source"
+
+
+# ---------- Executive dashboard (radar/views.overview) ----------
+def test_executive_dashboard_covers_every_subsidiary(user):
+    d = user.get("/overview").json()
+    assert [c["company"] for c in d["companies"]] == COMPANIES_ORDER, "one card per RPG company, in order"
+    ceat = next(c for c in d["companies"] if c["company"] == "CEAT")
+    assert ceat["open"] == sum(1 for s in d["lists"]["open"] if s["for"] == "CEAT") >= 1
+    assert ceat["top"]["who"] in (ALPHA, BETA) and set(ceat["swot"]) == set("SWOT")
+    assert d["kpis"]["open"] == len(d["lists"]["open"]) and len(d["weeks"]) == 8
+    assert sum(sum(w["counts"].values()) for w in d["weeks"]) >= 1, "the watched companies' signals are counted by week"
+    assert all(set(w["counts"]) == set(COMPANIES_ORDER) for w in d["weeks"])
+    assert all(n["for"] in COMPANIES_ORDER for n in d["news"]), "every news item is tagged with its RPG company"
+
+
+def test_executive_dashboard_carries_each_theses_ripple(user):
+    from agents import acquisition_thesis
+
+    cid = case_of(ALPHA)
+    ev = acquisition_thesis.evidence(STORE.cases[cid], [])
+    draft = thesis_draft([x["id"] for x in ev])
+
+    async def put(value):
+        async with base.get_db_session() as db:
+            await state_store.save(db, acquisition_thesis.key(cid, "CEAT"), value)
+            await db.commit()
+    asyncio.run(put({"at": "12 Oct 2026 10:00", "draft": draft}))
+    try:
+        r = next(x for x in user.get("/overview").json()["ripples"] if x["case_id"] == cid)
+        assert r["for"] == "CEAT" and [x["company"] for x in r["ripple"]] == OTHERS and r["headline"] == draft["headline"]
+    finally:
+        asyncio.run(put({}))

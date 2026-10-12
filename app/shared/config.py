@@ -103,9 +103,11 @@ class Settings(BaseSettings):
     # described in its module docstring.
     live_connectors_enabled: bool = True
     gnews_api_key: str = ""
+    currents_api_key: str = ""            # stands in for GNews on a day it refuses (ingestion/connectors/live/news.py)
     gdelt_enabled: bool = True            # GDELT news needs no key; one request every 5 seconds
     newsdata_api_key: str = ""
     tavily_api_key: str = ""
+    jina_api_key: str = ""                # Jina search: the first fallback for Tavily's web-page searches (services/web_search.py)
     ddg_fallback: bool = True             # DuckDuckGo answers news and web searches when Tavily refuses (services/web_search.py)
     adzuna_app_id: str = ""
     adzuna_app_key: str = ""
@@ -115,6 +117,8 @@ class Settings(BaseSettings):
     epo_ops_consumer_key: str = ""
     epo_ops_consumer_secret: str = ""
     fincrux_api_key: str = ""             # 5 calls a day
+    marketstack_api_key: str = ""         # NSE closing prices when Alpha Vantage is used up (services/market_data.py)
+    finnhub_api_key: str = ""             # kept, unused: the free plan refuses Indian (NSE/BSE) symbols
     nse_enabled: bool = True              # no key; NSE's site API, used sparingly
 
     # KV URI overrides for every connector key above — every one of these was pasted into chat
@@ -131,6 +135,10 @@ class Settings(BaseSettings):
     epo_ops_consumer_key_kv_uri: str = ""
     epo_ops_consumer_secret_kv_uri: str = ""
     fincrux_api_key_kv_uri: str = ""
+    currents_api_key_kv_uri: str = ""
+    marketstack_api_key_kv_uri: str = ""
+    finnhub_api_key_kv_uri: str = ""
+    jina_api_key_kv_uri: str = ""
 
     # ── Reasoning LLM routes (agents/llm_routes.py) ──────────────────────────────
     # Used for watchlist discovery and SWOT briefs — never for scoring.
@@ -189,6 +197,10 @@ class Settings(BaseSettings):
             ("epo_ops_consumer_key_kv_uri", "epo_ops_consumer_key"),
             ("epo_ops_consumer_secret_kv_uri", "epo_ops_consumer_secret"),
             ("fincrux_api_key_kv_uri", "fincrux_api_key"),
+            ("currents_api_key_kv_uri", "currents_api_key"),
+            ("marketstack_api_key_kv_uri", "marketstack_api_key"),
+            ("finnhub_api_key_kv_uri", "finnhub_api_key"),
+            ("jina_api_key_kv_uri", "jina_api_key"),
             ("groq_api_key_kv_uri", "groq_api_key"),
             ("nvidia_api_key_kv_uri", "nvidia_api_key"),
         ]
